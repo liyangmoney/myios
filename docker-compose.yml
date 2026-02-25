@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: pis-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: pis_system
+      MYSQL_USER: pis_user
+      MYSQL_PASSWORD: pis_pass123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/pis_system.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # 后端服务
+  backend:
+    build: ./backend
+    container_name: pis-backend
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: pis_user
+      DB_PASSWORD: pis_pass123
+      DB_NAME: pis_system
+      JWT_SECRET: your_jwt_secret_key_change_this
+      JWT_EXPIRES_IN: 7d
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./backend/uploads:/app/uploads
+
+  # 前端服务
+  frontend:
+    build: ./frontend
+    container_name: pis-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
