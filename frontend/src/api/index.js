@@ -66,4 +66,14 @@ export const userApi = {
   getList: () => api.get('/users')
 }
 
-export default api
+// 42个体系文件API
+export const procedureDocumentApi = {
+  getCategories: () => api.get('/procedure-documents/categories'),
+  getDepartments: () => api.get('/procedure-documents/departments'),
+  getList: (params) => api.get('/procedure-documents', { params }),
+  getDetail: (id) => api.get(`/procedure-documents/${id}`),
+  update: (id, data) => api.put(`/procedure-documents/${id}`, data),
+  upload: (formData) => api.post('/procedure-documents/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}

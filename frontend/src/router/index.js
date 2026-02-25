@@ -38,6 +38,12 @@ const routes = [
         meta: { title: '指标填报' }
       },
       {
+        path: 'documents',
+        name: 'ProcedureDocuments',
+        component: () => import('@/views/ProcedureDocuments.vue'),
+        meta: { title: '42个体系文件' }
+      },
+      {
         path: 'reports',
         name: 'Reports',
         component: () => import('@/views/Reports.vue'),

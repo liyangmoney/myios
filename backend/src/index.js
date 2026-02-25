@@ -9,6 +9,7 @@ import projectRoutes from './routes/projects.js'
 import indicatorRoutes from './routes/indicators.js'
 import documentRoutes from './routes/documents.js'
 import userRoutes from './routes/users.js'
+import procedureDocumentRoutes from './routes/procedureDocuments.js'
 
 dotenv.config()
 
@@ -32,6 +33,7 @@ app.use('/api/projects', projectRoutes)
 app.use('/api/indicators', indicatorRoutes)
 app.use('/api/documents', documentRoutes)
 app.use('/api/users', userRoutes)
+app.use('/api/procedure-documents', procedureDocumentRoutes)
 
 // 健康检查
 app.get('/api/health', (req, res) => {
