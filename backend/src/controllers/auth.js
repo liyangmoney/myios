@@ -17,14 +17,15 @@ export const login = async (req, res) => {
     
     const user = users[0]
     
-    // 验证密码
+    // 验证密码 - 临时支持明文密码 admin123
     let isValid = false
-    // 临时支持明文密码 admin123
     if (password === 'admin123') {
       isValid = true
     } else {
       isValid = await bcrypt.compare(password, user.password)
     }
+    
+    if (!isValid) {
       return res.status(401).json({ code: 401, message: '用户名或密码错误' })
     }
     
