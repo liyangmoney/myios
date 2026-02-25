@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS sys_user (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
     password VARCHAR(255) NOT NULL COMMENT '密码',
-    user_name VARCHAR(100) COMMENT '真实姓名',
+    user_name VARCHAR(200) COMMENT '真实姓名',
     email VARCHAR(100) COMMENT '邮箱',
     phone VARCHAR(20) COMMENT '电话',
     role VARCHAR(50) DEFAULT 'user' COMMENT '角色：admin/user',
@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS pis_document (
 
 -- 插入默认管理员用户 (密码: admin123)
 INSERT INTO sys_user (username, password, user_name, email, role, status) VALUES
-('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqWfW2z8wKJvUqYnTnZPHzZGA3r.W', '管理员', 'admin@example.com', 'admin', 1),
-('zhangsan', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqWfW2z8wKJvUqYnTnZPHzZGA3r.W', '张三', 'zhangsan@example.com', 'user', 1),
-('lisi', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqWfW2z8wKJvUqYnTnZPHzZGA3r.W', '李四', 'lisi@example.com', 'user', 1),
-('wangwu', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqWfW2z8wKJvUqYnTnZPHzZGA3r.W', '王五', 'wangwu@example.com', 'user', 1);
+('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqWfW2z8wKJvUqYnTnZPHzZGA3r.W', 'Admin', 'admin@example.com', 'admin', 1),
+('zhangsan', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqWfW2z8wKJvUqYnTnZPHzZGA3r.W', 'Zhang San', 'zhangsan@example.com', 'user', 1),
+('lisi', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqWfW2z8wKJvUqYnTnZPHzZGA3r.W', 'Li Si', 'lisi@example.com', 'user', 1),
+('wangwu', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqWfW2z8wKJvUqYnTnZPHzZGA3r.W', 'Wang Wu', 'wangwu@example.com', 'user', 1);
