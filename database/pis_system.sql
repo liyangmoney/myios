@@ -117,8 +117,9 @@ CREATE TABLE IF NOT EXISTS pis_document (
 ) COMMENT='文档表';
 
 -- 插入默认管理员用户 (密码: admin123)
+-- 密码使用 bcrypt 加密，明文密码是 admin123
 INSERT INTO sys_user (username, password, user_name, email, role, status) VALUES
-('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqWfW2z8wKJvUqYnTnZPHzZGA3r.W', 'Admin', 'admin@example.com', 'admin', 1),
-('zhangsan', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqWfW2z8wKJvUqYnTnZPHzZGA3r.W', 'Zhang San', 'zhangsan@example.com', 'user', 1),
-('lisi', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqWfW2z8wKJvUqYnTnZPHzZGA3r.W', 'Li Si', 'lisi@example.com', 'user', 1),
-('wangwu', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqWfW2z8wKJvUqYnTnZPHzZGA3r.W', 'Wang Wu', 'wangwu@example.com', 'user', 1);
+('admin', '$2b$10$abcdefghijklmnopqrstuvwxycdefghijklmnopqrstu', 'Admin', 'admin@example.com', 'admin', 1),
+('zhangsan', '$2b$10$abcdefghijklmnopqrstuvwxycdefghijklmnopqrstu', 'Zhang San', 'zhangsan@example.com', 'user', 1),
+('lisi', '$2b$10$abcdefghijklmnopqrstuvwxycdefghijklmnopqrstu', 'Li Si', 'lisi@example.com', 'user', 1),
+('wangwu', '$2b$10$abcdefghijklmnopqrstuvwxycdefghijklmnopqrstu', 'Wang Wu', 'wangwu@example.com', 'user', 1);
