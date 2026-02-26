@@ -89,6 +89,8 @@
         <el-table :data="procedureList" v-loading="loading" stripe @row-click="viewDetail">
           <el-table-column type="index" label="序号" width="60" />
           
+          <el-table-column prop="sortNumber" label="排序号" width="80" sortable />
+          
           <el-table-column prop="fileCode" label="文件编号" width="150" />
           
           <el-table-column prop="fileName" label="文件名称" min-width="250" />

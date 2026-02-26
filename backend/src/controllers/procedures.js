@@ -30,7 +30,7 @@ export const getProcedures = async (req, res) => {
       params.push(`%${keyword}%`, `%${keyword}%`)
     }
     
-    sql += ' ORDER BY p.category, p.file_code'
+    sql += ' ORDER BY p.sort_number, p.file_code'
     
     const procedures = await query(sql, params)
     
@@ -47,6 +47,7 @@ export const getProcedures = async (req, res) => {
       version: proc.version,
       status: proc.status,
       priority: proc.priority,
+      sortNumber: proc.sort_number,
       description: proc.description,
       filePath: proc.file_path,
       createdBy: proc.created_by,
@@ -108,6 +109,7 @@ export const getProcedureDetail = async (req, res) => {
       version: procedures[0].version,
       status: procedures[0].status,
       priority: procedures[0].priority,
+      sortNumber: procedures[0].sort_number,
       description: procedures[0].description,
       filePath: procedures[0].file_path,
       createdBy: procedures[0].created_by,
