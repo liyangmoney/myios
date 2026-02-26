@@ -10,16 +10,16 @@ CREATE TABLE IF NOT EXISTS pis_document_category (
     id INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(10) NOT NULL UNIQUE COMMENT '分类代码: C/M/S',
     name VARCHAR(50) NOT NULL COMMENT '分类名称',
-    description VARCHAR(200) COMMENT '分类描述',
+    description TEXT COMMENT '分类描述',
     sort_order INT DEFAULT 0 COMMENT '排序',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) COMMENT='文件分类表';
 
 -- 插入文件分类
 INSERT INTO pis_document_category (code, name, description, sort_order) VALUES
-('C', '程序文件', 'Procedure - 质量管理体系程序文件', 1),
-('M', '管理文件', 'Management - 管理制度和办法', 2),
-('S', '支持文件', 'Support - 作业指导书和支持性文件', 3);
+('C', '程序文件', 'Procedure', 1),
+('M', '管理文件', 'Management', 2),
+('S', '支持文件', 'Support', 3);
 
 -- 创建42个体系文件表
 CREATE TABLE IF NOT EXISTS pis_procedure_document (
