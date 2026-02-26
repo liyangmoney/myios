@@ -95,15 +95,22 @@
             </template>
           </el-table-column>
           
-          <el-table-column prop="categorySort" label="分类序号" width="90" sortable>
+          <el-table-column prop="groupSort" label="分组排序" width="90" sortable>
             <template #default="{ row }">
-              <el-tag :type="getCategoryType(row.category)" size="small">{{ row.categorySort }}</el-tag>
+              <el-tag :type="getCategoryType(row.category)" size="small">{{ row.groupSort }}</el-tag>
             </template>
           </el-table-column>
           
           <el-table-column prop="fileCode" label="文件编号" width="150" />
           
-          <el-table-column prop="fileName" label="文件名称" min-width="250" />
+          <el-table-column prop="fileName" label="文件名称" min-width="200" />
+          
+          <el-table-column label="KO项" width="70" align="center">
+            <template #default="{ row }">
+              <el-tag v-if="row.isKo === 1 || row.isKo === true" type="danger" size="small" effect="dark">KO</el-tag>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
           
           <el-table-column prop="department" label="编制部门" width="120" />
           
@@ -153,8 +160,12 @@
           <el-descriptions-item label="文件分类">
             <el-tag :type="getCategoryType(currentProcedure.category)">{{ currentProcedure.category }}</el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="分类序号">
-            <el-tag :type="getCategoryType(currentProcedure.category)" size="small">{{ currentProcedure.categorySort }}</el-tag>
+          <el-descriptions-item label="分组排序">
+            <el-tag :type="getCategoryType(currentProcedure.category)" size="small">{{ currentProcedure.groupSort }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="KO项">
+            <el-tag v-if="currentProcedure.isKo === 1 || currentProcedure.isKo === true" type="danger" effect="dark">是</el-tag>
+            <span v-else>否</span>
           </el-descriptions-item>
           <el-descriptions-item label="编制部门">{{ currentProcedure.department }}</el-descriptions-item>
           <el-descriptions-item label="负责人">{{ currentProcedure.responsiblePerson }}</el-descriptions-item>
