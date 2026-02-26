@@ -486,28 +486,23 @@ const previewFile = async (row) => {
     return
   }
   
-  try {
-    const res = await api.get('/preview', {
-      params: { url: row.filePath }
-    })
-    
-    if (res.code === 200) {
-      const { previewType, previewUrl } = res.data
-      
-      if (previewType === 'direct') {
-        // PDF 直接打开
-        window.open(`http://localhost:9090${previewUrl}`, '_blank')
-      } else if (previewType === 'office') {
-        // Office 文件使用微软在线预览
-        window.open(previewUrl, '_blank')
-      }
-    } else {
-      ElMessage.error(res.message || '预览失败')
-    }
-  } catch (error) {
-    console.error('预览失败:', error)
-    ElMessage.error('预览失败: ' + (error.message || '未知错误'))
+  const ext = row.filePath.split('.').pop().toLowerCase()
+  
+  // PDF 直接浏览器打开预览
+  if (ext === 'pdf') {
+    window.open(`http://localhost:9090${row.filePath}`, '_blank')
+    return
   }
+  
+  // Office 文件暂不支持在线预览，提示下载
+  const officeExts = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx']
+  if (officeExts.includes(ext)) {
+    ElMessage.info('Office文件暂不支持在线预览，请下载后查看')
+    downloadFile(row)
+    return
+  }
+  
+  ElMessage.warning('该文件类型不支持在线预览')
 }
 
 const deleteRecord = (row) => {

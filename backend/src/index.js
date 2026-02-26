@@ -41,17 +41,14 @@ app.get('/api/preview', (req, res) => {
     })
   }
   
-  // Word/Excel/PPT 使用微软 Office Online Viewer
+  // Word/Excel/PPT 本地预览不支持，提示下载
   const officeExts = ['.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx']
   if (officeExts.includes(ext)) {
-    // 构建完整URL
-    const fullUrl = `${req.protocol}://${req.get('host')}${url}`
-    const previewUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fullUrl)}`
     return res.json({ 
       code: 200, 
       data: { 
-        previewType: 'office',
-        previewUrl: previewUrl 
+        previewType: 'download',
+        message: 'Office文件暂不支持在线预览，请下载后查看'
       } 
     })
   }
