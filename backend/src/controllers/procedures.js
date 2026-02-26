@@ -155,6 +155,7 @@ export const getProcedureDetail = async (req, res) => {
       uploadedBy: r.uploaded_by,
       uploadedByName: r.uploaded_by_name,
       uploadedAt: r.uploaded_at,
+      createdAt: r.created_at,
       status: r.status
     }))
     
@@ -238,6 +239,22 @@ export const deleteRecord = async (req, res) => {
   try {
     const { id } = req.params
     
+    // 先获取记录信息，检查是否有文件
+    const records = await query(
+      'SELECT file_path FROM procedure_file_record WHERE id = ?',
+      [id]
+    )
+    
+    if (records.length > 0 && records[0].file_path) {
+      // 删除物理文件
+      const filePath = path.join(__dirname, '../../', records[0].file_path)
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath)
+        console.log('文件已删除:', filePath)
+      }
+    }
+    
+    // 删除数据库记录
     await query('DELETE FROM procedure_file_record WHERE id = ?', [id])
     
     res.json({ code: 200, message: '记录删除成功' })

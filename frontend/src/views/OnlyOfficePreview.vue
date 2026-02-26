@@ -1,5 +1,13 @@
 <template>
   <div class="onlyoffice-preview">
+    <!-- 顶部导航栏 -->
+    <div class="preview-header">
+      <el-button @click="goBack" type="primary" plain>
+        <el-icon><ArrowLeft /></el-icon> 返回
+      </el-button>
+      <span class="preview-title">文档预览</span>
+    </div>
+    
     <div v-if="loading" class="loading">
       <el-spin size="large" />
       <p>正在加载文档...请稍候</p>
@@ -7,7 +15,7 @@
     
     <div v-else-if="error" class="error">
       <el-alert :title="error" type="error" show-icon />
-      <el-button @click="$router.back()" style="margin-top: 20px">返回</el-button>
+      <el-button @click="goBack" style="margin-top: 20px">返回</el-button>
     </div>
     
     <div v-else id="onlyoffice-editor" class="editor-container"></div>
@@ -24,6 +32,16 @@ const route = useRoute()
 const loading = ref(true)
 const error = ref('')
 const docEditor = ref(null)
+
+// 返回上一页
+const goBack = () => {
+  // 尝试返回上一页，如果没有历史则跳转到程序文件页面
+  if (window.history.length > 1) {
+    window.history.back()
+  } else {
+    window.location.href = '/procedures'
+  }
+}
 
 // 加载 OnlyOffice 脚本
 const loadOnlyOfficeScript = () => {
@@ -114,6 +132,21 @@ onBeforeUnmount(() => {
   flex-direction: column;
 }
 
+.preview-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #e4e7ed;
+  gap: 15px;
+}
+
+.preview-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #303133;
+}
+
 .loading {
   display: flex;
   flex-direction: column;
@@ -130,6 +163,6 @@ onBeforeUnmount(() => {
 
 .editor-container {
   flex: 1;
-  height: 100%;
+  height: calc(100% - 60px);
 }
 </style>
