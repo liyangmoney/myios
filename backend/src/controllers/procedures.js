@@ -145,7 +145,7 @@ export const getProcedureDetail = async (req, res) => {
     procedure.records = records.map(r => ({
       id: r.id,
       recordName: r.record_name,
-      recordCode: r.record_code,
+      recordNumber: r.record_number,
       description: r.description,
       filePath: r.file_path,
       uploadedBy: r.uploaded_by,
@@ -181,15 +181,18 @@ const generateRecordNumber = async (procedureFileId) => {
 // 创建程序文件记录
 export const createRecord = async (req, res) => {
   try {
-    const { procedureFileId, recordName, description } = req.body
+    const { procedureFileId, recordName, recordNumber, description } = req.body
     
-    // 自动生成记录编号
-    const recordCode = await generateRecordNumber(procedureFileId)
+    // 使用前端传递的记录编号，如果没有则自动生成
+    let finalRecordNumber = recordNumber
+    if (!finalRecordNumber) {
+      finalRecordNumber = await generateRecordNumber(procedureFileId)
+    }
     
     const result = await query(
-      `INSERT INTO procedure_file_record (procedure_file_id, record_name, record_code, description, status) 
+      `INSERT INTO procedure_file_record (procedure_file_id, record_name, record_number, description, status) 
        VALUES (?, ?, ?, ?, 'PENDING')`,
-      [procedureFileId, recordName, recordCode, description]
+      [procedureFileId, recordName, finalRecordNumber, description]
     )
     
     res.json({ 
@@ -197,7 +200,7 @@ export const createRecord = async (req, res) => {
       message: '记录创建成功', 
       data: { 
         id: result.insertId,
-        recordCode: recordCode
+        recordNumber: finalRecordNumber
       } 
     })
   } catch (error) {

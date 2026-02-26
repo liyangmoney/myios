@@ -200,7 +200,7 @@
         <el-table v-else :data="currentProcedure.records" stripe size="small">
           <el-table-column type="index" label="序号" width="60" />
           
-          <el-table-column prop="recordCode" label="记录编号" width="120" />
+          <el-table-column prop="recordNumber" label="记录编号" width="120" />
           
           <el-table-column prop="recordName" label="记录名称" />
           
@@ -273,7 +273,7 @@
     <el-dialog v-model="addRecordDialogVisible" title="添加记录" width="500px">
       <el-form :model="recordForm" label-width="100px">
         <el-form-item label="记录编号">
-          <el-input v-model="recordForm.recordCode" placeholder="请输入记录编号" />
+          <el-input v-model="recordForm.recordNumber" placeholder="请输入记录编号" readonly />
         </el-form-item>
         
         <el-form-item label="记录名称">
@@ -317,7 +317,7 @@ const currentRecord = ref(null)
 const selectedFile = ref(null)
 
 const recordForm = reactive({
-  recordCode: '',
+  recordNumber: '',
   recordName: '',
   description: ''
 })
@@ -383,7 +383,19 @@ const getCategoryType = (category) => {
 }
 
 const showAddRecordDialog = () => {
-  recordForm.recordCode = ''
+  // 自动生成记录编号：YYYYMMDD-001格式
+  const today = new Date()
+  const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '')
+  
+  // 统计当前程序文件当天的记录数
+  const todayRecords = currentProcedure.value.records?.filter(r => {
+    const recordDate = r.createdAt?.slice(0, 10).replace(/-/g, '')
+    return recordDate === dateStr
+  }) || []
+  
+  const sequence = String(todayRecords.length + 1).padStart(3, '0')
+  recordForm.recordNumber = `${dateStr}-${sequence}`
+  
   recordForm.recordName = ''
   recordForm.description = ''
   addRecordDialogVisible.value = true
@@ -399,7 +411,7 @@ const addRecord = async () => {
   try {
     await procedureApi.createRecord({
       procedureFileId: currentProcedure.value.id,
-      recordCode: recordForm.recordCode,
+      recordNumber: recordForm.recordNumber,
       recordName: recordForm.recordName,
       description: recordForm.description
     })
