@@ -34,20 +34,26 @@
       </template>
 
       <el-table :data="projectList" v-loading="loading" stripe>
-        <el-table-column type="index" width="50" />
+        <el-table-column type="index" label="序号" width="60" />
+        
         <el-table-column prop="projectCode" label="项目编号" width="150" />
+        
         <el-table-column prop="projectName" label="项目名称" />
+        
         <el-table-column prop="projectType" label="类型" width="120">
           <template #default="{ row }">
             <el-tag>{{ row.projectType }}</el-tag>
           </template>
         </el-table-column>
+        
         <el-table-column prop="responsibleUserName" label="负责人" width="120" />
+        
         <el-table-column label="时间范围" width="200">
           <template #default="{ row }">
             {{ formatDate(row.startDate) }} ~ {{ formatDate(row.endDate) }}
           </template>
         </el-table-column>
+        
         <el-table-column label="达标率" width="180">
           <template #default="{ row }">
             <el-progress 
@@ -56,6 +62,7 @@
             />
           </template>
         </el-table-column>
+        
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="viewDetail(row)">查看</el-button>

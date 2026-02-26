@@ -24,8 +24,8 @@ export const getProjects = async (req, res) => {
       params.push(projectType)
     }
     
-    sql += ' ORDER BY p.created_at DESC LIMIT ? OFFSET ?'
-    params.push(Number(pageSize), Number(offset))
+    sql += ' ORDER BY p.created_at DESC'
+    sql += ` LIMIT ${parseInt(pageSize)} OFFSET ${parseInt(offset)}`
     
     const projects = await query(sql, params)
     

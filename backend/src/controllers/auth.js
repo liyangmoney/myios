@@ -6,14 +6,12 @@ export const login = async (req, res) => {
   try {
     const { username, password } = req.body
     
-    console.log('Login attempt:', username) // 调试日志
+    console.log('登录尝试:', username)
     
     const users = await query(
       'SELECT * FROM sys_user WHERE username = ? AND status = 1',
       [username]
     )
-    
-    console.log('Found users:', users.length) // 调试日志
     
     if (users.length === 0) {
       return res.status(401).json({ code: 401, message: '用户名或密码错误' })
@@ -29,8 +27,6 @@ export const login = async (req, res) => {
       isValid = await bcrypt.compare(password, user.password)
     }
     
-    console.log('Password valid:', isValid) // 调试日志
-    
     if (!isValid) {
       return res.status(401).json({ code: 401, message: '用户名或密码错误' })
     }
@@ -41,8 +37,6 @@ export const login = async (req, res) => {
       username: user.username,
       role: user.role
     })
-    
-    console.log('Login success, token generated') // 调试日志
     
     res.json({
       code: 200,
@@ -60,7 +54,7 @@ export const login = async (req, res) => {
     })
   } catch (error) {
     console.error('登录失败:', error)
-    res.status(500).json({ code: 500, message: '登录失败: ' + error.message })
+    res.status(500).json({ code: 500, message: '登录失败' })
   }
 }
 
