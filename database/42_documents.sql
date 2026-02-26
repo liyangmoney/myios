@@ -9,8 +9,12 @@ SET CHARACTER SET utf8mb4;
 
 USE pis_system;
 
+-- 删除旧表（如果存在）- 注意顺序：先删除有外键依赖的子表
+DROP TABLE IF EXISTS pis_procedure_document;
+DROP TABLE IF EXISTS pis_document_category;
+
 -- 创建文件分类表
-CREATE TABLE IF NOT EXISTS pis_document_category (
+CREATE TABLE pis_document_category (
     id INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(10) NOT NULL UNIQUE COMMENT 'Category Code: C/M/S',
     name VARCHAR(100) NOT NULL COMMENT 'Category Name',
@@ -19,10 +23,6 @@ CREATE TABLE IF NOT EXISTS pis_document_category (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) COMMENT='Document Category' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 清空旧数据（如果存在）
-DELETE FROM pis_procedure_document WHERE 1=1;
-DELETE FROM pis_document_category WHERE 1=1;
-
 -- 插入文件分类
 INSERT INTO pis_document_category (code, name, description, sort_order) VALUES
 ('C', 'C-Procedure', 'C', 1),
@@ -30,11 +30,11 @@ INSERT INTO pis_document_category (code, name, description, sort_order) VALUES
 ('S', 'S-Support', 'S', 3);
 
 -- 创建42个体系文件表
-CREATE TABLE IF NOT EXISTS pis_procedure_document (
+CREATE TABLE pis_procedure_document (
     id INT AUTO_INCREMENT PRIMARY KEY,
     document_code VARCHAR(50) NOT NULL UNIQUE COMMENT 'File No.',
     document_name VARCHAR(500) NOT NULL COMMENT 'File Name',
-    category_code VARCHAR(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Category C/M/S',
+    category_code VARCHAR(10) COMMENT 'Category C/M/S',
     department VARCHAR(200) COMMENT 'Department',
     version VARCHAR(10) DEFAULT '2025' COMMENT 'Version',
     status VARCHAR(20) DEFAULT 'ACTIVE' COMMENT 'Status',
@@ -48,10 +48,6 @@ CREATE TABLE IF NOT EXISTS pis_procedure_document (
     FOREIGN KEY (category_code) REFERENCES pis_document_category(code) ON DELETE SET NULL,
     FOREIGN KEY (upload_user_id) REFERENCES sys_user(id)
 ) COMMENT='42 Procedure Documents' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 清空旧数据（如果存在）
-DELETE FROM pis_procedure_document WHERE 1=1;
-DELETE FROM pis_document_category WHERE 1=1;
 
 -- Insert 42 documents (using ASCII names to avoid encoding issues)
 INSERT INTO pis_procedure_document (document_code, document_name, category_code, department, version, status, priority, sort_number) VALUES
