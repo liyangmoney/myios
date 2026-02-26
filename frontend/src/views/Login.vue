@@ -54,6 +54,7 @@
       
       <div class="login-tips">
         <p>默认账号：admin / admin123</p>
+        <p v-if="errorMsg" style="color: #f56c6c; margin-top: 10px;">{{ errorMsg }}</p>
       </div>
     </div>
   </div>
@@ -63,17 +64,16 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { useUserStore } from '@/store/user'
-import { userApi } from '@/api'
+import axios from 'axios'
 
 const router = useRouter()
-const userStore = useUserStore()
 const formRef = ref(null)
 const loading = ref(false)
+const errorMsg = ref('')
 
 const loginForm = reactive({
-  username: '',
-  password: ''
+  username: 'admin',
+  password: 'admin123'
 })
 
 const rules = {
@@ -82,26 +82,42 @@ const rules = {
 }
 
 const handleLogin = async () => {
+  errorMsg.value = ''
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
 
   loading.value = true
   try {
-    const res = await userApi.login({
+    console.log('正在登录:', loginForm.username)
+    
+    // 直接使用 axios 测试
+    const response = await axios.post('/api/auth/login', {
       username: loginForm.username,
       password: loginForm.password
     })
     
-    if (res.code === 200) {
-      userStore.setToken(res.data.token)
-      userStore.setUserInfo(res.data.userInfo)
+    console.log('登录响应:', response.data)
+    
+    const res = response.data
+    
+    if (res.code === 200 && res.data?.token) {
+      // 保存 token
+      localStorage.setItem('token', res.data.token)
+      localStorage.setItem('userInfo', JSON.stringify(res.data.userInfo))
+      
       ElMessage.success('登录成功')
+      
+      // 跳转到首页
       router.push('/')
     } else {
+      errorMsg.value = res.message || '登录失败'
       ElMessage.error(res.message || '登录失败')
     }
   } catch (error) {
-    ElMessage.error('登录失败，请检查用户名和密码')
+    console.error('登录错误:', error)
+    console.error('错误详情:', error.response?.data)
+    errorMsg.value = error.response?.data?.message || '登录失败，请检查网络连接'
+    ElMessage.error(error.response?.data?.message || '登录失败')
   } finally {
     loading.value = false
   }
