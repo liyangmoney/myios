@@ -45,3 +45,23 @@ export const uploadProcedureFile = async (req, res) => {
     res.status(500).json({ code: 500, message: '文件上传失败' })
   }
 }
+
+export const addPerson = async (req, res) => {
+  try {
+    const { procedureFileId, personName, personRole, department } = req.body
+
+    if (!procedureFileId || !personName || !personRole || !department) {
+      return res.status(400).json({ code: 400, message: '缺少必要参数' })
+    }
+
+    await query(`
+      INSERT INTO procedure_file_person (procedure_file_id, person_name, person_role, department, created_at)
+      VALUES (?, ?, ?, ?, NOW())
+    `, [procedureFileId, personName, personRole, department])
+
+    res.json({ code: 200, message: '人员添加成功' })
+  } catch (error) {
+    console.error('添加人员失败:', error)
+    res.status(500).json({ code: 500, message: '添加人员失败' })
+  }
+}
