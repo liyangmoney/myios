@@ -257,7 +257,7 @@ const fetchDocuments = async () => {
     // 更新统计
     const statsData = res.data?.stats || []
     statsData.forEach(item => {
-      stats[item.category_code] = item.count
+      stats[item.categoryCode] = item.count
     })
   } catch (error) {
     console.error('获取文件列表失败:', error)

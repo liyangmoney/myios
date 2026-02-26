@@ -63,6 +63,26 @@ export const getDocuments = async (req, res) => {
     
     const documents = await query(sql, params)
     
+    // 转换字段名为驼峰命名
+    const formattedDocuments = documents.map(doc => ({
+      id: doc.id,
+      documentCode: doc.document_code,
+      documentName: doc.document_name,
+      categoryCode: doc.category_code,
+      categoryName: doc.category_name,
+      department: doc.department,
+      version: doc.version,
+      status: doc.status,
+      priority: doc.priority,
+      sortNumber: doc.sort_number,
+      filePath: doc.file_path,
+      uploadUserId: doc.upload_user_id,
+      uploadUserName: doc.upload_user_name,
+      uploadTime: doc.upload_time,
+      createdAt: doc.created_at,
+      updatedAt: doc.updated_at
+    }))
+    
     // 获取总数
     let countSql = 'SELECT COUNT(*) as total FROM pis_procedure_document WHERE 1=1'
     const countParams = []
@@ -87,16 +107,22 @@ export const getDocuments = async (req, res) => {
     const [countResult] = await query(countSql, countParams)
     
     // 按分类分组统计
-    const stats = await query(`
+    const statsRaw = await query(`
       SELECT category_code, COUNT(*) as count 
       FROM pis_procedure_document 
       GROUP BY category_code
     `)
     
+    // 转换统计数据的字段名
+    const stats = statsRaw.map(s => ({
+      categoryCode: s.category_code,
+      count: s.count
+    }))
+    
     res.json({
       code: 200,
       data: {
-        list: documents,
+        list: formattedDocuments,
         total: countResult.total,
         stats: stats
       }
