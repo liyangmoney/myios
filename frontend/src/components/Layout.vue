@@ -24,7 +24,7 @@
           <el-icon><EditPen /></el-icon>
           <span>指标填报</span>
         </el-menu-item>
-        <el-menu-item index="/procedures">
+        <el-menu-item index="/procedures" @click="handleMenuClick('/procedures')">
           <el-icon><Document /></el-icon>
           <span>程序文件</span>
         </el-menu-item>
@@ -61,16 +61,25 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 
 const handleCommand = (command) => {
   if (command === 'logout') {
     userStore.logout()
     router.push('/login')
+  }
+}
+
+// 处理菜单点击，支持返回功能
+const handleMenuClick = (path) => {
+  // 如果当前已经在该路径下的子页面，则返回列表页
+  if (route.path.startsWith(path) && route.path !== path) {
+    router.push(path)
   }
 }
 </script>
