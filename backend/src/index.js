@@ -18,7 +18,7 @@ app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-// 静态文件
+// 静态文件 - 上传的文件需要公开访问（OnlyOffice 需要）
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
 
 // 文件预览接口
@@ -148,9 +148,10 @@ import indicatorRoutes from './routes/indicators.js'
 import documentRoutes from './routes/documents.js'
 import userRoutes from './routes/users.js'
 import procedureRoutes from './routes/procedures.js'
+import onlyofficeRoutes from './routes/onlyoffice.js'
 
 // 认证中间件
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -163,6 +164,11 @@ const authMiddleware = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_secret')
     req.userId = decoded.userId
     req.userRole = decoded.role
+    
+    // 获取用户信息
+    const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [decoded.userId])
+    req.userName = users[0]?.user_name || decoded.username || '用户'
+    
     next()
   } catch (error) {
     return res.status(401).json({ code: 401, message: '令牌无效或已过期' })
@@ -176,6 +182,8 @@ app.use('/api/indicators', authMiddleware, indicatorRoutes)
 app.use('/api/documents', authMiddleware, documentRoutes)
 app.use('/api/users', authMiddleware, userRoutes)
 app.use('/api/procedures', authMiddleware, procedureRoutes)
+// OnlyOffice 回调不需要认证（OnlyOffice 服务器调用）
+app.use('/api/onlyoffice', onlyofficeRoutes)
 
 // 错误处理
 app.use((err, req, res, next) => {

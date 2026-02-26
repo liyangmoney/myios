@@ -50,5 +50,21 @@ services:
     depends_on:
       - backend
 
+  # OnlyOffice 文档服务器
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    container_name: pis-onlyoffice
+    ports:
+      - "9000:80"
+    environment:
+      - JWT_ENABLED=false
+    volumes:
+      - onlyoffice_data:/var/www/onlyoffice/Data
+      - onlyoffice_logs:/var/log/onlyoffice
+    depends_on:
+      - backend
+
 volumes:
   mysql_data:
+  onlyoffice_data:
+  onlyoffice_logs:

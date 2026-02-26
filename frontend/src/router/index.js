@@ -44,6 +44,12 @@ const routes = [
         meta: { title: '程序文件' }
       },
       {
+        path: 'onlyoffice-preview/:id',
+        name: 'OnlyOfficePreview',
+        component: () => import('@/views/OnlyOfficePreview.vue'),
+        meta: { title: '文档预览' }
+      },
+      {
         path: 'reports',
         name: 'Reports',
         component: () => import('@/views/Reports.vue'),

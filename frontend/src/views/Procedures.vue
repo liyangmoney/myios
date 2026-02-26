@@ -494,11 +494,12 @@ const previewFile = async (row) => {
     return
   }
   
-  // Office 文件暂不支持在线预览，提示下载
+  // Office 文件使用 OnlyOffice 预览
   const officeExts = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx']
   if (officeExts.includes(ext)) {
-    ElMessage.info('Office文件暂不支持在线预览，请下载后查看')
-    downloadFile(row)
+    // 打开 OnlyOffice 预览页面
+    const previewUrl = `/onlyoffice-preview/${row.id}`
+    window.open(previewUrl, '_blank')
     return
   }
   
