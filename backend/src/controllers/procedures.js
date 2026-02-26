@@ -161,10 +161,30 @@ export const getProcedureDetail = async (req, res) => {
   }
 }
 
+// 生成记录编号（YYYYMMDD-001格式）
+const generateRecordNumber = async (procedureFileId) => {
+  const today = new Date()
+  const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '') // YYYYMMDD
+  
+  // 查询当天该程序文件的记录数
+  const countResult = await query(`
+    SELECT COUNT(*) as count 
+    FROM procedure_file_record 
+    WHERE procedure_file_id = ? 
+    AND DATE(created_at) = CURDATE()
+  `, [procedureFileId])
+  
+  const sequence = String(countResult[0]?.count + 1 || 1).padStart(3, '0')
+  return `${dateStr}-${sequence}`
+}
+
 // 创建程序文件记录
 export const createRecord = async (req, res) => {
   try {
-    const { procedureFileId, recordName, recordCode, description } = req.body
+    const { procedureFileId, recordName, description } = req.body
+    
+    // 自动生成记录编号
+    const recordCode = await generateRecordNumber(procedureFileId)
     
     const result = await query(
       `INSERT INTO procedure_file_record (procedure_file_id, record_name, record_code, description, status) 
@@ -172,7 +192,14 @@ export const createRecord = async (req, res) => {
       [procedureFileId, recordName, recordCode, description]
     )
     
-    res.json({ code: 200, message: '记录创建成功', data: { id: result.insertId } })
+    res.json({ 
+      code: 200, 
+      message: '记录创建成功', 
+      data: { 
+        id: result.insertId,
+        recordCode: recordCode
+      } 
+    })
   } catch (error) {
     console.error('创建记录失败:', error)
     res.status(500).json({ code: 500, message: '创建记录失败' })
@@ -261,42 +288,55 @@ export const deletePerson = async (req, res) => {
 // 上传程序文件（新功能）
 export const uploadProcedureFile = async (req, res) => {
   try {
-    const { procedureFileId } = req.body // 表示程序文件 ID
+    const { procedureFileId, recordId } = req.body // 程序文件ID和记录ID
     const file = req.file // 上传的文件
     
     if (!procedureFileId || !file) {
       return res.status(400).json({ code: 400, message: '缺少必要参数' })
     }
 
-    const uploadDate = new Date()
-    const year = uploadDate.getFullYear()
-    const dateStr = uploadDate.toISOString().slice(0, 10).replace(/-/g, '') // 20260226
+    // 获取程序文件名称
+    const procedures = await query(
+      'SELECT file_name FROM procedure_file WHERE id = ?',
+      [procedureFileId]
+    )
+    
+    if (procedures.length === 0) {
+      return res.status(404).json({ code: 404, message: '程序文件不存在' })
+    }
+    
+    const procedureFileName = procedures[0].file_name
+    const year = new Date().getFullYear()
 
-    // 确保目录按年份分类
-    const uploadDir = path.join(__dirname, `../../uploads/程序文件/${year}`)
+    // 创建文件夹：程序文件名称/年份/
+    const uploadDir = path.join(__dirname, `../../uploads/${procedureFileName}/${year}`)
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true })
     }
 
-    // 生成记录编号 YYYYMMDD-001
-    const countResult = await query(`
-      SELECT COUNT(*) as count FROM procedure_file_record 
-      WHERE DATE(created_at) = CURDATE()
-    `)
-    const recordCount = countResult[0]?.count || 0
-    const recordNum = `${dateStr}-${String(recordCount + 1).padStart(3, '0')}`
-
     // 保存文件
-    const filePath = path.join(uploadDir, file.originalname)
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    const fileName = uniqueSuffix + path.extname(file.originalname)
+    const filePath = path.join(uploadDir, fileName)
     fs.writeFileSync(filePath, file.buffer)
 
-    // 保存记录至数据库
-    await query(`
-      INSERT INTO procedure_file_record (procedure_file_id, file_path, record_number, created_at)
-      VALUES (?, ?, ?, NOW())
-    `, [procedureFileId, filePath, recordNum])
+    // 更新记录的文件路径
+    if (recordId) {
+      await query(
+        `UPDATE procedure_file_record 
+         SET file_path = ?, status = 'UPLOADED', uploaded_at = NOW()
+         WHERE id = ?`,
+        [`/uploads/${procedureFileName}/${year}/${fileName}`, recordId]
+      )
+    }
 
-    res.json({ code: 200, message: '文件上传成功', data: { filePath, recordNum } })
+    res.json({ 
+      code: 200, 
+      message: '文件上传成功', 
+      data: { 
+        filePath: `/uploads/${procedureFileName}/${year}/${fileName}`
+      } 
+    })
 
   } catch (error) {
     console.error('文件上传失败:', error)
