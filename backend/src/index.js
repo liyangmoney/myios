@@ -27,18 +27,20 @@ app.use(express.urlencoded({ extended: true }))
 // 静态文件
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
 
-// 路由
+// 公开路由（不需要认证）
 app.use('/api/auth', authRoutes)
-app.use('/api/projects', projectRoutes)
-app.use('/api/indicators', indicatorRoutes)
-app.use('/api/documents', documentRoutes)
-app.use('/api/users', userRoutes)
-app.use('/api/procedure-documents', procedureDocumentRoutes)
 
 // 健康检查
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
+
+// 需要认证的路由
+app.use('/api/projects', projectRoutes)
+app.use('/api/indicators', indicatorRoutes)
+app.use('/api/documents', documentRoutes)
+app.use('/api/users', userRoutes)
+app.use('/api/procedure-documents', procedureDocumentRoutes)
 
 // 错误处理
 app.use((err, req, res, next) => {
