@@ -350,8 +350,11 @@ const showImportDialog = () => {
 }
 
 onMounted(() => {
-  fetchDocuments()
-  fetchDepartments()
+  const token = localStorage.getItem('token')
+  if (token) {
+    fetchDocuments()
+    fetchDepartments()
+  }
 })
 </script>
 
