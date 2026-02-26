@@ -65,3 +65,23 @@ export const addPerson = async (req, res) => {
     res.status(500).json({ code: 500, message: '添加人员失败' })
   }
 }
+
+export const createRecord = async (req, res) => {
+  try {
+    const { procedureFileId, recordDetails } = req.body
+
+    if (!procedureFileId || !recordDetails) {
+      return res.status(400).json({ code: 400, message: '缺少必要参数' })
+    }
+
+    const result = await query(`
+      INSERT INTO procedure_file_record (procedure_file_id, record_details, created_at)
+      VALUES (?, ?, NOW())
+    `, [procedureFileId, recordDetails])
+
+    res.json({ code: 200, message: '记录创建成功', data: { id: result.insertId } })
+  } catch (error) {
+    console.error('创建记录失败:', error)
+    res.status(500).json({ code: 500, message: '创建记录失败' })
+  }
+}
