@@ -64,13 +64,6 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import axios from 'axios'
-
-// 创建不带拦截器的 axios 实例用于登录
-const loginAxios = axios.create({
-  baseURL: '/api',
-  timeout: 10000
-})
 
 const router = useRouter()
 const formRef = ref(null)
@@ -96,21 +89,23 @@ const handleLogin = async () => {
   try {
     console.log('正在登录:', loginForm.username)
     
-    // 清除旧的 token，避免干扰
+    // 清除旧的 token
     localStorage.removeItem('token')
     
-    // 清除旧的 token，避免干扰
-    localStorage.removeItem('token')
-    
-    // 使用不带拦截器的 axios 实例
-    const response = await loginAxios.post('/auth/login', {
-      username: loginForm.username,
-      password: loginForm.password
+    // 使用 fetch API 发送登录请求
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        username: loginForm.username,
+        password: loginForm.password
+      })
     })
     
-    console.log('登录响应:', response.data)
-    
-    const res = response.data
+    const res = await response.json()
+    console.log('登录响应:', res)
     
     if (res.code === 200 && res.data?.token) {
       // 保存 token
@@ -127,9 +122,8 @@ const handleLogin = async () => {
     }
   } catch (error) {
     console.error('登录错误:', error)
-    console.error('错误详情:', error.response?.data)
-    errorMsg.value = error.response?.data?.message || '登录失败，请检查网络连接'
-    ElMessage.error(error.response?.data?.message || '登录失败')
+    errorMsg.value = '登录失败，请检查网络连接'
+    ElMessage.error('登录失败')
   } finally {
     loading.value = false
   }
