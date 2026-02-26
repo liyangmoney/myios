@@ -24,9 +24,9 @@
           <el-icon><EditPen /></el-icon>
           <span>指标填报</span>
         </el-menu-item>
-        <el-menu-item index="/documents">
+        <el-menu-item index="/procedures">
           <el-icon><Document /></el-icon>
-          <span>42个体系文件</span>
+          <span>程序文件</span>
         </el-menu-item>
         <el-menu-item index="/reports">
           <el-icon><DocumentCopy /></el-icon>

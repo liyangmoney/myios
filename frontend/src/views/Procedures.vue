@@ -1,0 +1,543 @@
+<template>
+  <div class="procedures">
+    <!-- 列表视图 -->
+    <div v-if="!showDetail">
+      <!-- 统计卡片 -->
+      <el-row :gutter="20">
+        <el-col :span="8">
+          <el-card class="stat-card c-class">
+            <div class="stat-content">
+              <div class="stat-icon">C</div>
+              <div class="stat-info">
+                <div class="stat-value">{{ categoryCount.C || 0 }}</div>
+                <div class="stat-label">程序文件</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="8">
+          <el-card class="stat-card m-class">
+            <div class="stat-content">
+              <div class="stat-icon">M</div>
+              <div class="stat-info">
+                <div class="stat-value">{{ categoryCount.M || 0 }}</div>
+                <div class="stat-label">管理文件</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="8">
+          <el-card class="stat-card s-class">
+            <div class="stat-content">
+              <div class="stat-icon">S</div>
+              <div class="stat-info">
+                <div class="stat-value">{{ categoryCount.S || 0 }}</div>
+                <div class="stat-label">支持文件</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <!-- 筛选栏 -->
+      <el-card class="filter-card">
+        <el-form :inline="true" :model="searchForm">
+          <el-form-item label="文件分类">
+            <el-select v-model="searchForm.category" placeholder="全部分类" clearable @change="handleSearch">
+              <el-option label="C-程序文件" value="C" />
+              <el-option label="M-管理文件" value="M" />
+              <el-option label="S-支持文件" value="S" />
+            </el-select>
+          </el-form-item>
+          
+          <el-form-item label="编制部门">
+            <el-select v-model="searchForm.department" placeholder="全部部门" clearable @change="handleSearch">
+              <el-option 
+                v-for="dept in departments" 
+                :key="dept" 
+                :label="dept" 
+                :value="dept" 
+              />
+            </el-select>
+          </el-form-item>
+          
+          <el-form-item label="关键词">
+            <el-input 
+              v-model="searchForm.keyword" 
+              placeholder="文件编号/名称" 
+              clearable
+              @keyup.enter="handleSearch"
+            >
+              <template #append>
+                <el-button @click="handleSearch">
+                  <el-icon><Search /></el-icon>
+                </el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+        </el-form>
+      </el-card>
+
+      <!-- 程序文件列表 -->
+      <el-card class="procedure-list">
+        <template #header>
+          <div class="card-header">
+            <span>程序文件列表</span>
+          </div>
+        </template>
+
+        <el-table :data="procedureList" v-loading="loading" stripe @row-click="viewDetail">
+          <el-table-column type="index" label="序号" width="60" />
+          
+          <el-table-column prop="fileCode" label="文件编号" width="150" />
+          
+          <el-table-column prop="fileName" label="文件名称" min-width="250" />
+          
+          <el-table-column label="分类" width="80">
+            <template #default="{ row }">
+              <el-tag :type="getCategoryType(row.category)">{{ row.category }}</el-tag>
+            </template>
+          </el-table-column>
+          
+          <el-table-column prop="department" label="编制部门" width="120" />
+          
+          <el-table-column prop="responsiblePerson" label="负责人" width="100" />
+          
+          <el-table-column label="记录进度" width="150">
+            <template #default="{ row }">
+              <el-progress 
+                v-if="row.recordCount > 0"
+                :percentage="Math.round((row.uploadedCount / row.recordCount) * 100)" 
+                :status="row.uploadedCount === row.recordCount ? 'success' : ''"
+              />
+              <span v-else>无记录</span>
+            </template>
+          </el-table-column>
+          
+          <el-table-column label="操作" width="100" fixed="right">
+            <template #default="{ row }">
+              <el-button type="primary" link @click.stop="viewDetail(row)">进入</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+    </div>
+
+    <!-- 详情视图 -->
+    <div v-else class="detail-view">
+      <!-- 返回按钮 -->
+      <div class="back-nav">
+        <el-button link @click="backToList">
+          <el-icon><ArrowLeft /></el-icon>返回列表
+        </el-button>
+      </div>
+
+      <!-- 文件基本信息 -->
+      <el-card>
+        <template #header>
+          <div class="detail-header">
+            <span>{{ currentProcedure.fileName }}</span>
+            <el-tag :type="getCategoryType(currentProcedure.category)">{{ currentProcedure.category }}</el-tag>
+          </div>
+        </template>
+        
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="文件编号">{{ currentProcedure.fileCode }}</el-descriptions-item>
+          <el-descriptions-item label="版本">{{ currentProcedure.version }}</el-descriptions-item>
+          <el-descriptions-item label="编制部门">{{ currentProcedure.department }}</el-descriptions-item>
+          <el-descriptions-item label="负责人">{{ currentProcedure.responsiblePerson }}</el-descriptions-item>
+        </el-descriptions>
+      </el-card>
+
+      <!-- 人员信息 -->
+      <el-card style="margin-top: 20px">
+        <template #header>
+          <span>相关人员</span>
+        </template>
+        
+        <el-table :data="currentProcedure.persons" stripe size="small">
+          <el-table-column type="index" label="序号" width="60" />
+          <el-table-column prop="personName" label="姓名" />
+          <el-table-column prop="personRole" label="角色" />
+          <el-table-column prop="department" label="部门" />
+        </el-table>
+      </el-card>
+
+      <!-- 需要编制的记录 -->
+      <el-card style="margin-top: 20px">
+        <template #header>
+          <div class="card-header">
+            <span>需要编制的记录</span>
+            <el-button type="primary" size="small" @click="showAddRecordDialog">添加记录</el-button>
+          </div>
+        </template>
+        
+        <el-empty v-if="!currentProcedure.records || currentProcedure.records.length === 0" description="暂无记录" />
+        
+        <el-table v-else :data="currentProcedure.records" stripe size="small">
+          <el-table-column type="index" label="序号" width="60" />
+          
+          <el-table-column prop="recordCode" label="记录编号" width="120" />
+          
+          <el-table-column prop="recordName" label="记录名称" />
+          
+          <el-table-column prop="description" label="说明" />
+          
+          <el-table-column label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag :type="row.status === 'UPLOADED' ? 'success' : 'warning'">
+                {{ row.status === 'UPLOADED' ? '已上传' : '待上传' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          
+          <el-table-column label="操作" width="200" fixed="right">
+            <template #default="{ row }">
+              <el-button 
+                v-if="row.status !== 'UPLOADED'" 
+                type="primary" 
+                size="small" 
+                @click="showUploadDialog(row)"
+              >
+                上传文件
+              </el-button>
+              <el-button 
+                v-else 
+                type="success" 
+                size="small" 
+                @click="downloadFile(row)"
+              >
+                下载
+              </el-button>
+              <el-button type="danger" size="small" @click="deleteRecord(row)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+    </div>
+
+    <!-- 上传对话框 -->
+    <el-dialog v-model="uploadDialogVisible" title="上传记录文件" width="500px">
+      <el-form label-width="100px">
+        <el-form-item label="记录名称">
+          <span>{{ currentRecord?.recordName }}</span>
+        </el-form-item>
+        
+        <el-form-item label="选择文件">
+          <el-upload
+            ref="uploadRef"
+            action="#"
+            :auto-upload="false"
+            :on-change="handleFileChange"
+            :limit="1"
+            accept=".pdf,.doc,.docx,.xls,.xlsx"
+          >
+            <el-button type="primary">选择文件</el-button>
+            <template #tip>
+              <div class="el-upload__tip">支持 PDF/Word/Excel 格式</div>
+            </template>
+          </el-upload>
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <el-button @click="uploadDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleUpload" :loading="uploading">上传</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 添加记录对话框 -->
+    <el-dialog v-model="addRecordDialogVisible" title="添加记录" width="500px">
+      <el-form :model="recordForm" label-width="100px">
+        <el-form-item label="记录编号">
+          <el-input v-model="recordForm.recordCode" placeholder="请输入记录编号" />
+        </el-form-item>
+        
+        <el-form-item label="记录名称">
+          <el-input v-model="recordForm.recordName" placeholder="请输入记录名称" />
+        </el-form-item>
+        <el-form-item label="说明">
+          <el-input v-model="recordForm.description" type="textarea" :rows="3" placeholder="请输入说明" />
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <el-button @click="addRecordDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="addRecord" :loading="adding">确定</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, computed, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { procedureApi } from '@/api'
+
+const loading = ref(false)
+const uploading = ref(false)
+const adding = ref(false)
+const showDetail = ref(false)
+const uploadDialogVisible = ref(false)
+const addRecordDialogVisible = ref(false)
+
+const searchForm = reactive({
+  category: '',
+  department: '',
+  keyword: ''
+})
+
+const procedureList = ref([])
+const departments = ref([])
+const currentProcedure = ref({})
+const currentRecord = ref(null)
+const selectedFile = ref(null)
+
+const recordForm = reactive({
+  recordCode: '',
+  recordName: '',
+  description: ''
+})
+
+const categoryCount = computed(() => {
+  const count = { C: 0, M: 0, S: 0 }
+  procedureList.value.forEach(p => {
+    if (count[p.category] !== undefined) {
+      count[p.category]++
+    }
+  })
+  return count
+})
+
+const fetchProcedures = async () => {
+  loading.value = true
+  try {
+    const res = await procedureApi.getList({
+      category: searchForm.category,
+      department: searchForm.department,
+      keyword: searchForm.keyword
+    })
+    procedureList.value = res.data || []
+  } catch (error) {
+    console.error('获取程序文件列表失败:', error)
+    ElMessage.error('获取程序文件列表失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+const fetchDepartments = async () => {
+  try {
+    const res = await procedureApi.getDepartments()
+    departments.value = res.data || []
+  } catch (error) {
+    console.error('获取部门列表失败:', error)
+  }
+}
+
+const viewDetail = async (row) => {
+  try {
+    const res = await procedureApi.getDetail(row.id)
+    currentProcedure.value = res.data || {}
+    showDetail.value = true
+  } catch (error) {
+    ElMessage.error('获取详情失败')
+  }
+}
+
+const backToList = () => {
+  showDetail.value = false
+  currentProcedure.value = {}
+}
+
+const handleSearch = () => {
+  fetchProcedures()
+}
+
+const getCategoryType = (category) => {
+  const map = { 'C': 'primary', 'M': 'success', 'S': 'warning' }
+  return map[category] || 'info'
+}
+
+const showAddRecordDialog = () => {
+  recordForm.recordCode = ''
+  recordForm.recordName = ''
+  recordForm.description = ''
+  addRecordDialogVisible.value = true
+}
+
+const addRecord = async () => {
+  if (!recordForm.recordName) {
+    ElMessage.warning('请输入记录名称')
+    return
+  }
+  
+  adding.value = true
+  try {
+    await procedureApi.createRecord({
+      procedureFileId: currentProcedure.value.id,
+      recordCode: recordForm.recordCode,
+      recordName: recordForm.recordName,
+      description: recordForm.description
+    })
+    ElMessage.success('记录添加成功')
+    addRecordDialogVisible.value = false
+    viewDetail(currentProcedure.value)
+  } catch (error) {
+    ElMessage.error('添加失败')
+  } finally {
+    adding.value = false
+  }
+}
+
+const showUploadDialog = (row) => {
+  currentRecord.value = row
+  selectedFile.value = null
+  uploadDialogVisible.value = true
+}
+
+const handleFileChange = (file) => {
+  selectedFile.value = file.raw
+}
+
+const handleUpload = async () => {
+  if (!selectedFile.value) {
+    ElMessage.warning('请选择文件')
+    return
+  }
+  
+  uploading.value = true
+  try {
+    // 先上传文件
+    const formData = new FormData()
+    formData.append('file', selectedFile.value)
+    const uploadRes = await procedureApi.upload(formData)
+    
+    // 更新记录
+    await procedureApi.updateRecord(currentRecord.value.id, {
+      filePath: uploadRes.data.filePath
+    })
+    
+    ElMessage.success('上传成功')
+    uploadDialogVisible.value = false
+    viewDetail(currentProcedure.value)
+  } catch (error) {
+    ElMessage.error('上传失败')
+  } finally {
+    uploading.value = false
+  }
+}
+
+const downloadFile = (row) => {
+  if (row.filePath) {
+    window.open(`http://localhost:9090${row.filePath}`, '_blank')
+  }
+}
+
+const deleteRecord = (row) => {
+  ElMessageBox.confirm('确定要删除该记录吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await procedureApi.deleteRecord(row.id)
+      ElMessage.success('删除成功')
+      viewDetail(currentProcedure.value)
+    } catch (error) {
+      ElMessage.error('删除失败')
+    }
+  })
+}
+
+onMounted(() => {
+  fetchProcedures()
+  fetchDepartments()
+})
+</script>
+
+<style scoped>
+.procedures {
+  padding: 0;
+}
+
+.stat-card {
+  .stat-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px;
+  }
+  
+  .stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: bold;
+    color: #fff;
+  }
+  
+  .stat-info {
+    flex: 1;
+  }
+  
+  .stat-value {
+    font-size: 32px;
+    font-weight: bold;
+    color: #303133;
+    margin-bottom: 4px;
+  }
+  
+  .stat-label {
+    font-size: 14px;
+    color: #909399;
+  }
+}
+
+.c-class .stat-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.m-class .stat-icon {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.s-class .stat-icon {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.filter-card {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.procedure-list {
+  cursor: pointer;
+}
+
+.back-nav {
+  margin-bottom: 20px;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.detail-view {
+  .el-card {
+    margin-bottom: 20px;
+  }
+}
+</style>

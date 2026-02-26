@@ -111,7 +111,7 @@ import projectRoutes from './routes/projects.js'
 import indicatorRoutes from './routes/indicators.js'
 import documentRoutes from './routes/documents.js'
 import userRoutes from './routes/users.js'
-import procedureDocumentRoutes from './routes/procedureDocuments.js'
+import procedureRoutes from './routes/procedures.js'
 
 // 认证中间件
 const authMiddleware = (req, res, next) => {
@@ -139,7 +139,7 @@ app.use('/api/projects', authMiddleware, projectRoutes)
 app.use('/api/indicators', authMiddleware, indicatorRoutes)
 app.use('/api/documents', authMiddleware, documentRoutes)
 app.use('/api/users', authMiddleware, userRoutes)
-app.use('/api/procedure-documents', authMiddleware, procedureDocumentRoutes)
+app.use('/api/procedures', authMiddleware, procedureRoutes)
 
 // 错误处理
 app.use((err, req, res, next) => {

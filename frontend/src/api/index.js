@@ -70,14 +70,17 @@ export const userApi = {
   getList: () => api.get('/users')
 }
 
-// 42个体系文件API
-export const procedureDocumentApi = {
-  getCategories: () => api.get('/procedure-documents/categories'),
-  getDepartments: () => api.get('/procedure-documents/departments'),
-  getList: (params) => api.get('/procedure-documents', { params }),
-  getDetail: (id) => api.get(`/procedure-documents/${id}`),
-  update: (id, data) => api.put(`/procedure-documents/${id}`, data),
-  upload: (formData) => api.post('/procedure-documents/upload', formData, {
+// 程序文件API
+export const procedureApi = {
+  getList: (params) => api.get('/procedures', { params }),
+  getDetail: (id) => api.get(`/procedures/${id}`),
+  getDepartments: () => api.get('/procedures/departments'),
+  createRecord: (data) => api.post('/procedures/records', data),
+  updateRecord: (id, data) => api.put(`/procedures/records/${id}`, data),
+  deleteRecord: (id) => api.delete(`/procedures/records/${id}`),
+  addPerson: (data) => api.post('/procedures/persons', data),
+  deletePerson: (id) => api.delete(`/procedures/persons/${id}`),
+  upload: (formData) => api.post('/procedures/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
