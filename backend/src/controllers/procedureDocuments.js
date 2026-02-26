@@ -25,7 +25,10 @@ export const getDocuments = async (req, res) => {
       pageSize = 50 
     } = req.query
     
-    const offset = (page - 1) * pageSize
+    // 确保是数字
+    const pageNum = parseInt(page) || 1
+    const pageSizeNum = parseInt(pageSize) || 50
+    const offset = (pageNum - 1) * pageSizeNum
     
     let sql = `
       SELECT d.*, c.name as category_name, u.user_name as upload_user_name
@@ -59,7 +62,7 @@ export const getDocuments = async (req, res) => {
     // 按分类和排序号排序
     sql += ' ORDER BY d.category_code, d.sort_number, d.document_code'
     sql += ' LIMIT ? OFFSET ?'
-    params.push(parseInt(pageSize), parseInt(offset))
+    params.push(pageSizeNum, offset)
     
     console.log('SQL:', sql)
     console.log('Params:', params)
