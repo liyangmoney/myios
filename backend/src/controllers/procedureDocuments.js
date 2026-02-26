@@ -59,7 +59,10 @@ export const getDocuments = async (req, res) => {
     // 按分类和排序号排序
     sql += ' ORDER BY d.category_code, d.sort_number, d.document_code'
     sql += ' LIMIT ? OFFSET ?'
-    params.push(Number(pageSize), Number(offset))
+    params.push(parseInt(pageSize), parseInt(offset))
+    
+    console.log('SQL:', sql)
+    console.log('Params:', params)
     
     const documents = await query(sql, params)
     
