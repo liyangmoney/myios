@@ -85,3 +85,23 @@ export const createRecord = async (req, res) => {
     res.status(500).json({ code: 500, message: '创建记录失败' })
   }
 }
+
+export const deletePerson = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    if (!id) {
+      return res.status(400).json({ code: 400, message: '缺少必要参数' })
+    }
+
+    await query(`
+      DELETE FROM procedure_file_person 
+      WHERE id = ?
+    `, [id])
+
+    res.json({ code: 200, message: '删除人员成功' })
+  } catch (error) {
+    console.error('删除人员失败:', error)
+    res.status(500).json({ code: 500, message: '删除人员失败' })
+  }
+}
