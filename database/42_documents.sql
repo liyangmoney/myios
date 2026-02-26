@@ -19,6 +19,10 @@ CREATE TABLE IF NOT EXISTS pis_document_category (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) COMMENT='Document Category' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 清空旧数据（如果存在）
+DELETE FROM pis_procedure_document WHERE 1=1;
+DELETE FROM pis_document_category WHERE 1=1;
+
 -- 插入文件分类
 INSERT INTO pis_document_category (code, name, description, sort_order) VALUES
 ('C', 'C-Procedure', 'C', 1),
@@ -44,6 +48,10 @@ CREATE TABLE IF NOT EXISTS pis_procedure_document (
     FOREIGN KEY (category_code) REFERENCES pis_document_category(code) ON DELETE SET NULL,
     FOREIGN KEY (upload_user_id) REFERENCES sys_user(id)
 ) COMMENT='42 Procedure Documents' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 清空旧数据（如果存在）
+DELETE FROM pis_procedure_document WHERE 1=1;
+DELETE FROM pis_document_category WHERE 1=1;
 
 -- Insert 42 documents (using ASCII names to avoid encoding issues)
 INSERT INTO pis_procedure_document (document_code, document_name, category_code, department, version, status, priority, sort_number) VALUES
