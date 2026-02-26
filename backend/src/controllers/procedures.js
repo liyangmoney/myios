@@ -327,8 +327,8 @@ export const uploadProcedureFile = async (req, res) => {
       fs.mkdirSync(uploadDir, { recursive: true })
     }
 
-    // 保存文件（保持原文件名）
-    const fileName = file.originalname
+    // 保存文件（保持原文件名，修复中文乱码）
+    const fileName = Buffer.from(file.originalname, 'latin1').toString('utf8')
     const filePath = path.join(uploadDir, fileName)
     fs.writeFileSync(filePath, file.buffer)
 

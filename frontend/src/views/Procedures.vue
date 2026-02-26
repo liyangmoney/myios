@@ -224,14 +224,22 @@
               >
                 上传文件
               </el-button>
-              <el-button 
-                v-else 
-                type="success" 
-                size="small" 
-                @click="downloadFile(row)"
-              >
-                下载
-              </el-button>
+              <template v-else>
+                <el-button 
+                  type="success" 
+                  size="small" 
+                  @click="previewFile(row)"
+                >
+                  预览
+                </el-button>
+                <el-button 
+                  type="primary" 
+                  size="small" 
+                  @click="downloadFile(row)"
+                >
+                  下载
+                </el-button>
+              </template>
               <el-button type="danger" size="small" @click="deleteRecord(row)">删除</el-button>
             </template>
           </el-table-column>
@@ -295,7 +303,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { procedureApi } from '@/api'
+import { procedureApi, api } from '@/api'
 
 const loading = ref(false)
 const uploading = ref(false)
@@ -464,6 +472,36 @@ const handleUpload = async () => {
 const downloadFile = (row) => {
   if (row.filePath) {
     window.open(`http://localhost:9090${row.filePath}`, '_blank')
+  }
+}
+
+const previewFile = async (row) => {
+  if (!row.filePath) {
+    ElMessage.warning('文件路径不存在')
+    return
+  }
+  
+  try {
+    const res = await api.get('/preview', {
+      params: { url: row.filePath }
+    })
+    
+    if (res.data.code === 200) {
+      const { previewType, previewUrl } = res.data.data
+      
+      if (previewType === 'direct') {
+        // PDF 直接打开
+        window.open(`http://localhost:9090${previewUrl}`, '_blank')
+      } else if (previewType === 'office') {
+        // Office 文件使用微软在线预览
+        window.open(previewUrl, '_blank')
+      }
+    } else {
+      ElMessage.error(res.data.message || '预览失败')
+    }
+  } catch (error) {
+    console.error('预览失败:', error)
+    ElMessage.error('预览失败')
   }
 }
 

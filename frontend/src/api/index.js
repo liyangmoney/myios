@@ -84,3 +84,5 @@ export const procedureApi = {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
+
+export { api }

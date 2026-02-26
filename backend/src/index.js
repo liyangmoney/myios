@@ -21,6 +21,45 @@ app.use(express.urlencoded({ extended: true }))
 // 静态文件
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
 
+// 文件预览接口
+app.get('/api/preview', (req, res) => {
+  const { url } = req.query
+  if (!url) {
+    return res.status(400).json({ code: 400, message: '缺少文件URL参数' })
+  }
+  
+  const ext = path.extname(url).toLowerCase()
+  
+  // PDF 直接在新窗口打开
+  if (ext === '.pdf') {
+    return res.json({ 
+      code: 200, 
+      data: { 
+        previewType: 'direct',
+        previewUrl: url 
+      } 
+    })
+  }
+  
+  // Word/Excel/PPT 使用微软 Office Online Viewer
+  const officeExts = ['.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx']
+  if (officeExts.includes(ext)) {
+    // 构建完整URL
+    const fullUrl = `${req.protocol}://${req.get('host')}${url}`
+    const previewUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fullUrl)}`
+    return res.json({ 
+      code: 200, 
+      data: { 
+        previewType: 'office',
+        previewUrl: previewUrl 
+      } 
+    })
+  }
+  
+  // 其他文件不支持预览
+  res.status(400).json({ code: 400, message: '该文件类型不支持在线预览' })
+})
+
 // 导入路由
 import { query } from './config/database.js'
 import bcrypt from 'bcryptjs'
