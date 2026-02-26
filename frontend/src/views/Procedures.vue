@@ -91,6 +91,12 @@
           
           <el-table-column prop="sortNumber" label="排序号" width="80" sortable />
           
+          <el-table-column prop="categorySort" label="分类序号" width="90" sortable>
+            <template #default="{ row }">
+              <el-tag :type="getCategoryType(row.category)" size="small">{{ row.categorySort }}</el-tag>
+            </template>
+          </el-table-column>
+          
           <el-table-column prop="fileCode" label="文件编号" width="150" />
           
           <el-table-column prop="fileName" label="文件名称" min-width="250" />
@@ -146,6 +152,12 @@
         <el-descriptions :column="2" border>
           <el-descriptions-item label="文件编号">{{ currentProcedure.fileCode }}</el-descriptions-item>
           <el-descriptions-item label="版本">{{ currentProcedure.version }}</el-descriptions-item>
+          <el-descriptions-item label="文件分类">
+            <el-tag :type="getCategoryType(currentProcedure.category)">{{ currentProcedure.category }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="分类序号">
+            <el-tag :type="getCategoryType(currentProcedure.category)" size="small">{{ currentProcedure.categorySort }}</el-tag>
+          </el-descriptions-item>
           <el-descriptions-item label="编制部门">{{ currentProcedure.department }}</el-descriptions-item>
           <el-descriptions-item label="负责人">{{ currentProcedure.responsiblePerson }}</el-descriptions-item>
         </el-descriptions>
