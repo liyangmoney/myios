@@ -21,6 +21,7 @@ CREATE TABLE procedure_file (
     file_name VARCHAR(200) NOT NULL COMMENT '文件名称',
     category VARCHAR(10) COMMENT '分类 C/M/S',
     category_sort VARCHAR(10) COMMENT '分类排序号 C1,C2,M1,M2,S1等',
+    sort_number INT COMMENT '排序号',
     department VARCHAR(100) COMMENT '编制部门',
     responsible_person VARCHAR(100) COMMENT '负责人',
     reviewer VARCHAR(100) COMMENT '审核人',
