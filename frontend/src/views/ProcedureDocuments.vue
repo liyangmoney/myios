@@ -47,18 +47,18 @@
             <el-option label="S-支持文件" value="S" />
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="主责部门">
           <el-select v-model="searchForm.department" placeholder="全部部门" clearable @change="handleSearch">
-            <el-option 
-              v-for="dept in departments" 
-              :key="dept" 
-              :label="dept" 
-              :value="dept" 
+            <el-option
+              v-for="dept in departments"
+              :key="dept"
+              :label="dept"
+              :value="dept"
             />
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="优先级">
           <el-select v-model="searchForm.priority" placeholder="全部" clearable @change="handleSearch">
             <el-option label="P0-KO项" value="P0" />
@@ -66,11 +66,11 @@
             <el-option label="P2-一般" value="P2" />
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="关键词">
-          <el-input 
-            v-model="searchForm.keyword" 
-            placeholder="文件编号/名称" 
+          <el-input
+            v-model="searchForm.keyword"
+            placeholder="文件编号/名称"
             clearable
             @keyup.enter="handleSearch"
           >
@@ -96,6 +96,8 @@
       </template>
 
       <!-- 按分类分组显示 -->
+      <el-empty v-if="groupedDocuments.length === 0 && !loading" description="暂无数据" />
+
       <div v-for="group in groupedDocuments" :key="group.category" class="document-group">
         <div class="group-header">
           <span class="category-badge" :class="'badge-' + group.category">{{ group.category }}</span>
@@ -107,13 +109,13 @@
           <el-table-column type="index" label="序号" width="60" align="center" >
             <template #default="{ $index }">{{ $index + 1 }}</template>
           </el-table-column>
-          
+
           <el-table-column prop="documentCode" label="文件编号" width="150" />
-          
+
           <el-table-column prop="documentName" label="文件名称" min-width="250" />
-          
+
           <el-table-column prop="department" label="主责部门" width="120" />
-          
+
           <el-table-column prop="priority" label="优先级" width="90" align="center">
             <template #default="{ row }">
               <el-tag :type="getPriorityType(row.priority)" size="small">
@@ -121,9 +123,9 @@
               </el-tag>
             </template>
           </el-table-column>
-          
+
           <el-table-column prop="version" label="版本" width="80" align="center" />
-          
+
           <el-table-column label="文件状态" width="100" align="center">
             <template #default="{ row }">
               <el-tag :type="getStatusType(row.status)" size="small">
@@ -131,21 +133,21 @@
               </el-tag>
             </template>
           </el-table-column>
-          
+
           <el-table-column label="操作" width="150" fixed="right">
             <template #default="{ row }">
-              <el-button 
-                v-if="!row.filePath" 
-                type="primary" 
-                link 
+              <el-button
+                v-if="!row.filePath"
+                type="primary"
+                link
                 @click="showUploadDialog(row)"
               >
                 上传
               </el-button>
-              <el-button 
-                v-else 
-                type="success" 
-                link 
+              <el-button
+                v-else
+                type="success"
+                link
                 @click="downloadFile(row)"
               >
                 下载
@@ -182,7 +184,7 @@
           </el-upload>
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
         <el-button @click="uploadDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleUpload" :loading="uploading">上传</el-button>
@@ -220,24 +222,25 @@ const stats = reactive({
 // 按分类分组
 const groupedDocuments = computed(() => {
   const groups = {}
-  
+
   documents.value.forEach(doc => {
     if (!groups[doc.categoryCode]) {
       groups[doc.categoryCode] = {
         category: doc.categoryCode,
-        categoryName: doc.categoryName,
+        categoryName: doc.categoryName || doc.categoryCode,
         documents: []
       }
     }
     groups[doc.categoryCode].documents.push(doc)
   })
-  
+
   // 按 C, M, S 顺序返回
   const result = []
   if (groups.C) result.push(groups.C)
   if (groups.M) result.push(groups.M)
   if (groups.S) result.push(groups.S)
-  
+
+  console.log('Grouped Documents:', result) // 调试输出
   return result
 })
 
@@ -251,17 +254,21 @@ const fetchDocuments = async () => {
       keyword: searchForm.keyword,
       pageSize: 100
     })
-    
+
+    console.log('API Response:', res) // 调试输出
+
     documents.value = res.data?.list || []
-    
+    console.log('Documents:', documents.value) // 调试输出
+
     // 更新统计
     const statsData = res.data?.stats || []
     statsData.forEach(item => {
       stats[item.categoryCode] = item.count
     })
+    console.log('Stats:', stats) // 调试输出
   } catch (error) {
     console.error('获取文件列表失败:', error)
-    ElMessage.error('获取文件列表失败')
+    ElMessage.error('获取文件列表失败: ' + error.message)
   } finally {
     loading.value = false
   }
@@ -310,13 +317,13 @@ const handleUpload = async () => {
     ElMessage.warning('请选择文件')
     return
   }
-  
+
   uploading.value = true
   try {
     const formData = new FormData()
     formData.append('file', selectedFile.value)
     formData.append('documentId', currentDocument.value.id)
-    
+
     await procedureDocumentApi.upload(formData)
     ElMessage.success('上传成功')
     uploadDialogVisible.value = false
@@ -360,7 +367,7 @@ onMounted(() => {
     gap: 16px;
     padding: 10px;
   }
-  
+
   .stat-icon {
     width: 60px;
     height: 60px;
@@ -372,18 +379,18 @@ onMounted(() => {
     font-weight: bold;
     color: #fff;
   }
-  
+
   .stat-info {
     flex: 1;
   }
-  
+
   .stat-value {
     font-size: 32px;
     font-weight: bold;
     color: #303133;
     margin-bottom: 4px;
   }
-  
+
   .stat-label {
     font-size: 14px;
     color: #909399;
@@ -415,7 +422,7 @@ onMounted(() => {
 
 .document-group {
   margin-bottom: 30px;
-  
+
   &:last-child {
     margin-bottom: 0;
   }
