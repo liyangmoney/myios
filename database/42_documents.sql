@@ -12,12 +12,12 @@ USE pis_system;
 -- 创建文件分类表
 CREATE TABLE IF NOT EXISTS pis_document_category (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(10) NOT NULL UNIQUE COMMENT '分类代码: C/M/S',
-    name VARCHAR(100) NOT NULL COMMENT '分类名称',
-    description TEXT COMMENT '分类描述',
-    sort_order INT DEFAULT 0 COMMENT '排序',
+    code VARCHAR(10) NOT NULL UNIQUE COMMENT 'Category Code: C/M/S',
+    name VARCHAR(100) NOT NULL COMMENT 'Category Name',
+    description TEXT COMMENT 'Description',
+    sort_order INT DEFAULT 0 COMMENT 'Sort Order',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) COMMENT='文件分类表' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) COMMENT='Document Category' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 插入文件分类
 INSERT INTO pis_document_category (code, name, description, sort_order) VALUES
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS pis_procedure_document (
     id INT AUTO_INCREMENT PRIMARY KEY,
     document_code VARCHAR(50) NOT NULL UNIQUE COMMENT 'File No.',
     document_name VARCHAR(500) NOT NULL COMMENT 'File Name',
-    category_code VARCHAR(10) COMMENT 'Category C/M/S',
+    category_code VARCHAR(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Category C/M/S',
     department VARCHAR(200) COMMENT 'Department',
     version VARCHAR(10) DEFAULT '2025' COMMENT 'Version',
     status VARCHAR(20) DEFAULT 'ACTIVE' COMMENT 'Status',
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS pis_procedure_document (
     upload_time TIMESTAMP COMMENT 'Upload Time',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_code) REFERENCES pis_document_category(code),
+    FOREIGN KEY (category_code) REFERENCES pis_document_category(code) ON DELETE SET NULL,
     FOREIGN KEY (upload_user_id) REFERENCES sys_user(id)
 ) COMMENT='42 Procedure Documents' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
