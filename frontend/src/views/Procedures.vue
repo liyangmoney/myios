@@ -89,7 +89,11 @@
         <el-table :data="procedureList" v-loading="loading" stripe @row-click="viewDetail">
           <el-table-column type="index" label="序号" width="60" />
           
-          <el-table-column prop="sortNumber" label="排序号" width="80" sortable />
+          <el-table-column label="分类" width="80">
+            <template #default="{ row }">
+              <el-tag :type="getCategoryType(row.category)">{{ row.category }}</el-tag>
+            </template>
+          </el-table-column>
           
           <el-table-column prop="categorySort" label="分类序号" width="90" sortable>
             <template #default="{ row }">
@@ -100,12 +104,6 @@
           <el-table-column prop="fileCode" label="文件编号" width="150" />
           
           <el-table-column prop="fileName" label="文件名称" min-width="250" />
-          
-          <el-table-column label="分类" width="80">
-            <template #default="{ row }">
-              <el-tag :type="getCategoryType(row.category)">{{ row.category }}</el-tag>
-            </template>
-          </el-table-column>
           
           <el-table-column prop="department" label="编制部门" width="120" />
           
