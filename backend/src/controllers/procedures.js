@@ -30,7 +30,7 @@ export const getProcedures = async (req, res) => {
       params.push(`%${keyword}%`, `%${keyword}%`)
     }
     
-    sql += ' ORDER BY p.sort_number, p.file_code'
+    sql += ' ORDER BY p.group_sort, p.file_code'
     
     const procedures = await query(sql, params)
     
