@@ -390,7 +390,12 @@ const getCategoryType = (category) => {
   return map[category] || 'info'
 }
 
-const showAddRecordDialog = () => {
+const showAddRecordDialog = async () => {
+  // 先刷新程序文件详情，获取最新记录列表
+  if (currentProcedure.value?.id) {
+    await viewDetail({ id: currentProcedure.value.id })
+  }
+  
   // 自动生成记录编号：YYYYMMDD-001格式
   const today = new Date()
   const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '')
@@ -486,8 +491,8 @@ const previewFile = async (row) => {
       params: { url: row.filePath }
     })
     
-    if (res.data.code === 200) {
-      const { previewType, previewUrl } = res.data.data
+    if (res.code === 200) {
+      const { previewType, previewUrl } = res.data
       
       if (previewType === 'direct') {
         // PDF 直接打开
@@ -497,11 +502,11 @@ const previewFile = async (row) => {
         window.open(previewUrl, '_blank')
       }
     } else {
-      ElMessage.error(res.data.message || '预览失败')
+      ElMessage.error(res.message || '预览失败')
     }
   } catch (error) {
     console.error('预览失败:', error)
-    ElMessage.error('预览失败')
+    ElMessage.error('预览失败: ' + (error.message || '未知错误'))
   }
 }
 
