@@ -443,15 +443,13 @@ const handleUpload = async () => {
   
   uploading.value = true
   try {
-    // 先上传文件
+    // 上传文件，传递 procedureFileId 和 recordId
     const formData = new FormData()
     formData.append('file', selectedFile.value)
-    const uploadRes = await procedureApi.upload(formData)
+    formData.append('procedureFileId', currentProcedure.value.id)
+    formData.append('recordId', currentRecord.value.id)
     
-    // 更新记录
-    await procedureApi.updateRecord(currentRecord.value.id, {
-      filePath: uploadRes.data.filePath
-    })
+    const uploadRes = await procedureApi.upload(formData)
     
     ElMessage.success('上传成功')
     uploadDialogVisible.value = false

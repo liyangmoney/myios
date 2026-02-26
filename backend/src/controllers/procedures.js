@@ -311,15 +311,20 @@ export const uploadProcedureFile = async (req, res) => {
     const procedureFileName = procedures[0].file_name
     const year = new Date().getFullYear()
 
-    // 创建文件夹：程序文件名称/年份/
-    const uploadDir = path.join(__dirname, `../../uploads/${procedureFileName}/${year}`)
+    // 创建文件夹：uploads/程序文件名称/年份/
+    const baseUploadDir = path.join(__dirname, '../../uploads')
+    const uploadDir = path.join(baseUploadDir, procedureFileName, String(year))
+    
+    // 确保基础文件夹存在
+    if (!fs.existsSync(baseUploadDir)) {
+      fs.mkdirSync(baseUploadDir, { recursive: true })
+    }
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true })
     }
 
-    // 保存文件
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-    const fileName = uniqueSuffix + path.extname(file.originalname)
+    // 保存文件（保持原文件名）
+    const fileName = file.originalname
     const filePath = path.join(uploadDir, fileName)
     fs.writeFileSync(filePath, file.buffer)
 
