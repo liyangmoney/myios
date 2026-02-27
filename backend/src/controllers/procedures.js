@@ -20,12 +20,12 @@ export const getProcedures = async (req, res) => {
     let sql = `
       SELECT p.*, u.user_name as created_by_name,
              (SELECT COUNT(*) FROM procedure_file_record r 
-              WHERE r.procedure_file_id = p.id AND r.year = ?) as record_count,
+              WHERE r.procedure_file_id = p.id AND (r.year = ? OR r.year IS NULL)) as record_count,
              (SELECT COUNT(*) FROM procedure_file_record r 
-              WHERE r.procedure_file_id = p.id AND r.year = ? AND r.status = 'UPLOADED') as uploaded_count
+              WHERE r.procedure_file_id = p.id AND (r.year = ? OR r.year IS NULL) AND r.status = 'UPLOADED') as uploaded_count
       FROM procedure_file p
       LEFT JOIN sys_user u ON p.created_by = u.id
-      WHERE p.year = ?
+      WHERE (p.year = ? OR p.year IS NULL OR p.year = 0)
     `
     const params = [currentYear, currentYear, currentYear]
     
@@ -107,7 +107,7 @@ export const getProcedureDetail = async (req, res) => {
       SELECT p.*, u.user_name as created_by_name
       FROM procedure_file p
       LEFT JOIN sys_user u ON p.created_by = u.id
-      WHERE p.id = ? AND p.year = ?
+      WHERE p.id = ? AND (p.year = ? OR p.year IS NULL OR p.year = 0)
     `, [id, currentYear])
     
     if (procedures.length === 0) {
@@ -154,7 +154,7 @@ export const getProcedureDetail = async (req, res) => {
       SELECT r.*, u.user_name as uploaded_by_name
       FROM procedure_file_record r
       LEFT JOIN sys_user u ON r.uploaded_by = u.id
-      WHERE r.procedure_file_id = ? AND r.year = ?
+      WHERE r.procedure_file_id = ? AND (r.year = ? OR r.year IS NULL OR r.year = 0)
       ORDER BY r.id
     `, [id, currentYear])
     procedure.records = records.map(r => ({
