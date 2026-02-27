@@ -7,6 +7,11 @@ export const getUsers = async (req, res) => {
   try {
     const { keyword, department, role, page = 1, pageSize = 10 } = req.query
     
+    // 确保分页参数是有效数字
+    const pageNum = parseInt(page) || 1
+    const pageSizeNum = parseInt(pageSize) || 10
+    const offset = (pageNum - 1) * pageSizeNum
+    
     let sql = `
       SELECT u.id, u.username, u.user_name, u.email, u.phone, 
              u.department, u.role, u.status, u.created_at, u.remark,
@@ -34,10 +39,12 @@ export const getUsers = async (req, res) => {
     
     sql += ' ORDER BY u.created_at DESC'
     
-    // 分页
-    const offset = (parseInt(page) - 1) * parseInt(pageSize)
+    // 分页 - 使用有效的数字
     sql += ' LIMIT ? OFFSET ?'
-    params.push(parseInt(pageSize), offset)
+    params.push(pageSizeNum, offset)
+    
+    console.log('SQL:', sql)
+    console.log('Params:', params)
     
     const users = await query(sql, params)
     
@@ -65,13 +72,13 @@ export const getUsers = async (req, res) => {
       data: {
         list: users,
         total: countResult[0].total,
-        page: parseInt(page),
-        pageSize: parseInt(pageSize)
+        page: pageNum,
+        pageSize: pageSizeNum
       }
     })
   } catch (error) {
     console.error('获取用户列表失败:', error)
-    res.status(500).json({ code: 500, message: '获取用户列表失败' })
+    res.status(500).json({ code: 500, message: '获取用户列表失败: ' + error.message })
   }
 }
 
