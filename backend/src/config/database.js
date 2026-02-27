@@ -17,7 +17,8 @@ const pool = mysql.createPool({
 export default pool
 
 export const query = async (sql, params) => {
-  const [rows] = await pool.execute(sql, params)
+  // 使用 query 而不是 execute，避免预处理语句对 LIMIT 参数的兼容性问题
+  const [rows] = await pool.query(sql, params)
   return rows
 }
 
