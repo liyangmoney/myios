@@ -82,22 +82,6 @@ export const getProcedures = async (req, res) => {
       recordCount: proc.record_count,
       uploadedCount: proc.uploaded_count
     }))
-      responsiblePerson: proc.responsible_person,
-      reviewer: proc.reviewer,
-      approver: proc.approver,
-      version: proc.version,
-      year: proc.year,
-      status: proc.status,
-      priority: proc.priority,
-      description: proc.description,
-      filePath: proc.file_path,
-      createdBy: proc.created_by,
-      createdByName: proc.created_by_name,
-      createdAt: proc.created_at,
-      updatedAt: proc.updated_at,
-      recordCount: proc.record_count,
-      uploadedCount: proc.uploaded_count
-    }))
     
     // 获取每个程序文件的人员
     for (const proc of formattedProcedures) {
