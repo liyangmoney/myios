@@ -301,10 +301,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { procedureApi, api } from '@/api'
 
+const route = useRoute()
 const loading = ref(false)
 const uploading = ref(false)
 const adding = ref(false)
@@ -525,6 +527,14 @@ const deleteRecord = (row) => {
 onMounted(() => {
   fetchProcedures()
   fetchDepartments()
+})
+
+// 监听路由变化，当点击菜单返回时重置到列表视图
+watch(() => route.query._t, (newVal) => {
+  if (newVal) {
+    showDetail.value = false
+    currentProcedure.value = {}
+  }
 })
 </script>
 

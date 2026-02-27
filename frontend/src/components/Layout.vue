@@ -24,7 +24,7 @@
           <el-icon><EditPen /></el-icon>
           <span>指标填报</span>
         </el-menu-item>
-        <el-menu-item index="/procedures">
+        <el-menu-item index="/procedures" @click="navigateToProcedures">
           <el-icon><Document /></el-icon>
           <span>程序文件</span>
         </el-menu-item>
@@ -73,6 +73,15 @@ const handleCommand = (command) => {
     userStore.logout()
     router.push('/login')
   }
+}
+
+// 导航到程序文件列表页（强制刷新）
+const navigateToProcedures = () => {
+  // 使用 replace 并添加时间戳参数强制刷新
+  router.replace({
+    path: '/procedures',
+    query: { _t: Date.now() }
+  })
 }
 </script>
 
