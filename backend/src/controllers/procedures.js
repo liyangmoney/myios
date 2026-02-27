@@ -9,6 +9,13 @@ const __dirname = path.dirname(__filename)
 // 获取当前年份
 const getCurrentYear = () => new Date().getFullYear()
 
+// 动态替换文件编号后四位为年份
+const formatFileCode = (fileCode, year) => {
+  if (!fileCode) return fileCode
+  // 匹配末尾的4位年份，替换为当前年份
+  return fileCode.replace(/-\d{4}$/, `-${year}`)
+}
+
 // 获取程序文件列表
 export const getProcedures = async (req, res) => {
   try {
@@ -17,17 +24,18 @@ export const getProcedures = async (req, res) => {
     // 默认使用当前年份
     const currentYear = parseInt(year) || getCurrentYear()
     
+    // 程序文件是固定模板，查询所有（不区分年份）
     let sql = `
       SELECT p.*, u.user_name as created_by_name,
              (SELECT COUNT(*) FROM procedure_file_record r 
-              WHERE r.procedure_file_id = p.id AND (r.year = ? OR r.year IS NULL)) as record_count,
+              WHERE r.procedure_file_id = p.id AND (r.year = ? OR r.year IS NULL OR r.year = 0)) as record_count,
              (SELECT COUNT(*) FROM procedure_file_record r 
-              WHERE r.procedure_file_id = p.id AND (r.year = ? OR r.year IS NULL) AND r.status = 'UPLOADED') as uploaded_count
+              WHERE r.procedure_file_id = p.id AND (r.year = ? OR r.year IS NULL OR r.year = 0) AND r.status = 'UPLOADED') as uploaded_count
       FROM procedure_file p
       LEFT JOIN sys_user u ON p.created_by = u.id
-      WHERE (p.year = ? OR p.year IS NULL OR p.year = 0)
+      WHERE 1=1
     `
-    const params = [currentYear, currentYear, currentYear]
+    const params = [currentYear, currentYear]
     
     if (category) {
       sql += ' AND p.category = ?'
@@ -48,15 +56,32 @@ export const getProcedures = async (req, res) => {
     
     const procedures = await query(sql, params)
     
-    // 转换字段名为驼峰命名
+    // 转换字段名为驼峰命名，并动态替换文件编号后四位
     const formattedProcedures = procedures.map(proc => ({
       id: proc.id,
-      fileCode: proc.file_code,
+      fileCode: formatFileCode(proc.file_code, currentYear),  // 动态替换后四位
+      originalFileCode: proc.file_code,  // 保留原始编号
       fileName: proc.file_name,
       category: proc.category,
       groupSort: proc.group_sort,
       isKo: proc.is_ko,
       department: proc.department,
+      responsiblePerson: proc.responsible_person,
+      reviewer: proc.reviewer,
+      approver: proc.approver,
+      version: proc.version,
+      year: currentYear,  // 返回当前年份
+      status: proc.status,
+      priority: proc.priority,
+      description: proc.description,
+      filePath: proc.file_path,
+      createdBy: proc.created_by,
+      createdByName: proc.created_by_name,
+      createdAt: proc.created_at,
+      updatedAt: proc.updated_at,
+      recordCount: proc.record_count,
+      uploadedCount: proc.uploaded_count
+    }))
       responsiblePerson: proc.responsible_person,
       reviewer: proc.reviewer,
       approver: proc.approver,
@@ -102,13 +127,13 @@ export const getProcedureDetail = async (req, res) => {
     const { year } = req.query
     const currentYear = parseInt(year) || getCurrentYear()
     
-    // 获取程序文件基本信息
+    // 获取程序文件基本信息（不区分年份）
     const procedures = await query(`
       SELECT p.*, u.user_name as created_by_name
       FROM procedure_file p
       LEFT JOIN sys_user u ON p.created_by = u.id
-      WHERE p.id = ? AND (p.year = ? OR p.year IS NULL OR p.year = 0)
-    `, [id, currentYear])
+      WHERE p.id = ?
+    `, [id])
     
     if (procedures.length === 0) {
       return res.status(404).json({ code: 404, message: '程序文件不存在' })
@@ -116,7 +141,27 @@ export const getProcedureDetail = async (req, res) => {
     
     const procedure = {
       id: procedures[0].id,
-      fileCode: procedures[0].file_code,
+      fileCode: formatFileCode(procedures[0].file_code, currentYear),  // 动态替换后四位
+      originalFileCode: procedures[0].file_code,
+      fileName: procedures[0].file_name,
+      category: procedures[0].category,
+      groupSort: procedures[0].group_sort,
+      isKo: procedures[0].is_ko,
+      department: procedures[0].department,
+      responsiblePerson: procedures[0].responsible_person,
+      reviewer: procedures[0].reviewer,
+      approver: procedures[0].approver,
+      version: procedures[0].version,
+      year: currentYear,
+      status: procedures[0].status,
+      priority: procedures[0].priority,
+      description: procedures[0].description,
+      filePath: procedures[0].file_path,
+      createdBy: procedures[0].created_by,
+      createdByName: procedures[0].created_by_name,
+      createdAt: procedures[0].created_at,
+      updatedAt: procedures[0].updated_at
+    }
       fileName: procedures[0].file_name,
       category: procedures[0].category,
       groupSort: procedures[0].group_sort,
@@ -277,15 +322,12 @@ export const deleteRecord = async (req, res) => {
   }
 }
 
-// 获取所有部门列表（按年份）
+// 获取所有部门列表
 export const getDepartments = async (req, res) => {
   try {
-    const { year } = req.query
-    const currentYear = parseInt(year) || getCurrentYear()
-    
+    // 程序文件是固定模板，部门列表不区分年份
     const departments = await query(
-      'SELECT DISTINCT department FROM procedure_file WHERE department IS NOT NULL AND year = ? ORDER BY department',
-      [currentYear]
+      'SELECT DISTINCT department FROM procedure_file WHERE department IS NOT NULL ORDER BY department'
     )
     res.json({ code: 200, data: departments.map(d => d.department) })
   } catch (error) {
