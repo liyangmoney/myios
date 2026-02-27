@@ -57,15 +57,28 @@
       <el-header class="header">
         <div class="header-right">
           <span class="current-year-tag">{{ appStore.currentYear }}年度</span>
-          <el-dropdown @command="handleCommand">
-            <span class="user-info">
-              <el-icon><User /></el-icon>
-              {{ userStore.userInfo?.userName || '用户' }}
-              <el-icon><ArrowDown /></el-icon>
-            </span>
+          
+          <!-- 用户信息 -->
+          <el-dropdown @command="handleCommand" trigger="click">
+            <div class="user-info">
+              <el-avatar :size="32" :icon="UserFilled" class="user-avatar" />
+              <div class="user-details">
+                <span class="user-name">{{ userStore.userInfo?.userName || '用户' }}</span>
+                <span class="user-role">{{ userStore.userInfo?.role === 'admin' ? '管理员' : '普通用户' }}</span>
+              </div>
+              <el-icon class="dropdown-icon"><ArrowDown /></el-icon>
+            </div>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+                <el-dropdown-item disabled>
+                  <div style="padding: 5px 0;">
+                    <div style="font-weight: bold;">{{ userStore.userInfo?.userName }}</div>
+                    <div style="font-size: 12px; color: #909399;">{{ userStore.userInfo?.username }}</div>
+                  </div>
+                </el-dropdown-item>
+                <el-dropdown-item divided command="logout">
+                  <el-icon><SwitchButton /></el-icon> 退出登录
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -256,8 +269,43 @@ onMounted(() => {
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #606266;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: background-color 0.3s;
+}
+
+.user-info:hover {
+  background-color: #f5f7fa;
+}
+
+.user-avatar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 16px;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.user-role {
+  font-size: 12px;
+  color: #909399;
+}
+
+.dropdown-icon {
+  color: #909399;
+  font-size: 12px;
+  margin-left: 4px;
 }
 
 .main-content {
