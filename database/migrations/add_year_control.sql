@@ -9,18 +9,18 @@ SET CHARACTER SET utf8mb4;
 
 -- 1. Add year column to procedure_file table
 ALTER TABLE procedure_file 
-ADD COLUMN year INT DEFAULT YEAR(CURRENT_DATE) COMMENT 'Belonging Year' AFTER version,
+ADD COLUMN year INT DEFAULT 2025 COMMENT 'Belonging Year' AFTER version,
 ADD INDEX idx_year (year);
 
 -- 2. Add year column to procedure_file_record table
 ALTER TABLE procedure_file_record 
-ADD COLUMN year INT DEFAULT YEAR(CURRENT_DATE) COMMENT 'Belonging Year' AFTER status,
+ADD COLUMN year INT DEFAULT 2025 COMMENT 'Belonging Year' AFTER status,
 ADD INDEX idx_year (year),
 ADD INDEX idx_procedure_year (procedure_file_id, year);
 
 -- 3. Update existing data to current year
-UPDATE procedure_file SET year = YEAR(CURRENT_DATE) WHERE year IS NULL;
-UPDATE procedure_file_record SET year = YEAR(CURRENT_DATE) WHERE year IS NULL;
+UPDATE procedure_file SET year = YEAR(CURDATE()) WHERE year IS NULL OR year = 0;
+UPDATE procedure_file_record SET year = YEAR(CURDATE()) WHERE year IS NULL OR year = 0;
 
 -- 4. User preference table
 CREATE TABLE IF NOT EXISTS user_preference (
