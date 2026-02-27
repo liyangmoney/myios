@@ -2,6 +2,7 @@ import { query, transaction } from '../config/database.js'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import archiver from 'archiver'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -462,62 +463,109 @@ export const getAnnualStatistics = async (req, res) => {
   }
 }
 
-// 年度文件归档
+// 年度文件归档 - 打包下载
 export const archiveYearFiles = async (req, res) => {
   try {
-    const { year, remark } = req.body
+    const { year } = req.body
     const archiveYear = parseInt(year) || getCurrentYear()
-    const archiveBy = req.userId
-    
-    // 创建归档目录
-    const archiveDir = path.join(__dirname, `../../archives/${archiveYear}`)
-    if (!fs.existsSync(archiveDir)) {
-      fs.mkdirSync(archiveDir, { recursive: true })
-    }
-    
+
     // 获取该年度所有已上传的文件
     const records = await query(`
-      SELECT r.file_path, p.file_name, r.record_number
+      SELECT r.file_path, p.file_name, p.file_code, r.record_number, r.year
       FROM procedure_file_record r
       JOIN procedure_file p ON r.procedure_file_id = p.id
       WHERE r.year = ? AND r.status = 'UPLOADED' AND r.file_path IS NOT NULL
     `, [archiveYear])
-    
-    let archivedCount = 0
-    
-    // 复制文件到归档目录
-    for (const record of records) {
-      if (record.file_path) {
-        const sourcePath = path.join(__dirname, '../../', record.file_path)
-        const fileName = path.basename(record.file_path)
-        const targetPath = path.join(archiveDir, fileName)
-        
-        if (fs.existsSync(sourcePath)) {
-          fs.copyFileSync(sourcePath, targetPath)
-          archivedCount++
+
+    if (records.length === 0) {
+      return res.status(400).json({ code: 400, message: `${archiveYear}年度没有可归档的文件` })
+    }
+
+    // 创建临时 zip 文件路径
+    const tempDir = path.join(__dirname, '../../temp')
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true })
+    }
+
+    const zipFileName = `archive_${archiveYear}_${Date.now()}.zip`
+    const zipFilePath = path.join(tempDir, zipFileName)
+
+    // 创建 zip 文件
+    const output = fs.createWriteStream(zipFilePath)
+    const archive = archiver('zip', { zlib: { level: 9 } })
+
+    await new Promise((resolve, reject) => {
+      output.on('close', resolve)
+      archive.on('error', reject)
+      archive.on('warning', (err) => {
+        if (err.code !== 'ENOENT') reject(err)
+      })
+
+      archive.pipe(output)
+
+      // 添加文件到 zip，按原有结构组织
+      for (const record of records) {
+        if (record.file_path) {
+          const sourcePath = path.join(__dirname, '../../', record.file_path)
+          if (fs.existsSync(sourcePath)) {
+            // 在 zip 中的路径：年份/程序文件名称/原始文件名
+            const fileName = path.basename(record.file_path)
+            const zipPath = `${archiveYear}/${record.file_name}/${fileName}`
+            archive.file(sourcePath, { name: zipPath })
+          }
         }
       }
-    }
-    
+
+      archive.finalize()
+    })
+
     // 记录归档日志
     await query(
       `INSERT INTO file_archive (year, archive_path, file_count, archive_by, status, remark)
        VALUES (?, ?, ?, ?, 'COMPLETED', ?)`,
-      [archiveYear, archiveDir, archivedCount, archiveBy, remark]
+      [archiveYear, zipFilePath, records.length, req.userId, `打包下载: ${zipFileName}`]
     )
-    
+
+    // 返回下载链接
+    const downloadUrl = `/api/procedures/archive-download/${zipFileName}`
+
     res.json({
       code: 200,
-      message: '归档完成',
+      message: '归档打包完成',
       data: {
         year: archiveYear,
-        archivedCount,
-        archivePath: archiveDir
+        fileCount: records.length,
+        downloadUrl: downloadUrl,
+        zipFileName: zipFileName
       }
     })
+
   } catch (error) {
     console.error('归档失败:', error)
     res.status(500).json({ code: 500, message: '归档失败: ' + error.message })
+  }
+}
+
+// 下载归档文件
+export const downloadArchive = async (req, res) => {
+  try {
+    const { fileName } = req.params
+    const filePath = path.join(__dirname, '../../temp', fileName)
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ code: 404, message: '归档文件不存在' })
+    }
+
+    res.download(filePath, fileName, (err) => {
+      if (err) {
+        console.error('下载失败:', err)
+        res.status(500).json({ code: 500, message: '下载失败' })
+      }
+    })
+
+  } catch (error) {
+    console.error('下载归档文件失败:', error)
+    res.status(500).json({ code: 500, message: '下载失败' })
   }
 }
 

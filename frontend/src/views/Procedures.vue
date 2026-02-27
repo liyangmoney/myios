@@ -579,12 +579,20 @@ const handleArchive = async () => {
   archiving.value = true
   try {
     const res = await procedureApi.archive({
-      year: appStore.currentYear,
-      remark: archiveForm.remark
+      year: appStore.currentYear
     })
     if (res.code === 200) {
-      ElMessage.success(`${appStore.currentYear}年度文件归档完成，共归档 ${res.data.archivedCount} 个文件`)
+      ElMessage.success(`${appStore.currentYear}年度文件归档完成，共归档 ${res.data.fileCount} 个文件`)
       archiveDialogVisible.value = false
+      
+      // 自动下载归档文件
+      const downloadUrl = `http://localhost:9090${res.data.downloadUrl}`
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = res.data.zipFileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
     }
   } catch (error) {
     console.error('归档失败:', error)

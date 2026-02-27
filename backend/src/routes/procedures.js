@@ -16,6 +16,7 @@ import {
   getAvailableYears,
   getAnnualStatistics,
   archiveYearFiles,
+  downloadArchive,
   copyYearFiles
 } from '../controllers/procedures.js'
 
@@ -45,6 +46,7 @@ router.get('/', getProcedures)
 router.get('/years', getAvailableYears)
 router.get('/statistics', getAnnualStatistics)
 router.post('/archive', archiveYearFiles)
+router.get('/archive-download/:fileName', downloadArchive)
 router.post('/copy-year', copyYearFiles)
 router.get('/departments', getDepartments)
 router.get('/:id', getProcedureDetail)
