@@ -67,7 +67,13 @@ export const documentApi = {
 export const userApi = {
   login: (data) => api.post('/auth/login', data),
   getInfo: () => api.get('/auth/info'),
-  getList: () => api.get('/users')
+  getList: (params) => api.get('/users', { params }),
+  getDetail: (id) => api.get(`/users/${id}`),
+  create: (data) => api.post('/users', data),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  delete: (id) => api.delete(`/users/${id}`),
+  resetPassword: (id) => api.post(`/users/${id}/reset-password`),
+  getDepartments: () => api.get('/users/departments')
 }
 
 // 程序文件API

@@ -54,6 +54,12 @@ const routes = [
         name: 'Reports',
         component: () => import('@/views/Reports.vue'),
         meta: { title: '报表中心' }
+      },
+      {
+        path: 'users',
+        name: 'UserManagement',
+        component: () => import('@/views/UserManagement.vue'),
+        meta: { title: '用户管理', adminOnly: true }
       }
     ]
   }

@@ -50,6 +50,13 @@
           <el-icon><DocumentCopy /></el-icon>
           <span>报表中心</span>
         </el-menu-item>
+        <el-menu-item 
+          v-if="userStore.userInfo?.role === 'admin'" 
+          index="/users"
+        >
+          <el-icon><User /></el-icon>
+          <span>用户管理</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 

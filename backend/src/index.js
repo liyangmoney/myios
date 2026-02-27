@@ -177,10 +177,10 @@ const authMiddleware = async (req, res, next) => {
 
 // 需要认证的路由
 app.use('/api/auth/info', authMiddleware)
-app.use('/api/projects', authMiddleware, projectRoutes)
-app.use('/api/indicators', authMiddleware, indicatorRoutes)
-app.use('/api/documents', authMiddleware, documentRoutes)
-app.use('/api/users', authMiddleware, userRoutes)
+app.use('/api/projects', projectRoutes)
+app.use('/api/indicators', indicatorRoutes)
+app.use('/api/documents', documentRoutes)
+app.use('/api/users', userRoutes)
 // procedures 路由内部自己处理认证
 app.use('/api/procedures', procedureRoutes)
 // OnlyOffice 回调不需要认证（OnlyOffice 服务器调用）
