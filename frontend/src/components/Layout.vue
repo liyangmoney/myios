@@ -83,6 +83,9 @@
                     <div style="font-size: 12px; color: #909399;">{{ userStore.userInfo?.username }}</div>
                   </div>
                 </el-dropdown-item>
+                <el-dropdown-item command="changePassword">
+                  <el-icon><Lock /></el-icon> 修改密码
+                </el-dropdown-item>
                 <el-dropdown-item divided command="logout">
                   <el-icon><SwitchButton /></el-icon> 退出登录
                 </el-dropdown-item>
@@ -96,6 +99,53 @@
         <router-view />
       </el-main>
     </el-container>
+
+    <!-- 修改密码对话框 -->
+    <el-dialog
+      v-model="changePasswordDialogVisible"
+      title="修改密码"
+      width="450px"
+      :close-on-click-modal="false"
+    >
+      <el-form
+        ref="changePasswordFormRef"
+        :model="changePasswordForm"
+        :rules="changePasswordRules"
+        label-width="100px"
+      >
+        <el-form-item label="旧密码" prop="oldPassword">
+          <el-input
+            v-model="changePasswordForm.oldPassword"
+            type="password"
+            placeholder="请输入旧密码"
+            show-password
+          />
+        </el-form-item>
+
+        <el-form-item label="新密码" prop="newPassword">
+          <el-input
+            v-model="changePasswordForm.newPassword"
+            type="password"
+            placeholder="请输入新密码（至少6位）"
+            show-password
+          />
+        </el-form-item>
+
+        <el-form-item label="确认密码" prop="confirmPassword">
+          <el-input
+            v-model="changePasswordForm.confirmPassword"
+            type="password"
+            placeholder="请再次输入新密码"
+            show-password
+          />
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="changePasswordDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleChangePassword" :loading="changePasswordLoading">确定</el-button>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
@@ -104,7 +154,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { useAppStore } from '@/store/app'
-import { procedureApi } from '@/api'
+import { procedureApi, userApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()
@@ -113,6 +163,39 @@ const userStore = useUserStore()
 const appStore = useAppStore()
 
 const availableYears = ref([])
+
+// 修改密码相关
+const changePasswordDialogVisible = ref(false)
+const changePasswordFormRef = ref(null)
+const changePasswordLoading = ref(false)
+const changePasswordForm = ref({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+// 确认密码验证
+const validateConfirmPassword = (rule, value, callback) => {
+  if (value !== changePasswordForm.value.newPassword) {
+    callback(new Error('两次输入的密码不一致'))
+  } else {
+    callback()
+  }
+}
+
+const changePasswordRules = {
+  oldPassword: [
+    { required: true, message: '请输入旧密码', trigger: 'blur' }
+  ],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '密码长度至少6位', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    { validator: validateConfirmPassword, trigger: 'blur' }
+  ]
+}
 
 // 组件挂载时从 localStorage 加载用户信息
 onMounted(() => {
@@ -206,10 +289,50 @@ const handleYearChange = async (year) => {
   })
 }
 
+// 打开修改密码对话框
+const openChangePasswordDialog = () => {
+  changePasswordForm.value = {
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  }
+  changePasswordDialogVisible.value = true
+}
+
+// 提交修改密码
+const handleChangePassword = async () => {
+  const valid = await changePasswordFormRef.value?.validate().catch(() => false)
+  if (!valid) return
+
+  changePasswordLoading.value = true
+  try {
+    const res = await userApi.changePassword(userStore.userInfo?.id, {
+      oldPassword: changePasswordForm.value.oldPassword,
+      newPassword: changePasswordForm.value.newPassword
+    })
+    if (res.code === 200) {
+      ElMessage.success('密码修改成功，请重新登录')
+      changePasswordDialogVisible.value = false
+      // 修改密码后退出登录
+      setTimeout(() => {
+        userStore.logout()
+        router.push('/login')
+      }, 1500)
+    }
+  } catch (error) {
+    console.error('修改密码失败:', error)
+    ElMessage.error(error.response?.data?.message || '修改密码失败')
+  } finally {
+    changePasswordLoading.value = false
+  }
+}
+
 const handleCommand = (command) => {
   if (command === 'logout') {
     userStore.logout()
     router.push('/login')
+  } else if (command === 'changePassword') {
+    openChangePasswordDialog()
   }
 }
 

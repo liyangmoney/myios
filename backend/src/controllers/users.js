@@ -297,6 +297,64 @@ export const resetPassword = async (req, res) => {
   }
 }
 
+// 修改密码
+// 管理员可以修改任何用户密码，普通用户只能修改自己的密码（需验证旧密码）
+export const changePassword = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { oldPassword, newPassword } = req.body
+    const currentUserId = req.userId
+    const currentUserRole = req.userRole
+    
+    // 检查用户是否存在
+    const user = await query('SELECT id, username, password FROM sys_user WHERE id = ? AND deleted_at IS NULL', [id])
+    if (user.length === 0) {
+      return res.status(404).json({ code: 404, message: '用户不存在' })
+    }
+    
+    const targetUser = user[0]
+    const isAdmin = currentUserRole === 'admin'
+    const isSelf = parseInt(id) === currentUserId
+    
+    // 权限检查：管理员可以修改任何人，普通用户只能修改自己
+    if (!isAdmin && !isSelf) {
+      return res.status(403).json({ code: 403, message: '无权修改其他用户的密码' })
+    }
+    
+    // 普通用户修改自己密码时需要验证旧密码
+    if (!isAdmin && isSelf) {
+      if (!oldPassword) {
+        return res.status(400).json({ code: 400, message: '请输入旧密码' })
+      }
+      
+      // 验证旧密码
+      const isValid = await bcrypt.compare(oldPassword, targetUser.password)
+      if (!isValid) {
+        return res.status(400).json({ code: 400, message: '旧密码不正确' })
+      }
+    }
+    
+    // 验证新密码
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ code: 400, message: '新密码长度至少6位' })
+    }
+    
+    // 加密新密码
+    const hashedPassword = await bcrypt.hash(newPassword, 10)
+    
+    // 更新密码
+    await query('UPDATE sys_user SET password = ?, updated_at = NOW() WHERE id = ?', [hashedPassword, id])
+    
+    res.json({
+      code: 200,
+      message: '密码修改成功'
+    })
+  } catch (error) {
+    console.error('修改密码失败:', error)
+    res.status(500).json({ code: 500, message: '修改密码失败: ' + error.message })
+  }
+}
+
 // 获取部门列表
 export const getDepartments = async (req, res) => {
   try {

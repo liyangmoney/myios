@@ -73,6 +73,7 @@ export const userApi = {
   update: (id, data) => api.put(`/users/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
   resetPassword: (id) => api.post(`/users/${id}/reset-password`),
+  changePassword: (id, data) => api.post(`/users/${id}/change-password`, data),
   getDepartments: () => api.get('/users/departments')
 }
 

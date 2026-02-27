@@ -7,6 +7,7 @@ import {
   updateUser,
   deleteUser,
   resetPassword,
+  changePassword,
   getDepartments
 } from '../controllers/users.js'
 
@@ -23,5 +24,6 @@ router.post('/', createUser)
 router.put('/:id', updateUser)
 router.delete('/:id', deleteUser)
 router.post('/:id/reset-password', resetPassword)
+router.post('/:id/change-password', changePassword)
 
 export default router
