@@ -107,6 +107,18 @@ const appStore = useAppStore()
 
 const availableYears = ref([])
 
+// 从 localStorage 加载用户信息（如果没有的话）
+if (!userStore.userInfo) {
+  const savedUserInfo = localStorage.getItem('userInfo')
+  if (savedUserInfo) {
+    try {
+      userStore.setUserInfo(JSON.parse(savedUserInfo))
+    } catch (e) {
+      console.error('解析用户信息失败:', e)
+    }
+  }
+}
+
 // 获取可用年份列表
 const fetchAvailableYears = async () => {
   try {
