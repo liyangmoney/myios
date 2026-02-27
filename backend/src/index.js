@@ -181,7 +181,8 @@ app.use('/api/projects', authMiddleware, projectRoutes)
 app.use('/api/indicators', authMiddleware, indicatorRoutes)
 app.use('/api/documents', authMiddleware, documentRoutes)
 app.use('/api/users', authMiddleware, userRoutes)
-app.use('/api/procedures', authMiddleware, procedureRoutes)
+// procedures 路由内部自己处理认证
+app.use('/api/procedures', procedureRoutes)
 // OnlyOffice 回调不需要认证（OnlyOffice 服务器调用）
 app.use('/api/onlyoffice', onlyofficeRoutes)
 
