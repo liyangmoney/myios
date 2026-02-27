@@ -609,6 +609,17 @@ watch(() => route.query._t, (newVal) => {
     fetchDepartments()
   }
 })
+
+// 监听年份变化，自动刷新数据
+watch(() => appStore.currentYear, (newYear, oldYear) => {
+  if (newYear !== oldYear) {
+    fetchProcedures()
+    fetchDepartments()
+    // 如果在详情页，返回列表页
+    showDetail.value = false
+    currentProcedure.value = {}
+  }
+})
 </script>
 
 <style scoped>
