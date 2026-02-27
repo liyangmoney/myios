@@ -117,9 +117,45 @@ const fetchAvailableYears = async () => {
 }
 
 // 年份切换
-const handleYearChange = (year) => {
+const handleYearChange = async (year) => {
   appStore.setCurrentYear(year)
   ElMessage.success(`已切换到 ${year} 年度`)
+  
+  // 检查该年度是否有数据
+  try {
+    const res = await procedureApi.getList({ year, pageSize: 1 })
+    const hasData = res.data && res.data.length > 0
+    
+    if (!hasData && year > new Date().getFullYear() - 5) {
+      // 新年份没有数据，询问是否复制上一年度
+      const prevYear = year - 1
+      
+      ElMessageBox.confirm(
+        `${year} 年度暂无数据，是否从 ${prevYear} 年度复制程序文件？`,
+        '年度数据初始化',
+        {
+          confirmButtonText: '复制上一年度',
+          cancelButtonText: '暂不复制',
+          type: 'info'
+        }
+      ).then(async () => {
+        // 执行复制
+        const copyRes = await procedureApi.copyYear({
+          sourceYear: prevYear,
+          targetYear: year
+        })
+        
+        if (copyRes.code === 200) {
+          ElMessage.success(`成功复制 ${copyRes.data.copiedFileCount} 个程序文件`)
+        }
+      }).catch(() => {
+        // 用户取消，不做任何操作
+      })
+    }
+  } catch (error) {
+    console.error('检查年度数据失败:', error)
+  }
+  
   // 刷新当前页面
   router.replace({
     path: route.path,

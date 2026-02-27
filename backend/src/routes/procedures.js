@@ -15,7 +15,8 @@ import {
   uploadProcedureFile,
   getAvailableYears,
   getAnnualStatistics,
-  archiveYearFiles
+  archiveYearFiles,
+  copyYearFiles
 } from '../controllers/procedures.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -44,6 +45,7 @@ router.get('/', getProcedures)
 router.get('/years', getAvailableYears)
 router.get('/statistics', getAnnualStatistics)
 router.post('/archive', archiveYearFiles)
+router.post('/copy-year', copyYearFiles)
 router.get('/departments', getDepartments)
 router.get('/:id', getProcedureDetail)
 router.post('/records', createRecord)

@@ -77,6 +77,7 @@ export const procedureApi = {
   getYears: () => api.get('/procedures/years'),
   getStatistics: (params) => api.get('/procedures/statistics', { params }),
   archive: (data) => api.post('/procedures/archive', data),
+  copyYear: (data) => api.post('/procedures/copy-year', data),
   getDepartments: (params) => api.get('/procedures/departments', { params }),
   createRecord: (data) => api.post('/procedures/records', data),
   updateRecord: (id, data) => api.put(`/procedures/records/${id}`, data),

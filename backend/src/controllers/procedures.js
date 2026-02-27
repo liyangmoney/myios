@@ -513,3 +513,113 @@ export const archiveYearFiles = async (req, res) => {
     res.status(500).json({ code: 500, message: '归档失败: ' + error.message })
   }
 }
+
+// 年度自动复制程序文件
+export const copyYearFiles = async (req, res) => {
+  try {
+    const { sourceYear, targetYear } = req.body
+    const userId = req.userId
+    
+    if (!sourceYear || !targetYear) {
+      return res.status(400).json({ code: 400, message: '缺少源年份或目标年份' })
+    }
+    
+    if (parseInt(sourceYear) >= parseInt(targetYear)) {
+      return res.status(400).json({ code: 400, message: '目标年份必须大于源年份' })
+    }
+    
+    // 检查目标年份是否已有数据
+    const existingCount = await query(
+      'SELECT COUNT(*) as count FROM procedure_file WHERE year = ?',
+      [targetYear]
+    )
+    
+    if (existingCount[0].count > 0) {
+      return res.status(400).json({ code: 400, message: `${targetYear}年度已有数据，无法复制` })
+    }
+    
+    // 获取源年份的所有程序文件
+    const sourceFiles = await query(
+      'SELECT * FROM procedure_file WHERE year = ?',
+      [sourceYear]
+    )
+    
+    if (sourceFiles.length === 0) {
+      return res.status(400).json({ code: 400, message: `${sourceYear}年度没有数据可复制` })
+    }
+    
+    const copiedFiles = []
+    const copiedPersons = []
+    
+    // 开始事务
+    await transaction(async (conn) => {
+      for (const file of sourceFiles) {
+        // 更新文件编号后四位为新年份
+        // 假设编号格式为：QMS-CX01-2025 → QMS-CX01-2026
+        const oldFileCode = file.file_code
+        const newFileCode = oldFileCode.replace(/-\d{4}$/, `-${targetYear}`)
+        
+        // 插入新的程序文件
+        const insertResult = await conn.query(
+          `INSERT INTO procedure_file 
+           (file_code, file_name, category, group_sort, is_ko, department, 
+            responsible_person, reviewer, approver, version, year, status, 
+            priority, description, created_by, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+          [
+            newFileCode,
+            file.file_name,
+            file.category,
+            file.group_sort,
+            file.is_ko,
+            file.department,
+            file.responsible_person,
+            file.reviewer,
+            file.approver,
+            targetYear, // 版本号也用新年份
+            targetYear,
+            'ACTIVE',
+            file.priority,
+            file.description,
+            userId
+          ]
+        )
+        
+        const newFileId = insertResult[0].insertId
+        copiedFiles.push({ oldId: file.id, newId: newFileId, oldCode: oldFileCode, newCode: newFileCode })
+        
+        // 复制相关人员
+        const persons = await conn.query(
+          'SELECT * FROM procedure_file_person WHERE procedure_file_id = ?',
+          [file.id]
+        )
+        
+        for (const person of persons[0]) {
+          await conn.query(
+            `INSERT INTO procedure_file_person 
+             (procedure_file_id, person_name, person_role, department, created_at)
+             VALUES (?, ?, ?, ?, NOW())`,
+            [newFileId, person.person_name, person.person_role, person.department]
+          )
+          copiedPersons.push({ fileId: newFileId, personName: person.person_name })
+        }
+      }
+    })
+    
+    res.json({
+      code: 200,
+      message: '年度复制完成',
+      data: {
+        sourceYear,
+        targetYear,
+        copiedFileCount: copiedFiles.length,
+        copiedPersonCount: copiedPersons.length,
+        files: copiedFiles
+      }
+    })
+    
+  } catch (error) {
+    console.error('年度复制失败:', error)
+    res.status(500).json({ code: 500, message: '年度复制失败: ' + error.message })
+  }
+}
