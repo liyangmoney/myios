@@ -24,7 +24,7 @@
           <el-icon><EditPen /></el-icon>
           <span>指标填报</span>
         </el-menu-item>
-        <el-menu-item index="/procedures" @click="handleMenuClick('/procedures')">
+        <el-menu-item index="/procedures">
           <el-icon><Document /></el-icon>
           <span>程序文件</span>
         </el-menu-item>
@@ -72,14 +72,6 @@ const handleCommand = (command) => {
   if (command === 'logout') {
     userStore.logout()
     router.push('/login')
-  }
-}
-
-// 处理菜单点击，支持返回功能
-const handleMenuClick = (path) => {
-  // 只要当前不在目标页面，就导航到该页面
-  if (route.path !== path) {
-    router.push(path)
   }
 }
 </script>
