@@ -7,10 +7,12 @@ export const getUsers = async (req, res) => {
   try {
     const { keyword, department, role, page = 1, pageSize = 10 } = req.query
     
-    // 确保分页参数是有效数字
-    const pageNum = parseInt(page) || 1
-    const pageSizeNum = parseInt(pageSize) || 10
+    // 确保分页参数是有效数字 - 强制转换为整数
+    const pageNum = Math.max(1, parseInt(page, 10) || 1)
+    const pageSizeNum = Math.max(1, parseInt(pageSize, 10) || 10)
     const offset = (pageNum - 1) * pageSizeNum
+    
+    console.log('分页参数:', { page, pageSize, pageNum, pageSizeNum, offset })
     
     let sql = `
       SELECT u.id, u.username, u.user_name, u.email, u.phone, 
@@ -39,12 +41,12 @@ export const getUsers = async (req, res) => {
     
     sql += ' ORDER BY u.created_at DESC'
     
-    // 分页 - 使用有效的数字
+    // 分页 - 使用显式整数
     sql += ' LIMIT ? OFFSET ?'
-    params.push(pageSizeNum, offset)
+    params.push(Number(pageSizeNum), Number(offset))
     
     console.log('SQL:', sql)
-    console.log('Params:', params)
+    console.log('Params:', params, 'Types:', params.map(p => typeof p))
     
     const users = await query(sql, params)
     
