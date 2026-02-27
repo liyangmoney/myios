@@ -107,17 +107,28 @@ const appStore = useAppStore()
 
 const availableYears = ref([])
 
-// 从 localStorage 加载用户信息（如果没有的话）
-if (!userStore.userInfo) {
-  const savedUserInfo = localStorage.getItem('userInfo')
-  if (savedUserInfo) {
-    try {
-      userStore.setUserInfo(JSON.parse(savedUserInfo))
-    } catch (e) {
-      console.error('解析用户信息失败:', e)
+// 组件挂载时从 localStorage 加载用户信息
+onMounted(() => {
+  // 加载用户信息
+  if (!userStore.userInfo) {
+    const savedUserInfo = localStorage.getItem('userInfo')
+    console.log('从 localStorage 加载用户信息:', savedUserInfo)
+    if (savedUserInfo) {
+      try {
+        const parsed = JSON.parse(savedUserInfo)
+        console.log('解析后的用户信息:', parsed)
+        userStore.setUserInfo(parsed)
+      } catch (e) {
+        console.error('解析用户信息失败:', e)
+      }
     }
+  } else {
+    console.log('userStore 已有用户信息:', userStore.userInfo)
   }
-}
+  
+  // 加载年份列表
+  fetchAvailableYears()
+})
 
 // 获取可用年份列表
 const fetchAvailableYears = async () => {
@@ -203,10 +214,6 @@ const navigateToProcedures = () => {
     query: { _t: Date.now() }
   })
 }
-
-onMounted(() => {
-  fetchAvailableYears()
-})
 </script>
 
 <style scoped>
