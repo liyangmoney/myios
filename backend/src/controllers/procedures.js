@@ -146,25 +146,6 @@ export const getProcedureDetail = async (req, res) => {
       createdAt: procedures[0].created_at,
       updatedAt: procedures[0].updated_at
     }
-      fileName: procedures[0].file_name,
-      category: procedures[0].category,
-      groupSort: procedures[0].group_sort,
-      isKo: procedures[0].is_ko,
-      department: procedures[0].department,
-      responsiblePerson: procedures[0].responsible_person,
-      reviewer: procedures[0].reviewer,
-      approver: procedures[0].approver,
-      version: procedures[0].version,
-      year: procedures[0].year,
-      status: procedures[0].status,
-      priority: procedures[0].priority,
-      description: procedures[0].description,
-      filePath: procedures[0].file_path,
-      createdBy: procedures[0].created_by,
-      createdByName: procedures[0].created_by_name,
-      createdAt: procedures[0].created_at,
-      updatedAt: procedures[0].updated_at
-    }
     
     // 获取相关人员
     const persons = await query(
