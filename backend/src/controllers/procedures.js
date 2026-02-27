@@ -6,20 +6,28 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+// 获取当前年份
+const getCurrentYear = () => new Date().getFullYear()
+
 // 获取程序文件列表
 export const getProcedures = async (req, res) => {
   try {
-    const { category, department, keyword } = req.query
+    const { category, department, keyword, year } = req.query
+    
+    // 默认使用当前年份
+    const currentYear = parseInt(year) || getCurrentYear()
     
     let sql = `
       SELECT p.*, u.user_name as created_by_name,
-             (SELECT COUNT(*) FROM procedure_file_record r WHERE r.procedure_file_id = p.id) as record_count,
-             (SELECT COUNT(*) FROM procedure_file_record r WHERE r.procedure_file_id = p.id AND r.status = 'UPLOADED') as uploaded_count
+             (SELECT COUNT(*) FROM procedure_file_record r 
+              WHERE r.procedure_file_id = p.id AND r.year = ?) as record_count,
+             (SELECT COUNT(*) FROM procedure_file_record r 
+              WHERE r.procedure_file_id = p.id AND r.year = ? AND r.status = 'UPLOADED') as uploaded_count
       FROM procedure_file p
       LEFT JOIN sys_user u ON p.created_by = u.id
-      WHERE 1=1
+      WHERE p.year = ?
     `
-    const params = []
+    const params = [currentYear, currentYear, currentYear]
     
     if (category) {
       sql += ' AND p.category = ?'
@@ -53,6 +61,7 @@ export const getProcedures = async (req, res) => {
       reviewer: proc.reviewer,
       approver: proc.approver,
       version: proc.version,
+      year: proc.year,
       status: proc.status,
       priority: proc.priority,
       description: proc.description,
@@ -71,7 +80,6 @@ export const getProcedures = async (req, res) => {
         'SELECT * FROM procedure_file_person WHERE procedure_file_id = ?',
         [proc.id]
       )
-      // 转换人员字段名
       proc.persons = persons.map(p => ({
         id: p.id,
         personName: p.person_name,
@@ -80,7 +88,7 @@ export const getProcedures = async (req, res) => {
       }))
     }
     
-    res.json({ code: 200, data: formattedProcedures })
+    res.json({ code: 200, data: formattedProcedures, year: currentYear })
   } catch (error) {
     console.error('获取程序文件列表失败:', error)
     res.status(500).json({ code: 500, message: '获取程序文件列表失败' })
@@ -91,14 +99,16 @@ export const getProcedures = async (req, res) => {
 export const getProcedureDetail = async (req, res) => {
   try {
     const { id } = req.params
+    const { year } = req.query
+    const currentYear = parseInt(year) || getCurrentYear()
     
     // 获取程序文件基本信息
     const procedures = await query(`
       SELECT p.*, u.user_name as created_by_name
       FROM procedure_file p
       LEFT JOIN sys_user u ON p.created_by = u.id
-      WHERE p.id = ?
-    `, [id])
+      WHERE p.id = ? AND p.year = ?
+    `, [id, currentYear])
     
     if (procedures.length === 0) {
       return res.status(404).json({ code: 404, message: '程序文件不存在' })
@@ -116,6 +126,7 @@ export const getProcedureDetail = async (req, res) => {
       reviewer: procedures[0].reviewer,
       approver: procedures[0].approver,
       version: procedures[0].version,
+      year: procedures[0].year,
       status: procedures[0].status,
       priority: procedures[0].priority,
       description: procedures[0].description,
@@ -138,14 +149,14 @@ export const getProcedureDetail = async (req, res) => {
       department: p.department
     }))
     
-    // 获取需要编制的记录
+    // 获取需要编制的记录（按年份筛选）
     const records = await query(`
       SELECT r.*, u.user_name as uploaded_by_name
       FROM procedure_file_record r
       LEFT JOIN sys_user u ON r.uploaded_by = u.id
-      WHERE r.procedure_file_id = ?
+      WHERE r.procedure_file_id = ? AND r.year = ?
       ORDER BY r.id
-    `, [id])
+    `, [id, currentYear])
     procedure.records = records.map(r => ({
       id: r.id,
       recordName: r.record_name,
@@ -159,7 +170,7 @@ export const getProcedureDetail = async (req, res) => {
       status: r.status
     }))
     
-    res.json({ code: 200, data: procedure })
+    res.json({ code: 200, data: procedure, year: currentYear })
   } catch (error) {
     console.error('获取程序文件详情失败:', error)
     res.status(500).json({ code: 500, message: '获取程序文件详情失败' })
@@ -167,17 +178,18 @@ export const getProcedureDetail = async (req, res) => {
 }
 
 // 生成记录编号（YYYYMMDD-001格式）
-const generateRecordNumber = async (procedureFileId) => {
+const generateRecordNumber = async (procedureFileId, year) => {
   const today = new Date()
   const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '') // YYYYMMDD
   
-  // 查询当天该程序文件的记录数
+  // 查询当天该程序文件的记录数（按年份）
   const countResult = await query(`
     SELECT COUNT(*) as count 
     FROM procedure_file_record 
     WHERE procedure_file_id = ? 
+    AND year = ?
     AND DATE(created_at) = CURDATE()
-  `, [procedureFileId])
+  `, [procedureFileId, year])
   
   const sequence = String(countResult[0]?.count + 1 || 1).padStart(3, '0')
   return `${dateStr}-${sequence}`
@@ -186,18 +198,19 @@ const generateRecordNumber = async (procedureFileId) => {
 // 创建程序文件记录
 export const createRecord = async (req, res) => {
   try {
-    const { procedureFileId, recordName, recordNumber, description } = req.body
+    const { procedureFileId, recordName, recordNumber, description, year } = req.body
+    const currentYear = parseInt(year) || getCurrentYear()
     
     // 使用前端传递的记录编号，如果没有则自动生成
     let finalRecordNumber = recordNumber
     if (!finalRecordNumber) {
-      finalRecordNumber = await generateRecordNumber(procedureFileId)
+      finalRecordNumber = await generateRecordNumber(procedureFileId, currentYear)
     }
     
     const result = await query(
-      `INSERT INTO procedure_file_record (procedure_file_id, record_name, record_number, description, status) 
-       VALUES (?, ?, ?, ?, 'PENDING')`,
-      [procedureFileId, recordName, finalRecordNumber, description]
+      `INSERT INTO procedure_file_record (procedure_file_id, record_name, record_number, description, status, year) 
+       VALUES (?, ?, ?, ?, 'PENDING', ?)`,
+      [procedureFileId, recordName, finalRecordNumber, description, currentYear]
     )
     
     res.json({ 
@@ -264,11 +277,15 @@ export const deleteRecord = async (req, res) => {
   }
 }
 
-// 获取所有部门列表
+// 获取所有部门列表（按年份）
 export const getDepartments = async (req, res) => {
   try {
+    const { year } = req.query
+    const currentYear = parseInt(year) || getCurrentYear()
+    
     const departments = await query(
-      'SELECT DISTINCT department FROM procedure_file WHERE department IS NOT NULL ORDER BY department'
+      'SELECT DISTINCT department FROM procedure_file WHERE department IS NOT NULL AND year = ? ORDER BY department',
+      [currentYear]
     )
     res.json({ code: 200, data: departments.map(d => d.department) })
   } catch (error) {
@@ -319,9 +336,9 @@ export const uploadProcedureFile = async (req, res) => {
       return res.status(400).json({ code: 400, message: '缺少必要参数' })
     }
 
-    // 获取程序文件名称
+    // 获取程序文件名称和年份
     const procedures = await query(
-      'SELECT file_name FROM procedure_file WHERE id = ?',
+      'SELECT file_name, year FROM procedure_file WHERE id = ?',
       [procedureFileId]
     )
     
@@ -330,7 +347,7 @@ export const uploadProcedureFile = async (req, res) => {
     }
     
     const procedureFileName = procedures[0].file_name
-    const year = new Date().getFullYear()
+    const year = procedures[0].year || getCurrentYear()
 
     // 创建文件夹：uploads/程序文件名称/年份/
     const baseUploadDir = path.join(__dirname, '../../uploads')
@@ -370,5 +387,129 @@ export const uploadProcedureFile = async (req, res) => {
   } catch (error) {
     console.error('文件上传失败:', error)
     res.status(500).json({ code: 500, message: '文件上传失败' })
+  }
+}
+
+// 获取可用年份列表
+export const getAvailableYears = async (req, res) => {
+  try {
+    const years = await query(`
+      SELECT DISTINCT year FROM procedure_file 
+      WHERE year IS NOT NULL 
+      ORDER BY year DESC
+    `)
+    
+    // 如果没有数据，至少返回当前年份
+    if (years.length === 0) {
+      return res.json({ code: 200, data: [getCurrentYear()] })
+    }
+    
+    res.json({ code: 200, data: years.map(y => y.year) })
+  } catch (error) {
+    console.error('获取年份列表失败:', error)
+    res.status(500).json({ code: 500, message: '获取年份列表失败' })
+  }
+}
+
+// 获取年度统计
+export const getAnnualStatistics = async (req, res) => {
+  try {
+    const { year } = req.query
+    const currentYear = parseInt(year) || getCurrentYear()
+    
+    // 文件统计
+    const fileStats = await query(`
+      SELECT 
+        category,
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END) as active,
+        SUM(CASE WHEN is_ko = 1 THEN 1 ELSE 0 END) as ko
+      FROM procedure_file
+      WHERE year = ?
+      GROUP BY category
+    `, [currentYear])
+    
+    // 记录完成率
+    const completionStats = await query(`
+      SELECT 
+        p.category,
+        COUNT(r.id) as total_records,
+        SUM(CASE WHEN r.status = 'UPLOADED' THEN 1 ELSE 0 END) as completed
+      FROM procedure_file p
+      LEFT JOIN procedure_file_record r ON p.id = r.procedure_file_id AND r.year = ?
+      WHERE p.year = ?
+      GROUP BY p.category
+    `, [currentYear, currentYear])
+    
+    res.json({
+      code: 200,
+      data: {
+        year: currentYear,
+        fileStats,
+        completionStats
+      }
+    })
+  } catch (error) {
+    console.error('获取年度统计失败:', error)
+    res.status(500).json({ code: 500, message: '获取年度统计失败' })
+  }
+}
+
+// 年度文件归档
+export const archiveYearFiles = async (req, res) => {
+  try {
+    const { year, remark } = req.body
+    const archiveYear = parseInt(year) || getCurrentYear()
+    const archiveBy = req.userId
+    
+    // 创建归档目录
+    const archiveDir = path.join(__dirname, `../../archives/${archiveYear}`)
+    if (!fs.existsSync(archiveDir)) {
+      fs.mkdirSync(archiveDir, { recursive: true })
+    }
+    
+    // 获取该年度所有已上传的文件
+    const records = await query(`
+      SELECT r.file_path, p.file_name, r.record_number
+      FROM procedure_file_record r
+      JOIN procedure_file p ON r.procedure_file_id = p.id
+      WHERE r.year = ? AND r.status = 'UPLOADED' AND r.file_path IS NOT NULL
+    `, [archiveYear])
+    
+    let archivedCount = 0
+    
+    // 复制文件到归档目录
+    for (const record of records) {
+      if (record.file_path) {
+        const sourcePath = path.join(__dirname, '../../', record.file_path)
+        const fileName = path.basename(record.file_path)
+        const targetPath = path.join(archiveDir, fileName)
+        
+        if (fs.existsSync(sourcePath)) {
+          fs.copyFileSync(sourcePath, targetPath)
+          archivedCount++
+        }
+      }
+    }
+    
+    // 记录归档日志
+    await query(
+      `INSERT INTO file_archive (year, archive_path, file_count, archive_by, status, remark)
+       VALUES (?, ?, ?, ?, 'COMPLETED', ?)`,
+      [archiveYear, archiveDir, archivedCount, archiveBy, remark]
+    )
+    
+    res.json({
+      code: 200,
+      message: '归档完成',
+      data: {
+        year: archiveYear,
+        archivedCount,
+        archivePath: archiveDir
+      }
+    })
+  } catch (error) {
+    console.error('归档失败:', error)
+    res.status(500).json({ code: 500, message: '归档失败: ' + error.message })
   }
 }

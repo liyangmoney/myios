@@ -73,8 +73,11 @@ export const userApi = {
 // 程序文件API
 export const procedureApi = {
   getList: (params) => api.get('/procedures', { params }),
-  getDetail: (id) => api.get(`/procedures/${id}`),
-  getDepartments: () => api.get('/procedures/departments'),
+  getDetail: (id, params) => api.get(`/procedures/${id}`, { params }),
+  getYears: () => api.get('/procedures/years'),
+  getStatistics: (params) => api.get('/procedures/statistics', { params }),
+  archive: (data) => api.post('/procedures/archive', data),
+  getDepartments: (params) => api.get('/procedures/departments', { params }),
   createRecord: (data) => api.post('/procedures/records', data),
   updateRecord: (id, data) => api.put(`/procedures/records/${id}`, data),
   deleteRecord: (id) => api.delete(`/procedures/records/${id}`),

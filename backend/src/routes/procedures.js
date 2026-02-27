@@ -12,7 +12,10 @@ import {
   getDepartments,
   addPerson,
   deletePerson,
-  uploadProcedureFile
+  uploadProcedureFile,
+  getAvailableYears,
+  getAnnualStatistics,
+  archiveYearFiles
 } from '../controllers/procedures.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -38,6 +41,9 @@ const router = express.Router()
 router.use(authMiddleware)
 
 router.get('/', getProcedures)
+router.get('/years', getAvailableYears)
+router.get('/statistics', getAnnualStatistics)
+router.post('/archive', archiveYearFiles)
 router.get('/departments', getDepartments)
 router.get('/:id', getProcedureDetail)
 router.post('/records', createRecord)

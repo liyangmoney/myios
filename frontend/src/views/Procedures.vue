@@ -41,41 +41,52 @@
 
       <!-- 筛选栏 -->
       <el-card class="filter-card">
-        <el-form :inline="true" :model="searchForm">
-          <el-form-item label="文件分类">
-            <el-select v-model="searchForm.category" placeholder="全部分类" clearable @change="handleSearch">
-              <el-option label="C-程序文件" value="C" />
-              <el-option label="M-管理文件" value="M" />
-              <el-option label="S-支持文件" value="S" />
-            </el-select>
-          </el-form-item>
+        <div class="filter-header">
+          <el-form :inline="true" :model="searchForm">
+            <el-form-item label="文件分类">
+              <el-select v-model="searchForm.category" placeholder="全部分类" clearable @change="handleSearch">
+                <el-option label="C-程序文件" value="C" />
+                <el-option label="M-管理文件" value="M" />
+                <el-option label="S-支持文件" value="S" />
+              </el-select>
+            </el-form-item>
+            
+            <el-form-item label="编制部门">
+              <el-select v-model="searchForm.department" placeholder="全部部门" clearable @change="handleSearch">
+                <el-option 
+                  v-for="dept in departments" 
+                  :key="dept" 
+                  :label="dept" 
+                  :value="dept" 
+                />
+              </el-select>
+            </el-form-item>
+            
+            <el-form-item label="关键词">
+              <el-input 
+                v-model="searchForm.keyword" 
+                placeholder="文件编号/名称" 
+                clearable
+                @keyup.enter="handleSearch"
+              >
+                <template #append>
+                  <el-button @click="handleSearch">
+                    <el-icon><Search /></el-icon>
+                  </el-button>
+                </template>
+              </el-input>
+            </el-form-item>
+          </el-form>
           
-          <el-form-item label="编制部门">
-            <el-select v-model="searchForm.department" placeholder="全部部门" clearable @change="handleSearch">
-              <el-option 
-                v-for="dept in departments" 
-                :key="dept" 
-                :label="dept" 
-                :value="dept" 
-              />
-            </el-select>
-          </el-form-item>
-          
-          <el-form-item label="关键词">
-            <el-input 
-              v-model="searchForm.keyword" 
-              placeholder="文件编号/名称" 
-              clearable
-              @keyup.enter="handleSearch"
-            >
-              <template #append>
-                <el-button @click="handleSearch">
-                  <el-icon><Search /></el-icon>
-                </el-button>
-              </template>
-            </el-input>
-          </el-form-item>
-        </el-form>
+          <div class="filter-actions">
+            <el-tag type="info" size="large" effect="plain">
+              {{ appStore.currentYear }}年度
+            </el-tag>
+            <el-button type="warning" @click="showArchiveDialog" v-if="userStore.userInfo?.role === 'admin'">
+              <el-icon><FolderChecked /></el-icon> 年度归档
+            </el-button>
+          </div>
+        </div>
       </el-card>
 
       <!-- 程序文件列表 -->
@@ -297,6 +308,26 @@
         <el-button type="primary" @click="addRecord" :loading="adding">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 归档对话框 -->
+    <el-dialog v-model="archiveDialogVisible" title="年度文件归档" width="500px">
+      <el-alert
+        :title="`将对 ${appStore.currentYear} 年度的所有已上传文件进行归档`"
+        type="info"
+        :closable="false"
+        style="margin-bottom: 20px"
+      />
+      <el-form :model="archiveForm" label-width="80px">
+        <el-form-item label="归档备注">
+          <el-input v-model="archiveForm.remark" type="textarea" :rows="3" placeholder="请输入归档备注（可选）" />
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <el-button @click="archiveDialogVisible = false">取消</el-button>
+        <el-button type="warning" @click="handleArchive" :loading="archiving">确认归档</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -305,14 +336,21 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { procedureApi, api } from '@/api'
+import { useAppStore } from '@/store/app'
+import { useUserStore } from '@/store/user'
 
 const route = useRoute()
+const appStore = useAppStore()
+const userStore = useUserStore()
+
 const loading = ref(false)
 const uploading = ref(false)
 const adding = ref(false)
+const archiving = ref(false)
 const showDetail = ref(false)
 const uploadDialogVisible = ref(false)
 const addRecordDialogVisible = ref(false)
+const archiveDialogVisible = ref(false)
 
 const searchForm = reactive({
   category: '',
@@ -348,7 +386,8 @@ const fetchProcedures = async () => {
     const res = await procedureApi.getList({
       category: searchForm.category,
       department: searchForm.department,
-      keyword: searchForm.keyword
+      keyword: searchForm.keyword,
+      year: appStore.currentYear
     })
     procedureList.value = res.data || []
   } catch (error) {
@@ -361,7 +400,7 @@ const fetchProcedures = async () => {
 
 const fetchDepartments = async () => {
   try {
-    const res = await procedureApi.getDepartments()
+    const res = await procedureApi.getDepartments({ year: appStore.currentYear })
     departments.value = res.data || []
   } catch (error) {
     console.error('获取部门列表失败:', error)
@@ -370,7 +409,7 @@ const fetchDepartments = async () => {
 
 const viewDetail = async (row) => {
   try {
-    const res = await procedureApi.getDetail(row.id)
+    const res = await procedureApi.getDetail(row.id, { year: appStore.currentYear })
     currentProcedure.value = res.data || {}
     showDetail.value = true
   } catch (error) {
@@ -428,7 +467,8 @@ const addRecord = async () => {
       procedureFileId: currentProcedure.value.id,
       recordNumber: recordForm.recordNumber,
       recordName: recordForm.recordName,
-      description: recordForm.description
+      description: recordForm.description,
+      year: appStore.currentYear
     })
     ElMessage.success('记录添加成功')
     addRecordDialogVisible.value = false
@@ -524,6 +564,36 @@ const deleteRecord = (row) => {
   })
 }
 
+// 显示归档对话框
+const archiveForm = reactive({
+  remark: ''
+})
+
+const showArchiveDialog = () => {
+  archiveForm.remark = ''
+  archiveDialogVisible.value = true
+}
+
+// 执行归档
+const handleArchive = async () => {
+  archiving.value = true
+  try {
+    const res = await procedureApi.archive({
+      year: appStore.currentYear,
+      remark: archiveForm.remark
+    })
+    if (res.code === 200) {
+      ElMessage.success(`${appStore.currentYear}年度文件归档完成，共归档 ${res.data.archivedCount} 个文件`)
+      archiveDialogVisible.value = false
+    }
+  } catch (error) {
+    console.error('归档失败:', error)
+    ElMessage.error('归档失败')
+  } finally {
+    archiving.value = false
+  }
+}
+
 onMounted(() => {
   fetchProcedures()
   fetchDepartments()
@@ -595,6 +665,20 @@ watch(() => route.query._t, (newVal) => {
 .filter-card {
   margin-top: 20px;
   margin-bottom: 20px;
+
+  .filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  .filter-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 }
 
 .card-header {
