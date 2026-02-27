@@ -604,6 +604,9 @@ watch(() => route.query._t, (newVal) => {
   if (newVal) {
     showDetail.value = false
     currentProcedure.value = {}
+    // 重新获取数据
+    fetchProcedures()
+    fetchDepartments()
   }
 })
 </script>
