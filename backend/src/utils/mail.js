@@ -40,6 +40,7 @@ export const sendMail = async (to, subject, html) => {
  */
 export const sendNewUserEmail = async (userInfo, plainPassword) => {
   const subject = '【PIS系统】您的账户已创建'
+  const appUrl = process.env.APP_URL || 'http://localhost:3000'
   
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -53,7 +54,7 @@ export const sendNewUserEmail = async (userInfo, plainPassword) => {
         <p>您的账户已创建成功，请使用以下信息登录系统：</p>
         
         <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #409EFF;">
-          <p><strong>登录地址：</strong> http://localhost:3000</p>
+          <p><strong>登录地址：</strong> <a href="${appUrl}" style="color: #409EFF;">${appUrl}</a></p>
           <p><strong>用户名：</strong> ${userInfo.username}</p>
           <p><strong>初始密码：</strong> <span style="color: #f56c6c; font-size: 18px; font-weight: bold;">${plainPassword}</span></p>
           <p><strong>所属部门：</strong> ${userInfo.department || '未分配'}</p>

@@ -7,7 +7,29 @@ CREATE DATABASE IF NOT EXISTS pis_system DEFAULT CHARACTER SET utf8mb4 COLLATE u
 
 USE pis_system;
 
--- 1. 用户表
+-- 1. 部门表
+CREATE TABLE IF NOT EXISTS sys_department (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    dept_name VARCHAR(100) NOT NULL COMMENT '部门名称',
+    dept_code VARCHAR(50) COMMENT '部门编码',
+    parent_id INT DEFAULT 0 COMMENT '父部门ID，0为顶级部门',
+    sort_order INT DEFAULT 0 COMMENT '排序号',
+    status TINYINT DEFAULT 1 COMMENT '状态：1启用 0禁用',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) COMMENT='部门表';
+
+-- 插入默认部门数据
+INSERT INTO sys_department (dept_name, dept_code, parent_id, sort_order) VALUES
+('销售部', 'SALES', 0, 1),
+('研发部', 'R&D', 0, 2),
+('质量部', 'QUALITY', 0, 3),
+('人力资源部', 'HR', 0, 4),
+('采购部', 'PROCUREMENT', 0, 5),
+('生产部', 'PRODUCTION', 0, 6),
+('财务部', 'FINANCE', 0, 7),
+('行政部', 'ADMIN', 0, 8);
+
+-- 2. 用户表
 CREATE TABLE IF NOT EXISTS sys_user (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
@@ -15,11 +37,14 @@ CREATE TABLE IF NOT EXISTS sys_user (
     user_name VARCHAR(200) COMMENT '真实姓名',
     email VARCHAR(100) COMMENT '邮箱',
     phone VARCHAR(20) COMMENT '电话',
+    department VARCHAR(100) COMMENT '所属部门',
     role VARCHAR(50) DEFAULT 'user' COMMENT '角色：admin/user',
-    dept_id INT COMMENT '部门ID',
     status TINYINT DEFAULT 1 COMMENT '状态：1启用 0禁用',
+    remark TEXT COMMENT '备注',
+    created_by INT COMMENT '创建人ID',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL DEFAULT NULL COMMENT '软删除时间'
 ) COMMENT='用户表';
 
 -- 2. 项目表
