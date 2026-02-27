@@ -77,8 +77,8 @@ const handleCommand = (command) => {
 
 // 处理菜单点击，支持返回功能
 const handleMenuClick = (path) => {
-  // 如果当前已经在该路径下的子页面，则返回列表页
-  if (route.path.startsWith(path) && route.path !== path) {
+  // 只要当前不在目标页面，就导航到该页面
+  if (route.path !== path) {
     router.push(path)
   }
 }
