@@ -82,7 +82,11 @@
             <el-tag type="info" size="large" effect="plain">
               {{ appStore.currentYear }}年度
             </el-tag>
-            <el-button type="warning" @click="showArchiveDialog">
+            <el-button 
+              v-if="userStore.userInfo?.role === 'admin'" 
+              type="warning" 
+              @click="showArchiveDialog"
+            >
               <el-icon><FolderChecked /></el-icon> 年度归档
             </el-button>
           </div>
