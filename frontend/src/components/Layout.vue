@@ -57,6 +57,13 @@
           <el-icon><User /></el-icon>
           <span>用户管理</span>
         </el-menu-item>
+        <el-menu-item 
+          v-if="userStore.userInfo?.role === 'admin'" 
+          index="/operation-logs"
+        >
+          <el-icon><Document /></el-icon>
+          <span>操作记录</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 

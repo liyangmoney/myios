@@ -119,18 +119,13 @@ const trendChart = ref(null)
 const pieChart = ref(null)
 
 const stats = ref({
-  totalProjects: 12,
-  achievedProjects: 8,
-  pendingIndicators: 15,
-  avgAchievementRate: 87.5
+  totalProjects: 0,
+  achievedProjects: 0,
+  pendingIndicators: 0,
+  avgAchievementRate: 0
 })
 
-const recentProjects = ref([
-  { id: 1, projectName: 'ISO22163体系建设', projectType: 'ISO22163', responsibleUser: '张三', achievementRate: 92 },
-  { id: 2, projectName: '质量管理体系优化', projectType: 'ISO9001', responsibleUser: '李四', achievementRate: 85 },
-  { id: 3, projectName: '供应商管理提升', projectType: 'EPPPS', responsibleUser: '王五', achievementRate: 100 },
-  { id: 4, projectName: '设计流程标准化', projectType: 'ISO22163', responsibleUser: '赵六', achievementRate: 78 }
-])
+const recentProjects = ref([])
 
 const getProgressStatus = (rate) => {
   if (rate >= 90) return 'success'

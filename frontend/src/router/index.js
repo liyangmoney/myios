@@ -60,6 +60,12 @@ const routes = [
         name: 'UserManagement',
         component: () => import('@/views/UserManagement.vue'),
         meta: { title: '用户管理', adminOnly: true }
+      },
+      {
+        path: 'operation-logs',
+        name: 'OperationLog',
+        component: () => import('@/views/OperationLog.vue'),
+        meta: { title: '操作记录', adminOnly: true }
       }
     ]
   }

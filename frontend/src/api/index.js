@@ -76,6 +76,12 @@ export const userApi = {
   getDepartments: () => api.get('/users/departments')
 }
 
+// 操作日志API
+export const operationLogApi = {
+  getList: (params) => api.get('/operation-logs', { params }),
+  getModules: () => api.get('/operation-logs/modules')
+}
+
 // 程序文件API
 export const procedureApi = {
   getList: (params) => api.get('/procedures', { params }),
