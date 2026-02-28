@@ -13,7 +13,7 @@ const generateEventNo = async () => {
 }
 
 // 发送通知邮件
-const sendNotificationEmail = async (event, notifyUserIds, action) => {
+const sendNotificationEmail = async (event, notifyUserIds, action, isReminder = false) => {
   if (!notifyUserIds || notifyUserIds.length === 0) return
   
   try {
@@ -28,30 +28,64 @@ const sendNotificationEmail = async (event, notifyUserIds, action) => {
     for (const user of users) {
       if (!user.email) continue
       
-      const subject = `【质量事件】${action} - ${event.event_no}`
-      const html = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; color: white;">
-            <h2>质量事件通知</h2>
-          </div>
-          
-          <div style="padding: 30px; background-color: #f9f9f9;">
-            <h3>${action}</h3>
-            <p><strong>事件编号：</strong> ${event.event_no}</p>
-            <p><strong>事件标题：</strong> ${event.title}</p>
-            <p><strong>严重程度：</strong> ${event.severity}</p>
-            <p><strong>当前状态：</strong> ${getStatusLabel(event.status)}</p>
-            <p><strong>责任人：</strong> ${event.responsible_name || '未分配'}</p>
-            
-            <div style="background: white; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>问题描述：</strong></p>
-              <p>${event.description || '暂无'}</p>
+      let subject, html
+      
+      if (isReminder) {
+        // 提醒邮件
+        const hoursLeft = Math.ceil((new Date(event.due_date) - new Date()) / (1000 * 60 * 60))
+        subject = `【质量事件提醒】${event.event_no} 即将到期`
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: #f56c6c; padding: 20px; text-align: center; color: white;">
+              <h2>⚠️ 质量事件即将到期</h2>
             </div>
             
-            <p><a href="${appUrl}/quality-events/${event.id}" style="color: #409EFF;">点击查看详情</a></p>
+            <div style="padding: 30px; background-color: #f9f9f9;">
+              <p style="color: #f56c6c; font-size: 18px; font-weight: bold;">
+                还有 ${hoursLeft} 小时到期！
+              </p>
+              <p><strong>事件编号：</strong> ${event.event_no}</p>
+              <p><strong>事件标题：</strong> ${event.title}</p>
+              <p><strong>当前处理人：</strong> ${event.current_handler_name || '未分配'}</p>
+              <p><strong>截止日期：</strong> ${event.due_date}</p>
+              
+              <div style="background: white; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>问题描述：</strong></p>
+                <p>${event.description || '暂无'}</p>
+              </div>
+              
+              <p><a href="${appUrl}/quality-events/${event.id}" style="color: #409EFF;">点击立即处理</a></p>
+            </div>
           </div>
-        </div>
-      `
+        `
+      } else {
+        // 普通通知邮件
+        subject = `【质量事件】${action} - ${event.event_no}`
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; color: white;">
+              <h2>质量事件通知</h2>
+            </div>
+            
+            <div style="padding: 30px; background-color: #f9f9f9;">
+              <h3>${action}</h3>
+              <p><strong>事件编号：</strong> ${event.event_no}</p>
+              <p><strong>事件标题：</strong> ${event.title}</p>
+              <p><strong>严重程度：</strong> ${event.severity}</p>
+              <p><strong>当前状态：</strong> ${getStatusLabel(event.status)}</p>
+              <p><strong>当前处理人：</strong> ${event.current_handler_name || '未分配'}</p>
+              <p><strong>下一步处理人：</strong> ${event.next_handler_name || '待定'}</p>
+              
+              <div style="background: white; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>问题描述：</strong></p>
+                <p>${event.description || '暂无'}</p>
+              </div>
+              
+              <p><a href="${appUrl}/quality-events/${event.id}" style="color: #409EFF;">点击查看详情</a></p>
+            </div>
+          </div>
+        `
+      }
       
       await sendMail(user.email, subject, html)
     }
@@ -390,6 +424,37 @@ export const updateQualityEvent = async (req, res) => {
         }
       }
     }
+    if (updateData.nextHandlerId !== undefined) {
+      fields.push('next_handler_id = ?')
+      values.push(updateData.nextHandlerId)
+      // 更新下一步处理人姓名
+      if (updateData.nextHandlerId) {
+        const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [updateData.nextHandlerId])
+        if (users.length > 0) {
+          fields.push('next_handler_name = ?')
+          values.push(users[0].user_name)
+        }
+      } else {
+        fields.push('next_handler_name = NULL')
+      }
+    }
+    if (updateData.currentHandlerId !== undefined) {
+      fields.push('current_handler_id = ?')
+      values.push(updateData.currentHandlerId)
+      if (updateData.currentHandlerId) {
+        const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [updateData.currentHandlerId])
+        if (users.length > 0) {
+          fields.push('current_handler_name = ?')
+          values.push(users[0].user_name)
+        }
+      } else {
+        fields.push('current_handler_name = NULL')
+      }
+    }
+    if (updateData.nextStep !== undefined) {
+      fields.push('next_step = ?')
+      values.push(updateData.nextStep)
+    }
     if (updateData.department !== undefined) {
       fields.push('department = ?')
       values.push(updateData.department)
@@ -560,5 +625,79 @@ export const getStatistics = async (req, res) => {
   } catch (error) {
     console.error('获取统计信息失败:', error)
     res.status(500).json({ code: 500, message: '获取统计信息失败' })
+  }
+}
+
+// 定时任务：检查即将到期的质量事件并发送提醒
+export const checkDueDateReminders = async () => {
+  try {
+    console.log('[' + new Date().toISOString() + '] 检查质量事件到期提醒...')
+    
+    // 查找未关闭且即将在72小时内到期的事件
+    const events = await query(`
+      SELECT * FROM quality_event
+      WHERE deleted_at IS NULL
+        AND status != 'CLOSED'
+        AND status != 'REJECTED'
+        AND due_date IS NOT NULL
+        AND due_date >= CURDATE()
+        AND due_date <= DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+    `)
+    
+    console.log(`找到 ${events.length} 个即将到期的事件`)
+    
+    for (const event of events) {
+      const hoursLeft = Math.ceil((new Date(event.due_date) - new Date()) / (1000 * 60 * 60))
+      
+      // 只处理72小时内的
+      if (hoursLeft > 72 || hoursLeft < 0) continue
+      
+      // 计算是否应该发送提醒（每3小时一次）
+      const lastReminder = event.last_reminder_at ? new Date(event.last_reminder_at) : null
+      const now = new Date()
+      const shouldSend = !lastReminder || (now - lastReminder) >= (3 * 60 * 60 * 1000)
+      
+      if (!shouldSend) {
+        console.log(`事件 ${event.event_no} 距离上次提醒不足3小时，跳过`)
+        continue
+      }
+      
+      // 准备通知列表
+      let notifyUserIds = []
+      if (event.notify_users) {
+        try {
+          notifyUserIds = JSON.parse(event.notify_users)
+        } catch {}
+      }
+      
+      // 添加当前处理人
+      if (event.current_handler_id && !notifyUserIds.includes(event.current_handler_id)) {
+        notifyUserIds.push(event.current_handler_id)
+      }
+      
+      // 添加责任人
+      if (event.responsible_id && !notifyUserIds.includes(event.responsible_id)) {
+        notifyUserIds.push(event.responsible_id)
+      }
+      
+      if (notifyUserIds.length === 0) {
+        console.log(`事件 ${event.event_no} 没有通知人，跳过`)
+        continue
+      }
+      
+      // 发送提醒邮件
+      await sendNotificationEmail(event, notifyUserIds, '到期提醒', true)
+      console.log(`已发送提醒：${event.event_no}，还剩 ${hoursLeft} 小时`)
+      
+      // 更新最后提醒时间
+      await query(
+        'UPDATE quality_event SET last_reminder_at = NOW() WHERE id = ?',
+        [event.id]
+      )
+    }
+    
+    console.log('到期提醒检查完成')
+  } catch (error) {
+    console.error('检查到期提醒失败:', error)
   }
 }

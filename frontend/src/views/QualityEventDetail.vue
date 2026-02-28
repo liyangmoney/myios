@@ -35,7 +35,7 @@
       </template>
       
       <el-descriptions :column="3" border>
-        <el-descriptions-item label="事件标题">
+        <el-descriptions-item label="事件标题" :span="3">
           {{ event.title }}
         </el-descriptions-item>
         <el-descriptions-item label="事件类型">
@@ -44,19 +44,49 @@
         <el-descriptions-item label="严重程度">
           <el-tag :type="getSeverityType(event.severity)">{{ event.severity }}</el-tag>
         </el-descriptions-item>
+        <el-descriptions-item label="当前状态">
+          <el-tag :type="getStatusType(event.status)">{{ getStatusLabel(event.status) }}</el-tag>
+        </el-descriptions-item>
         <el-descriptions-item label="创建人">
           {{ event.reporter_name }}
         </el-descriptions-item>
         <el-descriptions-item label="责任人">
           {{ event.responsible_name || '未分配' }}
         </el-descriptions-item>
-        <el-descriptions-item label="截止日期">
-          <span :class="{ 'overdue': isOverdue }">{{ event.due_date || '未设置' }}</span>
+        <el-descriptions-item label="当前处理人">
+          <el-tag v-if="event.current_handler_name" type="primary" effect="dark">
+            {{ event.current_handler_name }}
+          </el-tag>
+          <span v-else class="text-gray">未分配</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="下一步" :span="2">
+          <div v-if="event.next_step || event.next_handler_name">
+            <el-tag v-if="event.next_step" size="small" class="mr-2">
+              {{ getStepLabel(event.next_step) }}
+            </el-tag>
+            <span v-if="event.next_handler_name" class="text-primary">
+              待 {{ event.next_handler_name }} 处理
+            </span>
+          </div>
+          <span v-else class="text-gray">暂无</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="截止日期" :span="3">
+          <div class="due-date-display">
+            <span :class="getDueDateClass(event.due_date, event.status)" class="due-date-text">
+              {{ formatDueDate(event.due_date) }}
+            </span>
+            <el-tag v-if="event.due_date && event.status !== 'CLOSED'" 
+                    :type="getDueDateTagType(event.due_date)" 
+                    size="small"
+                    class="due-date-tag">
+              {{ getDueDateText(event.due_date) }}
+            </el-tag>
+          </div>
         </el-descriptions-item>
         <el-descriptions-item label="创建时间">
           {{ formatDateTime(event.created_at) }}
         </el-descriptions-item>
-        <el-descriptions-item label="更新时间">
+        <el-descriptions-item label="更新时间" :span="2">
           {{ formatDateTime(event.updated_at) }}
         </el-descriptions-item>
       </el-descriptions>
@@ -269,6 +299,16 @@
               placeholder="制定纠正措施计划..."
             />
           </el-form-item>
+          
+          <el-form-item label="指派下一步">
+            <el-select-v2
+              v-model="editForm.nextHandlerId"
+              :options="userOptions"
+              placeholder="选择下一步处理人"
+              style="width: 100%"
+              clearable
+            />
+          </el-form-item>
         </template>
         
         <template v-if="editType === 'DO'">
@@ -278,6 +318,16 @@
               type="textarea"
               :rows="6"
               placeholder="记录实施过程..."
+            />
+          </el-form-item>
+          
+          <el-form-item label="指派下一步">
+            <el-select-v2
+              v-model="editForm.nextHandlerId"
+              :options="userOptions"
+              placeholder="选择下一步处理人"
+              style="width: 100%"
+              clearable
             />
           </el-form-item>
         </template>
@@ -297,6 +347,16 @@
               <el-radio :label="true">通过，可以关闭</el-radio>
               <el-radio :label="false">不通过，需要重新处理</el-radio>
             </el-radio-group>
+          </el-form-item>
+          
+          <el-form-item label="指派下一步">
+            <el-select-v2
+              v-model="editForm.nextHandlerId"
+              :options="userOptions"
+              placeholder="选择下一步处理人"
+              style="width: 100%"
+              clearable
+            />
           </el-form-item>
         </template>
         
@@ -331,7 +391,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { qualityEventApi } from '@/api'
+import { qualityEventApi, userApi } from '@/api'
 import { useUserStore } from '@/store/user'
 
 const route = useRoute()
@@ -343,6 +403,7 @@ const event = ref(null)
 const comments = ref([])
 const logs = ref([])
 const newComment = ref('')
+const userOptions = ref([]) // 用户选项列表
 
 // 编辑对话框
 const editDialogVisible = ref(false)
@@ -364,7 +425,8 @@ const editForm = ref({
   verificationResult: '',
   passed: true,
   standardization: '',
-  status: 'CLOSED'
+  status: 'CLOSED',
+  nextHandlerId: null
 })
 
 const saving = ref(false)
@@ -397,6 +459,21 @@ const fetchEventDetail = async () => {
   } catch (error) {
     console.error('获取事件详情失败:', error)
     ElMessage.error('获取事件详情失败')
+  }
+}
+
+// 获取用户列表
+const fetchUserList = async () => {
+  try {
+    const res = await userApi.getList({ pageSize: 1000 })
+    if (res.code === 200) {
+      userOptions.value = res.data.list.map(user => ({
+        label: `${user.user_name} (${user.username})`,
+        value: user.id
+      }))
+    }
+  } catch (error) {
+    console.error('获取用户列表失败:', error)
   }
 }
 
@@ -446,19 +523,36 @@ const savePDCA = async () => {
       data.rootCause = editForm.value.rootCause
       data.correctiveAction = editForm.value.correctiveAction
       data.status = 'PLAN'
+      data.currentHandlerId = editForm.value.nextHandlerId || currentUserId.value
+      data.nextHandlerId = editForm.value.nextHandlerId
+      data.nextStep = 'DO'
     } else if (editType.value === 'DO') {
       data.implementation = editForm.value.implementation
       data.status = 'DO'
+      data.currentHandlerId = editForm.value.nextHandlerId || currentUserId.value
+      data.nextHandlerId = editForm.value.nextHandlerId
+      data.nextStep = 'CHECK'
     } else if (editType.value === 'CHECK') {
       data.verificationResult = editForm.value.verificationResult
       if (editForm.value.passed) {
         data.status = 'CHECK'
+        data.currentHandlerId = editForm.value.nextHandlerId || currentUserId.value
+        data.nextHandlerId = editForm.value.nextHandlerId
+        data.nextStep = 'ACT'
       } else {
         data.status = 'DO' // 不通过，回到执行阶段
+        data.currentHandlerId = editForm.value.nextHandlerId || currentUserId.value
+        data.nextHandlerId = editForm.value.nextHandlerId
+        data.nextStep = 'DO'
       }
     } else if (editType.value === 'ACT') {
       data.standardization = editForm.value.standardization
       data.status = editForm.value.status
+      if (editForm.value.status === 'CLOSED') {
+        data.currentHandlerId = null
+        data.nextHandlerId = null
+        data.nextStep = null
+      }
     }
     
     await qualityEventApi.update(event.value.id, data)
@@ -535,6 +629,78 @@ const getActionLabel = (action) => {
   return labels[action] || action
 }
 
+const getStepLabel = (step) => {
+  const labels = {
+    PLAN: '计划阶段',
+    DO: '执行阶段',
+    CHECK: '检查阶段',
+    ACT: '处理阶段'
+  }
+  return labels[step] || step
+}
+
+// 截止日期显示相关函数
+const formatDueDate = (date) => {
+  if (!date) return '未设置截止日期'
+  const d = new Date(date)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  d.setHours(0, 0, 0, 0)
+  
+  const diffDays = Math.ceil((d - today) / (1000 * 60 * 60 * 24))
+  
+  if (diffDays === 0) return `今天 (${date})`
+  if (diffDays === 1) return `明天 (${date})`
+  if (diffDays === -1) return `昨天 (${date})`
+  if (diffDays > 1) return `${date} (${diffDays}天后)`
+  return `${date} (${Math.abs(diffDays)}天前)`
+}
+
+const getDueDateClass = (date, status) => {
+  if (!date || status === 'CLOSED') return ''
+  const d = new Date(date)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  d.setHours(0, 0, 0, 0)
+  
+  const diffDays = Math.ceil((d - today) / (1000 * 60 * 60 * 24))
+  
+  if (diffDays < 0) return 'overdue'
+  if (diffDays <= 1) return 'urgent'
+  if (diffDays <= 3) return 'warning'
+  return 'normal'
+}
+
+const getDueDateTagType = (date) => {
+  if (!date) return 'info'
+  const d = new Date(date)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  d.setHours(0, 0, 0, 0)
+  
+  const diffDays = Math.ceil((d - today) / (1000 * 60 * 60 * 24))
+  
+  if (diffDays < 0) return 'danger'
+  if (diffDays <= 1) return 'danger'
+  if (diffDays <= 3) return 'warning'
+  return 'success'
+}
+
+const getDueDateText = (date) => {
+  if (!date) return ''
+  const d = new Date(date)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  d.setHours(0, 0, 0, 0)
+  
+  const diffDays = Math.ceil((d - today) / (1000 * 60 * 60 * 24))
+  
+  if (diffDays < 0) return `已逾期 ${Math.abs(diffDays)} 天`
+  if (diffDays === 0) return '今天到期'
+  if (diffDays === 1) return '明天到期'
+  return `还剩 ${diffDays} 天`
+}
+
 const formatDateTime = (date) => {
   if (!date) return '-'
   return new Date(date).toLocaleString('zh-CN', {
@@ -545,6 +711,7 @@ const formatDateTime = (date) => {
 
 onMounted(() => {
   fetchEventDetail()
+  fetchUserList()
 })
 </script>
 
@@ -634,6 +801,50 @@ onMounted(() => {
 .overdue {
   color: #f56c6c;
   font-weight: bold;
+}
+
+// 截止日期显示样式
+.due-date-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.due-date-text {
+  font-size: 14px;
+  
+  &.overdue {
+    color: #f56c6c;
+    font-weight: bold;
+    text-decoration: line-through;
+  }
+  
+  &.urgent {
+    color: #f56c6c;
+    font-weight: bold;
+  }
+  
+  &.warning {
+    color: #e6a23c;
+    font-weight: bold;
+  }
+  
+  &.normal {
+    color: #67c23a;
+  }
+}
+
+.text-gray {
+  color: #909399;
+}
+
+.text-primary {
+  color: #409eff;
+  font-weight: bold;
+}
+
+.mr-2 {
+  margin-right: 8px;
 }
 
 .comment-list {

@@ -33,7 +33,15 @@ CREATE TABLE IF NOT EXISTS quality_event (
     reporter_name VARCHAR(100) COMMENT '创建人姓名',
     responsible_id INT COMMENT '责任人ID',
     responsible_name VARCHAR(100) COMMENT '责任人姓名',
-    department VARCHAR(100) COMMENT '责任部门',
+    
+    -- 当前处理人（用于流程跟踪）
+    current_handler_id INT COMMENT '当前处理人ID',
+    current_handler_name VARCHAR(100) COMMENT '当前处理人姓名',
+    
+    -- 下一步指定
+    next_handler_id INT COMMENT '下一步处理人ID',
+    next_handler_name VARCHAR(100) COMMENT '下一步处理人姓名',
+    next_step VARCHAR(50) COMMENT '下一步操作：PLAN/DO/CHECK/ACT',
     
     -- 通知人（JSON数组存储用户ID列表）
     notify_users TEXT COMMENT '通知人列表（JSON）',
@@ -41,12 +49,15 @@ CREATE TABLE IF NOT EXISTS quality_event (
     -- 状态和时间
     status VARCHAR(20) DEFAULT 'NEW' COMMENT '状态：NEW新建/PLAN计划中/DO执行中/CHECK验证中/CLOSED已关闭/REJECTED已驳回',
     due_date DATE COMMENT '计划完成日期',
+    last_reminder_at TIMESTAMP NULL COMMENT '最后提醒时间',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL DEFAULT NULL COMMENT '软删除时间',
     
     FOREIGN KEY (reporter_id) REFERENCES sys_user(id),
     FOREIGN KEY (responsible_id) REFERENCES sys_user(id),
+    FOREIGN KEY (current_handler_id) REFERENCES sys_user(id),
+    FOREIGN KEY (next_handler_id) REFERENCES sys_user(id),
     FOREIGN KEY (verified_by) REFERENCES sys_user(id),
     FOREIGN KEY (closed_by) REFERENCES sys_user(id)
 ) COMMENT='质量事件表';
