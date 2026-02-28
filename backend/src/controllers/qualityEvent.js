@@ -323,11 +323,11 @@ export const createQualityEvent = async (req, res) => {
     const result = await query(`
       INSERT INTO quality_event 
       (event_no, title, description, event_type, severity, reporter_id, reporter_name,
-       responsible_id, responsible_name, department, due_date, notify_users, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'NEW')
+       responsible_id, responsible_name, current_handler_id, current_handler_name, department, due_date, notify_users, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'NEW')
     `, [
       eventNo, title, description, eventType, severity,
-      reporterId, reporterName, responsibleId, responsibleName,
+      reporterId, reporterName, responsibleId, responsibleName, responsibleId, responsibleName,
       department, dueDate, JSON.stringify(notifyUsers || [])
     ])
     

@@ -474,11 +474,11 @@ const canEdit = computed(() => {
   return event.value?.current_handler_id === currentUserId.value
 })
 
-// 各阶段编辑权限（当前处理人可以编辑所有阶段，包括上一步）
-const canEditPlan = computed(() => canEdit.value)
-const canEditDo = computed(() => canEdit.value)
-const canEditCheck = computed(() => canEdit.value)
-const canEditAct = computed(() => canEdit.value)
+// 各阶段编辑权限（当前处理人只能编辑当前对应的阶段）
+const canEditPlan = computed(() => canEdit.value && (event.value?.status === 'NEW' || event.value?.status === 'PLAN'))
+const canEditDo = computed(() => canEdit.value && event.value?.status === 'DO')
+const canEditCheck = computed(() => canEdit.value && event.value?.status === 'CHECK')
+const canEditAct = computed(() => canEdit.value && event.value?.status === 'ACT')
 
 // 是否可以评论（所有人都可以评论）
 const canComment = computed(() => true)
