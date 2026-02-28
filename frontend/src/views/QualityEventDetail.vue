@@ -735,15 +735,17 @@ const parseLogContent = (log) => {
           }
           const fromStatus = statusLabels[oldData.status] || oldData.status || '新建'
           const toStatus = statusLabels[data.status] || data.status
-          changes.push(`状态从"${fromStatus}"变为"${toStatus}"`)
+          // 状态变更只记录到 details，不添加到 changes
+          details.push(`状态: ${fromStatus} → ${toStatus}`)
         }
         
         // 处理人变更
         if (data.currentHandlerId !== undefined && data.currentHandlerId !== oldData.currentHandlerId) {
           if (data.currentHandlerId) {
-            changes.push('指派了新的处理人')
+            const handlerName = data.currentHandlerName || data.nextHandlerName || '未知'
+            details.push(`指派给: ${handlerName}`)
           } else {
-            changes.push('取消了处理人')
+            details.push('取消了处理人')
           }
         }
         
@@ -801,11 +803,11 @@ const parseLogContent = (log) => {
         }
         
         if (changes.length > 0) {
-          let result = changes.join('、')
-          if (details.length > 0) {
-            result += ' (' + details.join('; ') + ')'
+          let result = details.length > 0 ? details.join('; ') : changes.join('、')
+          if (result) {
+            result = '(' + result + ')'
           }
-          return result
+          return result || '更新了事件信息'
         }
         return '更新了事件信息'
       

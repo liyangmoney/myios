@@ -526,6 +526,14 @@ export const updateQualityEvent = async (req, res) => {
     // 获取更新后的事件信息
     const [event] = await query('SELECT * FROM quality_event WHERE id = ?', [id])
     
+    // 如果有新的处理人，查询姓名并添加到 updateData 中用于日志记录
+    if (updateData.currentHandlerId) {
+      const handlerUsers = await query('SELECT user_name FROM sys_user WHERE id = ?', [updateData.currentHandlerId])
+      if (handlerUsers.length > 0) {
+        updateData.currentHandlerName = handlerUsers[0].user_name
+      }
+    }
+    
     // 发送通知 - 根据新的业务规则
     if (updateData.status === 'CLOSED') {
       // 1. 事件关闭时，通知通知人
