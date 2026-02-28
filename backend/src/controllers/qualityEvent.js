@@ -520,16 +520,20 @@ export const updateQualityEvent = async (req, res) => {
     // 获取更新后的事件信息
     const [event] = await query('SELECT * FROM quality_event WHERE id = ?', [id])
     
-    // 发送通知
-    let notifyUserIds = []
-    if (event.notify_users) {
-      try {
-        notifyUserIds = JSON.parse(event.notify_users)
-      } catch {}
+    // 发送通知 - 根据新的业务规则
+    if (updateData.status === 'CLOSED') {
+      // 1. 事件关闭时，通知通知人
+      let notifyUserIds = []
+      if (event.notify_users) {
+        try {
+          notifyUserIds = JSON.parse(event.notify_users)
+        } catch {}
+      }
+      await sendNotificationEmail(event, notifyUserIds, '质量事件已关闭')
+    } else if (updateData.status && updateData.currentHandlerId) {
+      // 2. 状态变换时，只通知变更后的当前处理人
+      await sendNotificationEmail(event, [updateData.currentHandlerId], `状态变更为${getStatusLabel(updateData.status)}`)
     }
-    
-    const actionType = updateData.status ? `状态变更为${getStatusLabel(updateData.status)}` : '信息更新'
-    await sendNotificationEmail(event, notifyUserIds, actionType)
     
     // 记录操作日志
     await query(`
