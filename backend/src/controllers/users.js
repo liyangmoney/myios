@@ -80,7 +80,7 @@ export const getUsers = async (req, res) => {
     })
   } catch (error) {
     console.error('获取用户列表失败:', error)
-    res.status(500).json({ code: 500, message: '获取用户列表失败: ' + error.message })
+    res.status(500).json({ code: 500, message: '获取用户列表失败：' + error.message)
   }
 }
 
@@ -106,25 +106,20 @@ export const getUserDetail = async (req, res) => {
   }
 }
 
-// 生成随机密码
-const generateRandomPassword = (length = 8) => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
-  let password = ''
-  for (let i = 0; i < length; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return password
-}
-
 // 创建用户
 export const createUser = async (req, res) => {
   try {
-    const { username, userName, email, phone, department, role = 'user', remark } = req.body
+    const { username, userName, password, email, phone, department, role = 'user', remark } = req.body
     const createdBy = req.userId
     
     // 校验必填项
-    if (!username || !userName || !email) {
-      return res.status(400).json({ code: 400, message: '用户名、姓名和邮箱不能为空' })
+    if (!username || !userName || !password || !email) {
+      return res.status(400).json({ code: 400, message: '用户名、姓名、密码和邮箱不能为空' })
+    }
+    
+    // 验证密码长度
+    if (password.length < 6) {
+      return res.status(400).json({ code: 400, message: '密码长度至少 6 位' })
     }
     
     // 检查用户名是否已存在
@@ -147,9 +142,8 @@ export const createUser = async (req, res) => {
       return res.status(400).json({ code: 400, message: '邮箱已被使用' })
     }
     
-    // 生成随机初始密码
-    const plainPassword = generateRandomPassword(10)
-    const hashedPassword = await bcrypt.hash(plainPassword, 10)
+    // 加密密码
+    const hashedPassword = await bcrypt.hash(password, 10)
     
     // 插入用户
     const result = await query(`
@@ -168,7 +162,7 @@ export const createUser = async (req, res) => {
         email,
         department,
         role
-      }, plainPassword)
+      }, password)
     }
     
     res.json({
@@ -178,13 +172,12 @@ export const createUser = async (req, res) => {
         id: newUserId,
         username,
         userName,
-        initialPassword: plainPassword, // 仅在创建时返回一次
         emailSent: emailResult?.success || false
       }
     })
   } catch (error) {
     console.error('创建用户失败:', error)
-    res.status(500).json({ code: 500, message: '创建用户失败: ' + error.message })
+    res.status(500).json({ code: 500, message: '创建用户失败：' + error.message)
   }
 }
 
@@ -255,48 +248,6 @@ export const deleteUser = async (req, res) => {
   }
 }
 
-// 重置密码
-export const resetPassword = async (req, res) => {
-  try {
-    const { id } = req.params
-    
-    const user = await query('SELECT id, username, user_name, email FROM sys_user WHERE id = ? AND deleted_at IS NULL', [id])
-    if (user.length === 0) {
-      return res.status(404).json({ code: 404, message: '用户不存在' })
-    }
-    
-    // 生成新密码
-    const plainPassword = generateRandomPassword(10)
-    const hashedPassword = await bcrypt.hash(plainPassword, 10)
-    
-    await query('UPDATE sys_user SET password = ? WHERE id = ?', [hashedPassword, id])
-    
-    // 发送邮件通知
-    let emailResult = null
-    if (user[0].email) {
-      emailResult = await sendNewUserEmail({
-        username: user[0].username,
-        userName: user[0].user_name,
-        email: user[0].email,
-        department: user[0].department,
-        role: user[0].role
-      }, plainPassword)
-    }
-    
-    res.json({
-      code: 200,
-      message: '密码重置成功',
-      data: {
-        newPassword: plainPassword,
-        emailSent: emailResult?.success || false
-      }
-    })
-  } catch (error) {
-    console.error('重置密码失败:', error)
-    res.status(500).json({ code: 500, message: '重置密码失败' })
-  }
-}
-
 // 修改密码
 // 管理员可以修改任何用户密码，普通用户只能修改自己的密码（需验证旧密码）
 export const changePassword = async (req, res) => {
@@ -336,7 +287,7 @@ export const changePassword = async (req, res) => {
     
     // 验证新密码
     if (!newPassword || newPassword.length < 6) {
-      return res.status(400).json({ code: 400, message: '新密码长度至少6位' })
+      return res.status(400).json({ code: 400, message: '新密码长度至少 6 位' })
     }
     
     // 加密新密码
@@ -351,7 +302,7 @@ export const changePassword = async (req, res) => {
     })
   } catch (error) {
     console.error('修改密码失败:', error)
-    res.status(500).json({ code: 500, message: '修改密码失败: ' + error.message })
+    res.status(500).json({ code: 500, message: '修改密码失败：' + error.message)
   }
 }
 

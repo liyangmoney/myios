@@ -88,10 +88,9 @@
           </template>
         </el-table-column>
         
-        <el-table-column label="操作" width="250" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="showEditDialog(row)">编辑</el-button>
-            <el-button link type="warning" @click="handleResetPassword(row)">重置密码</el-button>
             <el-button link type="success" @click="showChangePasswordDialog(row)">修改密码</el-button>
             <el-button link type="danger" @click="handleDelete(row)" :disabled="row.id === currentUserId">删除</el-button>
           </template>
@@ -135,6 +134,15 @@
         
         <el-form-item label="姓名" prop="userName">
           <el-input v-model="formData.userName" placeholder="请输入姓名" />
+        </el-form-item>
+        
+        <el-form-item label="初始密码" prop="password" v-if="!isEdit">
+          <el-input 
+            v-model="formData.password" 
+            type="password"
+            placeholder="请输入初始密码（至少6位）"
+            show-password
+          />
         </el-form-item>
         
         <el-form-item label="邮箱" prop="email">
@@ -186,26 +194,6 @@
       </template>
     </el-dialog>
     
-    <!-- 显示新密码对话框 -->
-    <el-dialog v-model="passwordDialogVisible" title="初始密码" width="400px">
-      <el-alert type="warning" :closable="false" style="margin-bottom: 15px">
-        <template #title>
-          <strong>请妥善保存密码，关闭后将无法再次查看！</strong>
-        </template>
-      </el-alert>
-      
-      <div class="password-box">
-        <div class="password-display">{{ newPassword }}</div>
-        <el-button type="primary" @click="copyPassword">复制密码</el-button>
-      </div>
-      
-      <p v-if="emailSent" class="email-notice">密码已发送至用户邮箱</p>
-      
-      <template #footer>
-        <el-button type="primary" @click="passwordDialogVisible = false">确定</el-button>
-      </template>
-    </el-dialog>
-
     <!-- 修改密码对话框（管理员使用） -->
     <el-dialog 
       v-model="changePasswordDialogVisible" 
@@ -287,6 +275,7 @@ const formData = reactive({
   id: null,
   username: '',
   userName: '',
+  password: '',
   email: '',
   phone: '',
   department: '',
@@ -305,6 +294,10 @@ const formRules = {
     { required: true, message: '请输入姓名', trigger: 'blur' },
     { min: 2, max: 20, message: '姓名长度2-20个字符', trigger: 'blur' }
   ],
+  password: [
+    { required: true, message: '请输入初始密码', trigger: 'blur' },
+    { min: 6, message: '密码长度至少6位', trigger: 'blur' }
+  ],
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
@@ -312,11 +305,6 @@ const formRules = {
 }
 
 // 密码对话框
-const passwordDialogVisible = ref(false)
-const newPassword = ref('')
-const emailSent = ref(false)
-
-// 修改密码对话框（管理员使用）
 const changePasswordDialogVisible = ref(false)
 const changePasswordFormRef = ref(null)
 const changePasswordSubmitting = ref(false)
@@ -415,6 +403,7 @@ const showCreateDialog = () => {
   formData.id = null
   formData.username = ''
   formData.userName = ''
+  formData.password = ''
   formData.email = ''
   formData.phone = ''
   formData.department = ''
@@ -467,6 +456,7 @@ const handleSubmit = async () => {
       const res = await userApi.create({
         username: formData.username,
         userName: formData.userName,
+        password: formData.password,
         email: formData.email,
         phone: formData.phone,
         department: formData.department,
@@ -474,10 +464,8 @@ const handleSubmit = async () => {
         remark: formData.remark
       })
       if (res.code === 200) {
-        newPassword.value = res.data.initialPassword
-        emailSent.value = res.data.emailSent
+        ElMessage.success('用户创建成功')
         dialogVisible.value = false
-        passwordDialogVisible.value = true
         fetchUserList()
       }
     }
@@ -542,39 +530,6 @@ const handleChangePasswordSubmit = async () => {
   }
 }
 
-// 重置密码
-const handleResetPassword = async (row) => {
-  try {
-    await ElMessageBox.confirm(
-      `确定要重置 "${row.user_name}" 的密码吗？`,
-      '确认重置密码',
-      { type: 'warning' }
-    )
-    
-    const res = await userApi.resetPassword(row.id)
-    if (res.code === 200) {
-      newPassword.value = res.data.newPassword
-      emailSent.value = res.data.emailSent
-      passwordDialogVisible.value = true
-      ElMessage.success('密码重置成功')
-    }
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('重置密码失败:', error)
-      ElMessage.error('重置密码失败')
-    }
-  }
-}
-
-// 复制密码
-const copyPassword = () => {
-  navigator.clipboard.writeText(newPassword.value).then(() => {
-    ElMessage.success('密码已复制到剪贴板')
-  }).catch(() => {
-    ElMessage.error('复制失败，请手动复制')
-  })
-}
-
 // 格式化日期
 const formatDate = (date) => {
   if (!date) return '-'
@@ -623,28 +578,5 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 20px;
-}
-
-.password-box {
-  text-align: center;
-  padding: 20px;
-}
-
-.password-display {
-  font-size: 24px;
-  font-weight: bold;
-  color: #f56c6c;
-  background: #fef0f0;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 15px;
-  letter-spacing: 2px;
-  font-family: monospace;
-}
-
-.email-notice {
-  text-align: center;
-  color: #67c23a;
-  margin-top: 10px;
 }
 </style>
