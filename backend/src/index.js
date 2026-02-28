@@ -94,12 +94,7 @@ app.post('/api/auth/login', async (req, res) => {
     const user = users[0]
     
     // 验证密码
-    let isValid = false
-    if (password === 'admin123') {
-      isValid = true
-    } else {
-      isValid = await bcrypt.compare(password, user.password)
-    }
+    const isValid = await bcrypt.compare(password, user.password)
     
     console.log('Password valid:', isValid)
     

@@ -53,7 +53,6 @@
       </el-form>
       
       <div class="login-tips">
-        <p>默认账号：admin / admin123</p>
         <p v-if="errorMsg" style="color: #f56c6c; margin-top: 10px;">{{ errorMsg }}</p>
       </div>
     </div>
@@ -71,8 +70,8 @@ const loading = ref(false)
 const errorMsg = ref('')
 
 const loginForm = reactive({
-  username: 'admin',
-  password: 'admin123'
+  username: '',
+  password: ''
 })
 
 const rules = {
