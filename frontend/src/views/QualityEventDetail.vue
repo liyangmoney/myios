@@ -280,6 +280,14 @@
             <span class="comment-time">{{ formatDateTime(comment.created_at) }}</span>
           </div>
           <div class="comment-content">{{ comment.content }}</div>
+          <!-- 评论附件 -->
+          <div v-if="comment.attachments" class="comment-attachments">
+            <div v-for="(file, idx) in parseFiles(comment.attachments)" :key="idx" class="comment-file">
+              <el-link :href="file.url" target="_blank" type="primary">
+                <el-icon><Document /></el-icon> {{ file.name }}
+              </el-link>
+            </div>
+          </div>
         </div>
         <div v-if="comments.length === 0" class="no-comment">
           暂无评论
@@ -294,6 +302,27 @@
           :rows="3"
           placeholder="添加评论..."
         />
+        <!-- 评论附件上传 -->
+        <div class="comment-upload">
+          <el-upload
+            ref="commentUploadRef"
+            :action="`/api/quality-events/${event.id}/upload?stage=comment`"
+            :headers="uploadHeaders"
+            :multiple="true"
+            :limit="5"
+            :file-list="commentFiles"
+            :on-success="handleCommentFileSuccess"
+            :on-remove="handleCommentFileRemove"
+            :before-upload="beforeCommentUpload"
+            auto-upload
+          >
+            <el-button type="info" :icon="Paperclip">添加附件</el-button>
+            <template #tip>
+              <div class="upload-tip">最多5个文件，单个不超过10MB</div>
+            </template>
+          </el-upload>
+        </div>
+        
         <el-button type="primary" @click="addComment" :disabled="!newComment.trim()">
           发表评论
         </el-button>
@@ -698,28 +727,23 @@ const parseLogContent = (log) => {
         
         if (data.rootCause !== undefined && data.rootCause !== oldData.rootCause) {
           changes.push('根本原因')
-          const content = data.rootCause.substring(0, 50) + (data.rootCause.length > 50 ? '...' : '')
-          details.push(`根本原因: ${content}`)
+          details.push(`根本原因: ${data.rootCause}`)
         }
         if (data.correctiveAction !== undefined && data.correctiveAction !== oldData.correctiveAction) {
           changes.push('纠正措施')
-          const content = data.correctiveAction.substring(0, 50) + (data.correctiveAction.length > 50 ? '...' : '')
-          details.push(`纠正措施: ${content}`)
+          details.push(`纠正措施: ${data.correctiveAction}`)
         }
         if (data.implementation !== undefined && data.implementation !== oldData.implementation) {
           changes.push('实施记录')
-          const content = data.implementation.substring(0, 50) + (data.implementation.length > 50 ? '...' : '')
-          details.push(`实施记录: ${content}`)
+          details.push(`实施记录: ${data.implementation}`)
         }
         if (data.verificationResult !== undefined && data.verificationResult !== oldData.verificationResult) {
           changes.push('验证结果')
-          const content = data.verificationResult.substring(0, 50) + (data.verificationResult.length > 50 ? '...' : '')
-          details.push(`验证结果: ${content}`)
+          details.push(`验证结果: ${data.verificationResult}`)
         }
         if (data.standardization !== undefined && data.standardization !== oldData.standardization) {
           changes.push('标准化措施')
-          const content = data.standardization.substring(0, 50) + (data.standardization.length > 50 ? '...' : '')
-          details.push(`标准化措施: ${content}`)
+          details.push(`标准化措施: ${data.standardization}`)
         }
         
         // 状态变更
@@ -813,7 +837,7 @@ const parseLogContent = (log) => {
       
       case 'COMMENT':
         const commentContent = typeof data === 'string' ? data : (data.content || '')
-        return `添加了评论：${commentContent.substring(0, 30)}${commentContent.length > 30 ? '...' : ''}`
+        return `添加了评论：${commentContent}`
       
       case 'UPLOAD':
         return `上传了附件：${data.fileName || ''}`
@@ -821,12 +845,12 @@ const parseLogContent = (log) => {
       default:
         // 尝试提取有意义的信息
         if (typeof data === 'string') {
-          return data.substring(0, 100)
+          return data
         }
         if (data.message) {
           return data.message
         }
-        return JSON.stringify(data).substring(0, 100)
+        return JSON.stringify(data)
     }
   } catch (e) {
     // 如果不是 JSON，直接返回前100个字符
