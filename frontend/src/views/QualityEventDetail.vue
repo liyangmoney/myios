@@ -828,11 +828,6 @@ const parseLogContent = (log) => {
             } catch {}
           }
         }
-              const fileNames = newFiles.slice(-addedCount).map(f => f.name).join('、')
-              details.push(`文件：${fileNames}`)
-            }
-          } catch {}
-        }
         
         if (changes.length > 0 || details.length > 0) {
           let result = details.join('; ')
