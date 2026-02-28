@@ -684,13 +684,22 @@ const formatDueDate = (date) => {
   today.setHours(0, 0, 0, 0)
   d.setHours(0, 0, 0, 0)
   
+  // 格式化日期为 YYYY/MM/DD HH:MM
+  const dateObj = new Date(date)
+  const year = dateObj.getFullYear()
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+  const day = String(dateObj.getDate()).padStart(2, '0')
+  const hour = String(dateObj.getHours()).padStart(2, '0')
+  const minute = String(dateObj.getMinutes()).padStart(2, '0')
+  const formattedDate = `${year}/${month}/${day} ${hour}:${minute}`
+  
   const diffDays = Math.ceil((d - today) / (1000 * 60 * 60 * 24))
   
-  if (diffDays === 0) return `今天 (${date})`
-  if (diffDays === 1) return `明天 (${date})`
-  if (diffDays === -1) return `昨天 (${date})`
-  if (diffDays > 1) return `${date} (${diffDays}天后)`
-  return `${date} (${Math.abs(diffDays)}天前)`
+  if (diffDays === 0) return `今天 (${formattedDate})`
+  if (diffDays === 1) return `明天 (${formattedDate})`
+  if (diffDays === -1) return `昨天 (${formattedDate})`
+  if (diffDays > 1) return `${formattedDate} (${diffDays}天后)`
+  return `${formattedDate} (${Math.abs(diffDays)}天前)`
 }
 
 const getDueDateClass = (date, status) => {
