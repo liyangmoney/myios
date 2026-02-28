@@ -81,7 +81,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
     
     const users = await query(
-      'SELECT * FROM sys_user WHERE username = ? AND status = 1',
+      'SELECT * FROM sys_user WHERE username = ? AND status = 1 AND deleted_at IS NULL',
       [username]
     )
     
