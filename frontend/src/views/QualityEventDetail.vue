@@ -684,14 +684,12 @@ const formatDueDate = (date) => {
   today.setHours(0, 0, 0, 0)
   d.setHours(0, 0, 0, 0)
   
-  // 格式化日期为 YYYY/MM/DD HH:MM
+  // 格式化日期为 YYYY/MM/DD
   const dateObj = new Date(date)
   const year = dateObj.getFullYear()
   const month = String(dateObj.getMonth() + 1).padStart(2, '0')
   const day = String(dateObj.getDate()).padStart(2, '0')
-  const hour = String(dateObj.getHours()).padStart(2, '0')
-  const minute = String(dateObj.getMinutes()).padStart(2, '0')
-  const formattedDate = `${year}/${month}/${day} ${hour}:${minute}`
+  const formattedDate = `${year}/${month}/${day}`
   
   const diffDays = Math.ceil((d - today) / (1000 * 60 * 60 * 24))
   
