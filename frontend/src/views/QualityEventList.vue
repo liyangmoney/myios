@@ -138,10 +138,10 @@
         
         <el-table-column prop="reporter_name" label="创建人" width="100" />
         
-        <el-table-column prop="due_date" label="截止日期" width="110">
+        <el-table-column prop="due_date" label="截止日期" width="140">
           <template #default="{ row }">
             <span :class="{ 'overdue': isOverdue(row.due_date, row.status) }">
-              {{ row.due_date || '-' }}
+              {{ row.due_date ? formatDateTime(row.due_date).split(' ')[0] : '-' }}
             </span>
           </template>
         </el-table-column>
