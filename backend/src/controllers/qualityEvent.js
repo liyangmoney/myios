@@ -235,12 +235,16 @@ export const getQualityEventDetail = async (req, res) => {
              r.user_name as reporter_name,
              u.user_name as responsible_name,
              v.user_name as verified_by_name,
-             c.user_name as closed_by_name
+             c.user_name as closed_by_name,
+             pf.user_name as plan_filled_by_name,
+             df.user_name as do_filled_by_name
       FROM quality_event e
       LEFT JOIN sys_user r ON e.reporter_id = r.id
       LEFT JOIN sys_user u ON e.responsible_id = u.id
       LEFT JOIN sys_user v ON e.verified_by = v.id
       LEFT JOIN sys_user c ON e.closed_by = c.id
+      LEFT JOIN sys_user pf ON e.plan_filled_by = pf.id
+      LEFT JOIN sys_user df ON e.do_filled_by = df.id
       WHERE e.id = ? AND e.deleted_at IS NULL
     `, [id])
     
@@ -473,10 +477,31 @@ export const updateQualityEvent = async (req, res) => {
       fields.push('status = ?')
       values.push(updateData.status)
       
-      // 状态变更时更新相关时间
-      if (updateData.status === 'CHECK') {
+      // 状态变更时更新相关时间和填写人
+      if (updateData.status === 'DO' && (oldEvent.status === 'NEW' || oldEvent.status === 'PLAN')) {
+        // 从Plan阶段进入Do阶段，记录Plan填写人
+        fields.push('plan_filled_by = ?, plan_filled_at = NOW()')
+        values.push(userId)
+      }
+      if (updateData.status === 'CHECK' && oldEvent.status === 'DO') {
+        // 从Do阶段进入Check阶段，记录Do填写人
+        fields.push('do_filled_by = ?, do_filled_at = NOW()')
+        values.push(userId)
+        // 同时记录验证人
         fields.push('verified_by = ?, verified_at = NOW()')
         values.push(userId)
+      }
+      if (updateData.status === 'DO' && oldEvent.status === 'CHECK') {
+        // 从Check退回Do阶段，验证不通过
+        fields.push('do_filled_by = ?, do_filled_at = NOW()')
+        values.push(userId)
+      }
+      if (updateData.status === 'ACT' && oldEvent.status === 'CHECK') {
+        // 从Check阶段进入Act阶段，记录验证人（如果还没记录）
+        if (!oldEvent.verified_by) {
+          fields.push('verified_by = ?, verified_at = NOW()')
+          values.push(userId)
+        }
       }
       if (updateData.status === 'CLOSED') {
         fields.push('closed_by = ?, closed_at = NOW()')

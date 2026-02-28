@@ -128,6 +128,9 @@
             <el-descriptions-item label="纠正措施计划">
               {{ event.corrective_action || '待填写' }}
             </el-descriptions-item>
+            <el-descriptions-item label="填写人">
+              {{ event.plan_filled_by_name || '-' }} {{ event.plan_filled_at ? formatDateTime(event.plan_filled_at) : '' }}
+            </el-descriptions-item>
             <el-descriptions-item label="附件">
               <FileList 
                 :files="parseFiles(event.plan_files)" 
@@ -162,6 +165,10 @@
           <el-descriptions :column="1" border>
             <el-descriptions-item label="实施过程记录">
               {{ event.implementation || '待填写' }}
+            </el-descriptions-item>
+            
+            <el-descriptions-item label="填写人">
+              {{ event.do_filled_by_name || '-' }} {{ event.do_filled_at ? formatDateTime(event.do_filled_at) : '' }}
             </el-descriptions-item>
             <el-descriptions-item label="附件">
               <FileList 
