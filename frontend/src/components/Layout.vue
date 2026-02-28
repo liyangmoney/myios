@@ -334,9 +334,9 @@ const handleChangePassword = async () => {
   }
 }
 
-const handleCommand = (command) => {
+const handleCommand = async (command) => {
   if (command === 'logout') {
-    userStore.logout()
+    await userStore.logout()
     router.push('/login')
   } else if (command === 'changePassword') {
     openChangePasswordDialog()

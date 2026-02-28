@@ -118,6 +118,21 @@ app.post('/api/auth/login', async (req, res) => {
     
     console.log('Login success!')
     
+    // 记录登录日志
+    try {
+      await query(`
+        INSERT INTO sys_operation_log 
+        (user_id, username, user_name, module, action, description, ip_address, user_agent, status)
+        VALUES (?, ?, ?, '登录', 'LOGIN', '用户登录', ?, ?, 1)
+      `, [
+        user.id, user.username, user.user_name,
+        req.ip || req.connection.remoteAddress,
+        req.headers['user-agent']
+      ])
+    } catch (logError) {
+      console.error('记录登录日志失败:', logError)
+    }
+    
     res.json({
       code: 200,
       message: '登录成功',
@@ -152,6 +167,7 @@ import userRoutes from './routes/users.js'
 import procedureRoutes from './routes/procedures.js'
 import onlyofficeRoutes from './routes/onlyoffice.js'
 import operationLogRoutes from './routes/operationLog.js'
+import { operationLogMiddleware } from './controllers/operationLog.js'
 
 // 认证中间件
 const authMiddleware = async (req, res, next) => {

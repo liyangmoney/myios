@@ -66,6 +66,7 @@ export const documentApi = {
 // 用户API
 export const userApi = {
   login: (data) => api.post('/auth/login', data),
+  logout: () => api.post('/auth/logout'),
   getInfo: () => api.get('/auth/info'),
   getList: (params) => api.get('/users', { params }),
   getDetail: (id) => api.get(`/users/${id}`),
