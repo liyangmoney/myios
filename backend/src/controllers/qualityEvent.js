@@ -116,6 +116,7 @@ export const getQualityEvents = async (req, res) => {
       eventType,
       reporterId,
       responsibleId,
+      currentHandlerId,
       page = 1,
       pageSize = 10
     } = req.query
@@ -163,6 +164,11 @@ export const getQualityEvents = async (req, res) => {
       params.push(responsibleId)
     }
     
+    if (currentHandlerId) {
+      sql += ' AND e.current_handler_id = ?'
+      params.push(currentHandlerId)
+    }
+    
     sql += ' ORDER BY e.created_at DESC'
     
     const pageNum = Math.max(1, parseInt(page, 10) || 1)
@@ -206,6 +212,10 @@ export const getQualityEvents = async (req, res) => {
     if (eventType) {
       countSql += ' AND event_type = ?'
       countParams.push(eventType)
+    }
+    if (currentHandlerId) {
+      countSql += ' AND current_handler_id = ?'
+      countParams.push(currentHandlerId)
     }
     
     const countResult = await query(countSql, countParams)

@@ -358,7 +358,8 @@ const fetchEventList = async () => {
     }
     
     if (searchForm.myEvents) {
-      params.reporterId = currentUserId.value
+      // 我的事件包括：我创建的 或 我负责的 或 我是当前处理人的
+      params.currentHandlerId = currentUserId.value
     }
     
     const res = await qualityEventApi.getList(params)
