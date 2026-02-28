@@ -80,7 +80,7 @@ export const getUsers = async (req, res) => {
     })
   } catch (error) {
     console.error('获取用户列表失败:', error)
-    res.status(500).json({ code: 500, message: '获取用户列表失败：' + error.message)
+    res.status(500).json({ code: 500, message: '获取用户列表失败：' + error.message })
   }
 }
 
@@ -177,7 +177,7 @@ export const createUser = async (req, res) => {
     })
   } catch (error) {
     console.error('创建用户失败:', error)
-    res.status(500).json({ code: 500, message: '创建用户失败：' + error.message)
+    res.status(500).json({ code: 500, message: '创建用户失败：' + error.message })
   }
 }
 
@@ -302,7 +302,7 @@ export const changePassword = async (req, res) => {
     })
   } catch (error) {
     console.error('修改密码失败:', error)
-    res.status(500).json({ code: 500, message: '修改密码失败：' + error.message)
+    res.status(500).json({ code: 500, message: '修改密码失败：' + error.message })
   }
 }
 
