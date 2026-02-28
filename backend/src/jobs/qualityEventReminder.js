@@ -1,4 +1,4 @@
-import { checkDueDateReminders } from './controllers/qualityEvent.js'
+import { checkDueDateReminders } from '../controllers/qualityEvent.js'
 
 // 每3小时执行一次到期提醒检查
 export const startQualityEventReminderJob = () => {
