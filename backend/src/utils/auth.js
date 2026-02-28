@@ -22,6 +22,7 @@ export const authMiddleware = (req, res, next) => {
   try {
     const decoded = verifyToken(token)
     req.userId = decoded.userId
+    req.username = decoded.username
     req.userRole = decoded.role
     next()
   } catch (error) {

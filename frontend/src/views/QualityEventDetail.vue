@@ -308,7 +308,7 @@
           <div class="log-item">
             <span class="log-user">{{ log.user_name }}</span>
             <el-tag size="small">{{ getActionLabel(log.action) }}</el-tag>
-            <span v-if="log.new_value" class="log-detail">{{ log.new_value.substring(0, 50) }}</span>
+            <span v-if="parseLogContent(log)" class="log-detail">{{ parseLogContent(log) }}</span>
           </div>
         </el-timeline-item>
       </el-timeline>
@@ -668,6 +668,61 @@ const getActionLabel = (action) => {
     STATUS_CHANGE: '状态变更', COMMENT: '评论'
   }
   return labels[action] || action
+}
+
+// 解析日志内容为中文描述
+const parseLogContent = (log) => {
+  if (!log.new_value) return ''
+  
+  try {
+    const data = JSON.parse(log.new_value)
+    const action = log.action
+    
+    // 根据操作类型生成描述
+    switch (action) {
+      case 'CREATE':
+        return `创建了质量事件：${data.title || data.eventNo || ''}`
+      
+      case 'UPDATE':
+        // 判断更新了哪些字段
+        const changes = []
+        if (data.rootCause !== undefined) changes.push('根本原因')
+        if (data.correctiveAction !== undefined) changes.push('纠正措施')
+        if (data.implementation !== undefined) changes.push('实施记录')
+        if (data.verificationResult !== undefined) changes.push('验证结果')
+        if (data.standardization !== undefined) changes.push('标准化措施')
+        if (data.status !== undefined) {
+          const statusLabels = {
+            'PLAN': '计划阶段',
+            'DO': '执行阶段',
+            'CHECK': '检查阶段',
+            'CLOSED': '关闭事件'
+          }
+          changes.push(`状态为"${statusLabels[data.status] || data.status}"`)
+        }
+        
+        if (changes.length > 0) {
+          return `更新了：${changes.join('、')}`
+        }
+        return '更新了事件信息'
+      
+      case 'DELETE':
+        return `删除了质量事件：${data.title || data.eventNo || ''}`
+      
+      case 'COMMENT':
+        return `添加了评论：${data.substring ? data.substring(0, 30) + '...' : data}`
+      
+      default:
+        // 尝试提取有意义的信息
+        if (typeof data === 'string') {
+          return data.substring(0, 50)
+        }
+        return ''
+    }
+  } catch (e) {
+    // 如果不是 JSON，直接返回前50个字符
+    return log.new_value.substring(0, 50)
+  }
 }
 
 const getStepLabel = (step) => {

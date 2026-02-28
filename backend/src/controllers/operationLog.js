@@ -20,8 +20,8 @@ export const operationLogMiddleware = (module, action, description) => {
     res.on('finish', async () => {
       try {
         const userId = req.userId || null
-        const username = req.user?.username || req.userName || '匿名'
-        const userName = req.user?.user_name || req.userName || '匿名'
+        const username = req.username || '匿名'
+        const userName = req.username || '匿名'
         
         const ipAddress = req.ip || req.connection.remoteAddress
         const userAgent = req.headers['user-agent']
