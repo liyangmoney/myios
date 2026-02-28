@@ -497,15 +497,17 @@ export const updateQualityEvent = async (req, res) => {
         // 从Do阶段进入Check阶段，记录Do填写人
         fields.push('do_filled_by = ?, do_filled_at = NOW()')
         values.push(userId)
-        // 注意：验证人(verified_by)应该在Check阶段完成验证时记录，不是在这里记录
       }
       if (updateData.status === 'DO' && oldEvent.status === 'CHECK') {
         // 从Check退回Do阶段，验证不通过
-        fields.push('do_filled_by = ?, do_filled_at = NOW()')
+        // 不更新 do_filled_by，保留原来的 Do 填写人
+        // 记录验证人（当前 Check 阶段的处理人）
+        fields.push('verified_by = ?, verified_at = NOW()')
         values.push(userId)
       }
       if (updateData.status === 'ACT' && oldEvent.status === 'CHECK') {
-        // 从Check阶段进入Act阶段，记录验证人（Check阶段的当前处理人）
+        // 从Check阶段进入Act阶段，验证通过
+        // 记录验证人（当前 Check 阶段的处理人）
         fields.push('verified_by = ?, verified_at = NOW()')
         values.push(userId)
       }

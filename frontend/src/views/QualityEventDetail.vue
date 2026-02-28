@@ -342,9 +342,11 @@
           :timestamp="formatDateTime(log.created_at)"
         >
           <div class="log-item">
-            <span class="log-user">{{ log.user_name }}</span>
-            <el-tag size="small">{{ getActionLabel(log.action) }}</el-tag>
-            <span v-if="parseLogContent(log)" class="log-detail">{{ parseLogContent(log) }}</span>
+            <div class="log-header">
+              <span class="log-user">{{ log.user_name }}</span>
+              <el-tag size="small">{{ getActionLabel(log.action) }}</el-tag>
+            </div>
+            <div v-if="parseLogContent(log)" class="log-detail">{{ parseLogContent(log) }}</div>
           </div>
         </el-timeline-item>
       </el-timeline>
@@ -1148,6 +1150,12 @@ onMounted(() => {
 
 .log-item {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.log-header {
+  display: flex;
   align-items: center;
   gap: 10px;
 }
@@ -1157,7 +1165,9 @@ onMounted(() => {
 }
 
 .log-detail {
-  color: #909399;
-  font-size: 12px;
+  color: #606266;
+  font-size: 13px;
+  line-height: 1.6;
+  padding-left: 0;
 }
 </style>
