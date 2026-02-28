@@ -708,6 +708,16 @@ export const uploadFiles = async (req, res) => {
     let fieldName
     let existingFiles = []
     
+    // 如果是评论附件，直接返回文件信息，不更新事件表
+    if (stage === 'comment') {
+      res.json({
+        code: 200,
+        message: '文件上传成功',
+        data: newFiles
+      })
+      return
+    }
+    
     switch (stage) {
       case 'plan':
         fieldName = 'plan_files'

@@ -478,6 +478,8 @@ const event = ref(null)
 const comments = ref([])
 const logs = ref([])
 const newComment = ref('')
+const commentFiles = ref([])
+const commentUploadRef = ref(null)
 const userOptions = ref([])
 
 // 编辑对话框
@@ -652,10 +654,15 @@ const addComment = async () => {
   
   try {
     await qualityEventApi.addComment(event.value.id, {
-      content: newComment.value
+      content: newComment.value,
+      attachments: commentFiles.value
     })
     ElMessage.success('评论添加成功')
     newComment.value = ''
+    commentFiles.value = []
+    if (commentUploadRef.value) {
+      commentUploadRef.value.clearFiles()
+    }
     fetchEventDetail()
   } catch (error) {
     console.error('添加评论失败:', error)
@@ -952,6 +959,39 @@ const formatDateTime = (date) => {
   const hour = String(d.getHours()).padStart(2, '0')
   const minute = String(d.getMinutes()).padStart(2, '0')
   return `${year}/${month}/${day} ${hour}:${minute}`
+}
+
+// 评论附件上传成功
+const handleCommentFileSuccess = (response, file) => {
+  if (response.code === 200) {
+    commentFiles.value.push({
+      name: file.name,
+      url: response.data[0]?.url || '',
+      type: file.raw?.type || '',
+      size: file.size
+    })
+    ElMessage.success('文件上传成功')
+  }
+}
+
+// 评论附件删除
+const handleCommentFileRemove = (file, fileList) => {
+  commentFiles.value = fileList.map(f => ({
+    name: f.name,
+    url: f.response?.data?.[0]?.url || f.url || '',
+    type: f.raw?.type || '',
+    size: f.size
+  }))
+}
+
+// 评论附件上传前检查
+const beforeCommentUpload = (file) => {
+  const isLt10M = file.size / 1024 / 1024 < 10
+  if (!isLt10M) {
+    ElMessage.error('文件大小不能超过 10MB!')
+    return false
+  }
+  return true
 }
 
 // 解析文件列表
