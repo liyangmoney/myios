@@ -136,6 +136,15 @@
         
         <el-table-column prop="responsible_name" label="责任人" width="100" />
         
+        <el-table-column prop="current_handler_name" label="当前处理人" width="100">
+          <template #default="{ row }">
+            <el-tag v-if="row.current_handler_name" type="primary" size="small">
+              {{ row.current_handler_name }}
+            </el-tag>
+            <span v-else class="text-gray">-</span>
+          </template>
+        </el-table-column>
+        
         <el-table-column prop="reporter_name" label="创建人" width="100" />
         
         <el-table-column prop="due_date" label="截止日期" width="140">

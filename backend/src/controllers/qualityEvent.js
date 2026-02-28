@@ -123,10 +123,12 @@ export const getQualityEvents = async (req, res) => {
     let sql = `
       SELECT e.*, 
              r.user_name as reporter_name,
-             u.user_name as responsible_name
+             u.user_name as responsible_name,
+             c.user_name as current_handler_name
       FROM quality_event e
       LEFT JOIN sys_user r ON e.reporter_id = r.id
       LEFT JOIN sys_user u ON e.responsible_id = u.id
+      LEFT JOIN sys_user c ON e.current_handler_id = c.id
       WHERE e.deleted_at IS NULL
     `
     const params = []
