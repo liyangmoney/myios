@@ -563,32 +563,32 @@ const savePDCA = async () => {
     if (editType.value === 'PLAN') {
       data.rootCause = editForm.value.rootCause
       data.correctiveAction = editForm.value.correctiveAction
-      data.status = 'PLAN'
+      data.status = 'DO' // Plan填写完成，进入DO阶段
       data.currentHandlerId = editForm.value.nextHandlerId || currentUserId.value
       data.nextHandlerId = editForm.value.nextHandlerId
       data.nextStep = 'DO'
     } else if (editType.value === 'DO') {
       data.implementation = editForm.value.implementation
-      data.status = 'DO'
+      data.status = 'CHECK' // Do填写完成，进入CHECK阶段
       data.currentHandlerId = editForm.value.nextHandlerId || currentUserId.value
       data.nextHandlerId = editForm.value.nextHandlerId
       data.nextStep = 'CHECK'
     } else if (editType.value === 'CHECK') {
       data.verificationResult = editForm.value.verificationResult
       if (editForm.value.passed) {
-        data.status = 'CHECK'
+        data.status = 'ACT' // 验证通过，进入ACT阶段
         data.currentHandlerId = editForm.value.nextHandlerId || currentUserId.value
         data.nextHandlerId = editForm.value.nextHandlerId
         data.nextStep = 'ACT'
       } else {
-        data.status = 'DO' // 不通过，回到执行阶段
+        data.status = 'DO' // 不通过，回到DO阶段
         data.currentHandlerId = editForm.value.nextHandlerId || currentUserId.value
         data.nextHandlerId = editForm.value.nextHandlerId
         data.nextStep = 'DO'
       }
     } else if (editType.value === 'ACT') {
       data.standardization = editForm.value.standardization
-      data.status = editForm.value.status
+      data.status = editForm.value.status // CLOSED 或保持 ACT
       if (editForm.value.status === 'CLOSED') {
         data.currentHandlerId = null
         data.nextHandlerId = null
