@@ -89,9 +89,9 @@ CREATE TABLE IF NOT EXISTS quality_event_log (
     FOREIGN KEY (user_id) REFERENCES sys_user(id)
 ) COMMENT='质量事件操作日志表';
 
--- 索引
-CREATE INDEX idx_quality_event_status ON quality_event(status);
-CREATE INDEX idx_quality_event_reporter ON quality_event(reporter_id);
-CREATE INDEX idx_quality_event_responsible ON quality_event(responsible_id);
-CREATE INDEX idx_quality_event_severity ON quality_event(severity);
-CREATE INDEX idx_quality_event_created ON quality_event(created_at);
+-- 索引（如果不存在则创建）
+CREATE INDEX IF NOT EXISTS idx_quality_event_status ON quality_event(status);
+CREATE INDEX IF NOT EXISTS idx_quality_event_reporter ON quality_event(reporter_id);
+CREATE INDEX IF NOT EXISTS idx_quality_event_responsible ON quality_event(responsible_id);
+CREATE INDEX IF NOT EXISTS idx_quality_event_severity ON quality_event(severity);
+CREATE INDEX IF NOT EXISTS idx_quality_event_created ON quality_event(created_at);
