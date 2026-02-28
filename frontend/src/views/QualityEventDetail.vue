@@ -722,7 +722,7 @@ const parseLogContent = (log) => {
       case 'CREATE':
         return `创建了质量事件：${data.title || data.eventNo || ''}`
       
-      case 'UPDATE':
+      case 'UPDATE': {
         // 判断更新了哪些字段
         const changes = []
         const details = []
@@ -834,14 +834,16 @@ const parseLogContent = (log) => {
           return result || '更新了事件信息'
         }
         return '更新了事件信息'
+      }
       
       case 'DELETE':
         return `删除了质量事件：${data.title || data.eventNo || ''}`
       
-      case 'COMMENT':
+      case 'COMMENT': {
         // 后端存储的是纯字符串评论内容
         const commentContent = typeof data === 'string' ? data : (data.content || JSON.stringify(data))
         return `添加了评论：${commentContent}`
+      }
       
       case 'UPLOAD':
         return `上传了附件：${data.fileName || ''}`
