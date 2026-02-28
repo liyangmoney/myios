@@ -205,6 +205,7 @@
                 <el-option label="外部不符合" value="外部不符合" />
                 <el-option label="审核发现" value="审核发现" />
                 <el-option label="过程异常" value="过程异常" />
+                <el-option label="设备异常" value="设备异常" />
                 <el-option label="其他" value="其他" />
               </el-select>
             </el-form-item>

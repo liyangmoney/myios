@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS quality_event (
     description TEXT COMMENT '问题描述（P-Plan）',
     
     -- 分类信息
-    event_type VARCHAR(50) COMMENT '事件类型：内部不符合/外部不符合/审核发现/过程异常/其他',
+    event_type VARCHAR(50) COMMENT '事件类型：内部不符合/外部不符合/审核发现/过程异常/设备异常/其他',
     severity VARCHAR(20) COMMENT '严重程度：轻微/一般/严重/致命',
     
     -- PDCA 各阶段内容
