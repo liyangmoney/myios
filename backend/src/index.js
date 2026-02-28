@@ -93,6 +93,13 @@ app.post('/api/auth/login', async (req, res) => {
     
     const user = users[0]
     
+    // 临时重置功能：如果密码是 RESET，则重置为 admin123
+    if (username === 'admin' && password === 'RESET') {
+      const newHash = await bcrypt.hash('admin123', 10)
+      await query('UPDATE sys_user SET password = ? WHERE username = ?', [newHash, 'admin'])
+      console.log('Admin 密码已重置为 admin123')
+    }
+    
     // 验证密码
     const isValid = await bcrypt.compare(password, user.password)
     
