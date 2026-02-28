@@ -72,7 +72,6 @@ export const userApi = {
   create: (data) => api.post('/users', data),
   update: (id, data) => api.put(`/users/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
-  resetPassword: (id) => api.post(`/users/${id}/reset-password`),
   changePassword: (id, data) => api.post(`/users/${id}/change-password`, data),
   getDepartments: () => api.get('/users/departments')
 }
