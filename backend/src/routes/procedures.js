@@ -1,5 +1,6 @@
 import express from 'express'
 import { authMiddleware } from '../utils/auth.js'
+import { operationLogMiddleware } from '../controllers/operationLog.js'
 import multer from 'multer'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -48,15 +49,15 @@ router.use(authMiddleware)
 router.get('/', getProcedures)
 router.get('/years', getAvailableYears)
 router.get('/statistics', getAnnualStatistics)
-router.post('/archive', archiveYearFiles)
-router.post('/copy-year', copyYearFiles)
+router.post('/archive', operationLogMiddleware('程序文件', 'ARCHIVE', '归档年度文件'), archiveYearFiles)
+router.post('/copy-year', operationLogMiddleware('程序文件', 'COPY', '复制年度文件'), copyYearFiles)
 router.get('/departments', getDepartments)
 router.get('/:id', getProcedureDetail)
-router.post('/records', createRecord)
-router.put('/records/:id', updateRecord)
-router.delete('/records/:id', deleteRecord)
-router.post('/persons', addPerson)
-router.delete('/persons/:id', deletePerson)
-router.post('/upload', upload.single('file'), uploadProcedureFile)
+router.post('/records', operationLogMiddleware('程序文件', 'CREATE', '创建记录'), createRecord)
+router.put('/records/:id', operationLogMiddleware('程序文件', 'UPDATE', '修改记录'), updateRecord)
+router.delete('/records/:id', operationLogMiddleware('程序文件', 'DELETE', '删除记录'), deleteRecord)
+router.post('/persons', operationLogMiddleware('程序文件', 'CREATE', '添加人员'), addPerson)
+router.delete('/persons/:id', operationLogMiddleware('程序文件', 'DELETE', '删除人员'), deletePerson)
+router.post('/upload', operationLogMiddleware('程序文件', 'UPLOAD', '上传文件'), upload.single('file'), uploadProcedureFile)
 
 export default router
