@@ -32,6 +32,9 @@
             <el-option label="删除" value="DELETE" />
             <el-option label="登录" value="LOGIN" />
             <el-option label="登出" value="LOGOUT" />
+            <el-option label="归档" value="ARCHIVE" />
+            <el-option label="复制" value="COPY" />
+            <el-option label="上传" value="UPLOAD" />
           </el-select>
         </el-form-item>
         <el-form-item label="时间范围">
@@ -259,7 +262,10 @@ const getActionLabel = (action) => {
     UPDATE: '修改',
     DELETE: '删除',
     LOGIN: '登录',
-    LOGOUT: '登出'
+    LOGOUT: '登出',
+    ARCHIVE: '归档',
+    COPY: '复制',
+    UPLOAD: '上传'
   }
   return labels[action] || action
 }
@@ -271,7 +277,10 @@ const getActionType = (action) => {
     UPDATE: 'primary',
     DELETE: 'danger',
     LOGIN: 'info',
-    LOGOUT: 'info'
+    LOGOUT: 'info',
+    ARCHIVE: 'warning',
+    COPY: 'warning',
+    UPLOAD: 'success'
   }
   return types[action] || ''
 }
