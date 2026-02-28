@@ -469,15 +469,19 @@ const editForm = ref({
 const saving = ref(false)
 
 // 权限判断
+// 只有当前处理人可以编辑和填写
 const canEdit = computed(() => {
-  return event.value?.reporter_id === currentUserId.value || 
-         event.value?.responsible_id === currentUserId.value
+  return event.value?.current_handler_id === currentUserId.value
 })
 
+// 各阶段编辑权限（只有当前处理人可以编辑）
 const canEditPlan = computed(() => canEdit.value)
 const canEditDo = computed(() => canEdit.value && event.value?.root_cause)
 const canEditCheck = computed(() => canEdit.value && event.value?.implementation)
 const canEditAct = computed(() => canEdit.value && event.value?.verification_result)
+
+// 是否可以评论（所有人都可以评论）
+const canComment = computed(() => true)
 
 const isOverdue = computed(() => {
   if (!event.value?.due_date || event.value?.status === 'CLOSED') return false
