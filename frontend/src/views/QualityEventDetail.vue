@@ -1049,6 +1049,21 @@ onMounted(() => {
 .pdca-badge.check { background: #E6A23C; }
 .pdca-badge.act { background: #909399; }
 
+.pdca-content {
+  width: 100%;
+}
+
+.pdca-content :deep(.el-descriptions__label) {
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
+  white-space: nowrap;
+}
+
+.pdca-content :deep(.el-descriptions__content) {
+  width: auto;
+}
+
 .overdue {
   color: #f56c6c;
   font-weight: bold;
