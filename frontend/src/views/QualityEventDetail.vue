@@ -775,53 +775,59 @@ const parseLogContent = (log) => {
           }
         }
         
-        // 附件上传
-        if (data.plan_files !== undefined && data.plan_files !== oldData.plan_files) {
-          try {
-            const newFiles = JSON.parse(data.plan_files)
-            const oldFiles = oldData.plan_files ? JSON.parse(oldData.plan_files) : []
-            const addedCount = newFiles.length - oldFiles.length
-            if (addedCount > 0) {
-              changes.push(`上传了 ${addedCount} 个 Plan 阶段附件`)
-              const fileNames = newFiles.slice(-addedCount).map(f => f.name).join('、')
-              details.push(`文件：${fileNames}`)
-            }
-          } catch {}
+        // 附件上传 - 直接使用后端记录的 message
+        if (data.message && data.message.includes('上传了') && data.message.includes('附件')) {
+          details.push(data.message)
+        } else {
+          // 兼容旧数据，尝试解析文件字段
+          if (data.plan_files !== undefined && data.plan_files !== oldData.plan_files) {
+            try {
+              const newFiles = JSON.parse(data.plan_files)
+              const oldFiles = oldData.plan_files ? JSON.parse(oldData.plan_files) : []
+              const addedCount = newFiles.length - oldFiles.length
+              if (addedCount > 0) {
+                const fileNames = newFiles.slice(-addedCount).map(f => f.name).join('、')
+                details.push(`上传了 ${addedCount} 个 Plan 阶段附件: ${fileNames}`)
+              }
+            } catch {}
+          }
+          
+          if (data.implementation_files !== undefined && data.implementation_files !== oldData.implementation_files) {
+            try {
+              const newFiles = JSON.parse(data.implementation_files)
+              const oldFiles = oldData.implementation_files ? JSON.parse(oldData.implementation_files) : []
+              const addedCount = newFiles.length - oldFiles.length
+              if (addedCount > 0) {
+                const fileNames = newFiles.slice(-addedCount).map(f => f.name).join('、')
+                details.push(`上传了 ${addedCount} 个 Do 阶段附件: ${fileNames}`)
+              }
+            } catch {}
+          }
+          
+          if (data.check_files !== undefined && data.check_files !== oldData.check_files) {
+            try {
+              const newFiles = JSON.parse(data.check_files)
+              const oldFiles = oldData.check_files ? JSON.parse(oldData.check_files) : []
+              const addedCount = newFiles.length - oldFiles.length
+              if (addedCount > 0) {
+                const fileNames = newFiles.slice(-addedCount).map(f => f.name).join('、')
+                details.push(`上传了 ${addedCount} 个 Check 阶段附件: ${fileNames}`)
+              }
+            } catch {}
+          }
+          
+          if (data.act_files !== undefined && data.act_files !== oldData.act_files) {
+            try {
+              const newFiles = JSON.parse(data.act_files)
+              const oldFiles = oldData.act_files ? JSON.parse(oldData.act_files) : []
+              const addedCount = newFiles.length - oldFiles.length
+              if (addedCount > 0) {
+                const fileNames = newFiles.slice(-addedCount).map(f => f.name).join('、')
+                details.push(`上传了 ${addedCount} 个 Act 阶段附件: ${fileNames}`)
+              }
+            } catch {}
+          }
         }
-        
-        if (data.implementation_files !== undefined && data.implementation_files !== oldData.implementation_files) {
-          try {
-            const newFiles = JSON.parse(data.implementation_files)
-            const oldFiles = oldData.implementation_files ? JSON.parse(oldData.implementation_files) : []
-            const addedCount = newFiles.length - oldFiles.length
-            if (addedCount > 0) {
-              changes.push(`上传了 ${addedCount} 个 Do 阶段附件`)
-              const fileNames = newFiles.slice(-addedCount).map(f => f.name).join('、')
-              details.push(`文件：${fileNames}`)
-            }
-          } catch {}
-        }
-        
-        if (data.check_files !== undefined && data.check_files !== oldData.check_files) {
-          try {
-            const newFiles = JSON.parse(data.check_files)
-            const oldFiles = oldData.check_files ? JSON.parse(oldData.check_files) : []
-            const addedCount = newFiles.length - oldFiles.length
-            if (addedCount > 0) {
-              changes.push(`上传了 ${addedCount} 个 Check 阶段附件`)
-              const fileNames = newFiles.slice(-addedCount).map(f => f.name).join('、')
-              details.push(`文件：${fileNames}`)
-            }
-          } catch {}
-        }
-        
-        if (data.act_files !== undefined && data.act_files !== oldData.act_files) {
-          try {
-            const newFiles = JSON.parse(data.act_files)
-            const oldFiles = oldData.act_files ? JSON.parse(oldData.act_files) : []
-            const addedCount = newFiles.length - oldFiles.length
-            if (addedCount > 0) {
-              changes.push(`上传了 ${addedCount} 个 Act 阶段附件`)
               const fileNames = newFiles.slice(-addedCount).map(f => f.name).join('、')
               details.push(`文件：${fileNames}`)
             }
@@ -838,7 +844,8 @@ const parseLogContent = (log) => {
         return `删除了质量事件：${data.title || data.eventNo || ''}`
       
       case 'COMMENT':
-        const commentContent = typeof data === 'string' ? data : (data.content || '')
+        // 后端存储的是纯字符串评论内容
+        const commentContent = typeof data === 'string' ? data : (data.content || JSON.stringify(data))
         return `添加了评论：${commentContent}`
       
       case 'UPLOAD':
