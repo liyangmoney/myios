@@ -35,6 +35,7 @@
             <el-option label="归档" value="ARCHIVE" />
             <el-option label="复制" value="COPY" />
             <el-option label="上传" value="UPLOAD" />
+            <el-option label="评论" value="COMMENT" />
           </el-select>
         </el-form-item>
         <el-form-item label="时间范围">
@@ -265,7 +266,8 @@ const getActionLabel = (action) => {
     LOGOUT: '登出',
     ARCHIVE: '归档',
     COPY: '复制',
-    UPLOAD: '上传'
+    UPLOAD: '上传',
+    COMMENT: '评论'
   }
   return labels[action] || action
 }
@@ -280,7 +282,8 @@ const getActionType = (action) => {
     LOGOUT: 'info',
     ARCHIVE: 'warning',
     COPY: 'warning',
-    UPLOAD: 'success'
+    UPLOAD: 'success',
+    COMMENT: 'info'
   }
   return types[action] || ''
 }
