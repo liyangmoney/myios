@@ -698,18 +698,28 @@ const parseLogContent = (log) => {
         
         if (data.rootCause !== undefined && data.rootCause !== oldData.rootCause) {
           changes.push('根本原因')
+          const content = data.rootCause.substring(0, 50) + (data.rootCause.length > 50 ? '...' : '')
+          details.push(`根本原因: ${content}`)
         }
         if (data.correctiveAction !== undefined && data.correctiveAction !== oldData.correctiveAction) {
           changes.push('纠正措施')
+          const content = data.correctiveAction.substring(0, 50) + (data.correctiveAction.length > 50 ? '...' : '')
+          details.push(`纠正措施: ${content}`)
         }
         if (data.implementation !== undefined && data.implementation !== oldData.implementation) {
           changes.push('实施记录')
+          const content = data.implementation.substring(0, 50) + (data.implementation.length > 50 ? '...' : '')
+          details.push(`实施记录: ${content}`)
         }
         if (data.verificationResult !== undefined && data.verificationResult !== oldData.verificationResult) {
           changes.push('验证结果')
+          const content = data.verificationResult.substring(0, 50) + (data.verificationResult.length > 50 ? '...' : '')
+          details.push(`验证结果: ${content}`)
         }
         if (data.standardization !== undefined && data.standardization !== oldData.standardization) {
           changes.push('标准化措施')
+          const content = data.standardization.substring(0, 50) + (data.standardization.length > 50 ? '...' : '')
+          details.push(`标准化措施: ${content}`)
         }
         
         // 状态变更
