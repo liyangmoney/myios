@@ -628,6 +628,94 @@ export const getStatistics = async (req, res) => {
   }
 }
 
+// 文件上传
+export const uploadFiles = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { stage } = req.body // plan, do, check, act
+    
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ code: 400, message: '没有上传文件' })
+    }
+    
+    // 获取当前文件列表
+    const events = await query('SELECT * FROM quality_event WHERE id = ?', [id])
+    if (events.length === 0) {
+      return res.status(404).json({ code: 404, message: '事件不存在' })
+    }
+    
+    const event = events[0]
+    
+    // 准备文件信息
+    const newFiles = req.files.map(file => ({
+      name: file.originalname,
+      url: `/uploads/quality-events/${file.filename}`,
+      type: file.mimetype,
+      size: file.size,
+      uploadTime: new Date().toISOString()
+    }))
+    
+    // 根据阶段更新对应的文件字段
+    let fieldName
+    let existingFiles = []
+    
+    switch (stage) {
+      case 'plan':
+        fieldName = 'plan_files'
+        if (event.plan_files) {
+          try {
+            existingFiles = JSON.parse(event.plan_files)
+          } catch {}
+        }
+        break
+      case 'do':
+        fieldName = 'implementation_files'
+        if (event.implementation_files) {
+          try {
+            existingFiles = JSON.parse(event.implementation_files)
+          } catch {}
+        }
+        break
+      case 'check':
+        fieldName = 'check_files'
+        if (event.check_files) {
+          try {
+            existingFiles = JSON.parse(event.check_files)
+          } catch {}
+        }
+        break
+      case 'act':
+        fieldName = 'act_files'
+        if (event.act_files) {
+          try {
+            existingFiles = JSON.parse(event.act_files)
+          } catch {}
+        }
+        break
+      default:
+        return res.status(400).json({ code: 400, message: '无效的阶段' })
+    }
+    
+    // 合并文件列表
+    const allFiles = [...existingFiles, ...newFiles]
+    
+    // 更新数据库
+    await query(`UPDATE quality_event SET ${fieldName} = ? WHERE id = ?`, [
+      JSON.stringify(allFiles),
+      id
+    ])
+    
+    res.json({
+      code: 200,
+      message: '文件上传成功',
+      data: newFiles
+    })
+  } catch (error) {
+    console.error('文件上传失败:', error)
+    res.status(500).json({ code: 500, message: '文件上传失败：' + error.message })
+  }
+}
+
 // 定时任务：检查即将到期的质量事件并发送提醒
 export const checkDueDateReminders = async () => {
   try {

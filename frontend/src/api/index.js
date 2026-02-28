@@ -85,7 +85,10 @@ export const qualityEventApi = {
   update: (id, data) => api.put(`/quality-events/${id}`, data),
   delete: (id) => api.delete(`/quality-events/${id}`),
   addComment: (id, data) => api.post(`/quality-events/${id}/comments`, data),
-  getStatistics: () => api.get('/quality-events/statistics')
+  getStatistics: () => api.get('/quality-events/statistics'),
+  uploadFiles: (id, formData) => api.post(`/quality-events/${id}/upload`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
 }
 
 // 操作日志API

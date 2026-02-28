@@ -1,0 +1,227 @@
+<template>
+  <div class="file-list">
+    <!-- 文件列表 -->
+    <div v-if="files.length > 0" class="files-container">
+      <div v-for="(file, index) in files" :key="index" class="file-item">
+        <div class="file-info" @click="previewFile(file)">
+          <el-icon class="file-icon">
+            <Document v-if="isDocument(file.type)" />
+            <Picture v-else-if="isImage(file.type)" />
+            <Folder v-else />
+          </el-icon>
+          <span class="file-name">{{ file.name }}</span>
+          <span class="file-size">{{ formatFileSize(file.size) }}</span>
+        </div>
+        <div class="file-actions">
+          <el-button link type="primary" @click="downloadFile(file)">下载</el-button>
+          <el-button v-if="canUpload" link type="danger" @click="deleteFile(index)">删除</el-button>
+        </div>
+      </div>
+    </div>
+    
+    <div v-else class="no-files">
+      暂无附件
+    </div>
+    
+    <!-- 上传按钮 -->
+    <el-upload
+      v-if="canUpload"
+      class="upload-section"
+      :action="uploadUrl"
+      :headers="uploadHeaders"
+      :data="{ stage }"
+      :multiple="true"
+      :limit="5"
+      :show-file-list="false"
+      :before-upload="beforeUpload"
+      :on-success="handleUploadSuccess"
+      :on-error="handleUploadError"
+    >
+      <el-button type="primary" :icon="Upload">上传文件</el-button>
+      <template #tip>
+        <div class="upload-tip">
+          支持图片、PDF、Word、Excel，单个文件不超过10MB
+        </div>
+      </template>
+    </el-upload>
+    
+    <!-- 图片预览对话框 -->
+    <el-dialog
+      v-model="previewVisible"
+      title="图片预览"
+      width="80%"
+      center
+    >
+      <img :src="previewUrl" style="width: 100%; max-height: 70vh; object-fit: contain;" />
+    </el-dialog>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+import { ElMessage } from 'element-plus'
+import { Document, Picture, Folder, Upload } from '@element-plus/icons-vue'
+import { qualityEventApi } from '@/api'
+
+const props = defineProps({
+  files: {
+    type: Array,
+    default: () => []
+  },
+  eventId: {
+    type: [String, Number],
+    required: true
+  },
+  stage: {
+    type: String,
+    required: true
+  },
+  canUpload: {
+    type: Boolean,
+    default: false
+  }
+})
+
+const emit = defineEmits(['upload-success'])
+
+const previewVisible = ref(false)
+const previewUrl = ref('')
+
+const uploadUrl = computed(() => {
+  return `/api/quality-events/${props.eventId}/upload`
+})
+
+const uploadHeaders = computed(() => {
+  const token = localStorage.getItem('token')
+  return {
+    Authorization: `Bearer ${token}`
+  }
+})
+
+const isImage = (type) => {
+  return type && type.startsWith('image/')
+}
+
+const isDocument = (type) => {
+  return type && (type.includes('pdf') || type.includes('word') || type.includes('excel'))
+}
+
+const formatFileSize = (size) => {
+  if (!size) return ''
+  if (size < 1024) return size + ' B'
+  if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB'
+  return (size / (1024 * 1024)).toFixed(1) + ' MB'
+}
+
+const previewFile = (file) => {
+  if (isImage(file.type)) {
+    previewUrl.value = file.url
+    previewVisible.value = true
+  } else {
+    // 非图片文件直接下载
+    downloadFile(file)
+  }
+}
+
+const downloadFile = (file) => {
+  const link = document.createElement('a')
+  link.href = file.url
+  link.download = file.name
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+const deleteFile = async (index) => {
+  // TODO: 实现删除文件功能
+  ElMessage.info('删除功能待实现')
+}
+
+const beforeUpload = (file) => {
+  const isLt10M = file.size / 1024 / 1024 < 10
+  if (!isLt10M) {
+    ElMessage.error('文件大小不能超过 10MB!')
+    return false
+  }
+  return true
+}
+
+const handleUploadSuccess = () => {
+  ElMessage.success('文件上传成功')
+  emit('upload-success')
+}
+
+const handleUploadError = (error) => {
+  console.error('上传失败:', error)
+  ElMessage.error('文件上传失败')
+}
+</script>
+
+<style scoped>
+.file-list {
+  width: 100%;
+}
+
+.files-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f5f7fa;
+  border-radius: 4px;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.file-icon {
+  font-size: 20px;
+  color: #409eff;
+}
+
+.file-name {
+  flex: 1;
+  color: #303133;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size {
+  color: #909399;
+  font-size: 12px;
+}
+
+.file-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.no-files {
+  color: #909399;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.upload-section {
+  margin-top: 8px;
+}
+
+.upload-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 8px;
+}
+</style>
