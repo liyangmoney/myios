@@ -66,6 +66,18 @@ const routes = [
         name: 'OperationLog',
         component: () => import('@/views/OperationLog.vue'),
         meta: { title: '操作记录', adminOnly: true }
+      },
+      {
+        path: 'quality-events',
+        name: 'QualityEventList',
+        component: () => import('@/views/QualityEventList.vue'),
+        meta: { title: '质量事件' }
+      },
+      {
+        path: 'quality-events/:id',
+        name: 'QualityEventDetail',
+        component: () => import('@/views/QualityEventDetail.vue'),
+        meta: { title: '质量事件详情' }
       }
     ]
   }

@@ -77,6 +77,17 @@ export const userApi = {
   getDepartments: () => api.get('/users/departments')
 }
 
+// 质量事件API
+export const qualityEventApi = {
+  getList: (params) => api.get('/quality-events', { params }),
+  getDetail: (id) => api.get(`/quality-events/${id}`),
+  create: (data) => api.post('/quality-events', data),
+  update: (id, data) => api.put(`/quality-events/${id}`, data),
+  delete: (id) => api.delete(`/quality-events/${id}`),
+  addComment: (id, data) => api.post(`/quality-events/${id}/comments`, data),
+  getStatistics: () => api.get('/quality-events/statistics')
+}
+
 // 操作日志API
 export const operationLogApi = {
   getList: (params) => api.get('/operation-logs', { params }),

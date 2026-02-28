@@ -50,6 +50,10 @@
           <el-icon><DocumentCopy /></el-icon>
           <span>报表中心</span>
         </el-menu-item>
+        <el-menu-item index="/quality-events">
+          <el-icon><Warning /></el-icon>
+          <span>质量事件</span>
+        </el-menu-item>
         <el-menu-item 
           v-if="userStore.userInfo?.role === 'admin'" 
           index="/users"
