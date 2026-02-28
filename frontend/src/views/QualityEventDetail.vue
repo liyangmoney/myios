@@ -802,8 +802,8 @@ const parseLogContent = (log) => {
           } catch {}
         }
         
-        if (changes.length > 0) {
-          let result = details.length > 0 ? details.join('; ') : changes.join('、')
+        if (changes.length > 0 || details.length > 0) {
+          let result = details.join('; ')
           if (result) {
             result = '(' + result + ')'
           }
