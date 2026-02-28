@@ -660,6 +660,8 @@ export const uploadFiles = async (req, res) => {
   try {
     const { id } = req.params
     const { stage } = req.body // plan, do, check, act
+    const userId = req.userId
+    const userName = req.userName
     
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ code: 400, message: '没有上传文件' })
@@ -731,6 +733,16 @@ export const uploadFiles = async (req, res) => {
       JSON.stringify(allFiles),
       id
     ])
+    
+    // 记录操作日志
+    const stageLabels = { plan: 'Plan', do: 'Do', check: 'Check', act: 'Act' }
+    await query(`
+      INSERT INTO quality_event_log (event_id, user_id, user_name, action, new_value)
+      VALUES (?, ?, ?, 'UPDATE', ?)
+    `, [id, userId, userName, JSON.stringify({
+      [fieldName]: JSON.stringify(allFiles),
+      message: `上传了 ${newFiles.length} 个 ${stageLabels[stage]} 阶段附件: ${newFiles.map(f => f.name).join(', ')}`
+    })])
     
     res.json({
       code: 200,

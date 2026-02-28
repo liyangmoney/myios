@@ -684,6 +684,7 @@ const parseLogContent = (log) => {
   try {
     const data = JSON.parse(log.new_value)
     const action = log.action
+    const oldData = log.old_value ? JSON.parse(log.old_value) : {}
     
     // 根据操作类型生成描述
     switch (action) {
@@ -693,23 +694,108 @@ const parseLogContent = (log) => {
       case 'UPDATE':
         // 判断更新了哪些字段
         const changes = []
-        if (data.rootCause !== undefined) changes.push('根本原因')
-        if (data.correctiveAction !== undefined) changes.push('纠正措施')
-        if (data.implementation !== undefined) changes.push('实施记录')
-        if (data.verificationResult !== undefined) changes.push('验证结果')
-        if (data.standardization !== undefined) changes.push('标准化措施')
-        if (data.status !== undefined) {
+        const details = []
+        
+        if (data.rootCause !== undefined && data.rootCause !== oldData.rootCause) {
+          changes.push('根本原因')
+        }
+        if (data.correctiveAction !== undefined && data.correctiveAction !== oldData.correctiveAction) {
+          changes.push('纠正措施')
+        }
+        if (data.implementation !== undefined && data.implementation !== oldData.implementation) {
+          changes.push('实施记录')
+        }
+        if (data.verificationResult !== undefined && data.verificationResult !== oldData.verificationResult) {
+          changes.push('验证结果')
+        }
+        if (data.standardization !== undefined && data.standardization !== oldData.standardization) {
+          changes.push('标准化措施')
+        }
+        
+        // 状态变更
+        if (data.status !== undefined && data.status !== oldData.status) {
           const statusLabels = {
+            'NEW': '新建',
             'PLAN': '计划阶段',
             'DO': '执行阶段',
             'CHECK': '检查阶段',
-            'CLOSED': '关闭事件'
+            'ACT': '处理阶段',
+            'CLOSED': '已关闭',
+            'REJECTED': '已驳回'
           }
-          changes.push(`状态为"${statusLabels[data.status] || data.status}"`)
+          const fromStatus = statusLabels[oldData.status] || oldData.status || '新建'
+          const toStatus = statusLabels[data.status] || data.status
+          changes.push(`状态从"${fromStatus}"变为"${toStatus}"`)
+        }
+        
+        // 处理人变更
+        if (data.currentHandlerId !== undefined && data.currentHandlerId !== oldData.currentHandlerId) {
+          if (data.currentHandlerId) {
+            changes.push('指派了新的处理人')
+          } else {
+            changes.push('取消了处理人')
+          }
+        }
+        
+        // 附件上传
+        if (data.plan_files !== undefined && data.plan_files !== oldData.plan_files) {
+          try {
+            const newFiles = JSON.parse(data.plan_files)
+            const oldFiles = oldData.plan_files ? JSON.parse(oldData.plan_files) : []
+            const addedCount = newFiles.length - oldFiles.length
+            if (addedCount > 0) {
+              changes.push(`上传了 ${addedCount} 个 Plan 阶段附件`)
+              const fileNames = newFiles.slice(-addedCount).map(f => f.name).join('、')
+              details.push(`文件：${fileNames}`)
+            }
+          } catch {}
+        }
+        
+        if (data.implementation_files !== undefined && data.implementation_files !== oldData.implementation_files) {
+          try {
+            const newFiles = JSON.parse(data.implementation_files)
+            const oldFiles = oldData.implementation_files ? JSON.parse(oldData.implementation_files) : []
+            const addedCount = newFiles.length - oldFiles.length
+            if (addedCount > 0) {
+              changes.push(`上传了 ${addedCount} 个 Do 阶段附件`)
+              const fileNames = newFiles.slice(-addedCount).map(f => f.name).join('、')
+              details.push(`文件：${fileNames}`)
+            }
+          } catch {}
+        }
+        
+        if (data.check_files !== undefined && data.check_files !== oldData.check_files) {
+          try {
+            const newFiles = JSON.parse(data.check_files)
+            const oldFiles = oldData.check_files ? JSON.parse(oldData.check_files) : []
+            const addedCount = newFiles.length - oldFiles.length
+            if (addedCount > 0) {
+              changes.push(`上传了 ${addedCount} 个 Check 阶段附件`)
+              const fileNames = newFiles.slice(-addedCount).map(f => f.name).join('、')
+              details.push(`文件：${fileNames}`)
+            }
+          } catch {}
+        }
+        
+        if (data.act_files !== undefined && data.act_files !== oldData.act_files) {
+          try {
+            const newFiles = JSON.parse(data.act_files)
+            const oldFiles = oldData.act_files ? JSON.parse(oldData.act_files) : []
+            const addedCount = newFiles.length - oldFiles.length
+            if (addedCount > 0) {
+              changes.push(`上传了 ${addedCount} 个 Act 阶段附件`)
+              const fileNames = newFiles.slice(-addedCount).map(f => f.name).join('、')
+              details.push(`文件：${fileNames}`)
+            }
+          } catch {}
         }
         
         if (changes.length > 0) {
-          return `更新了：${changes.join('、')}`
+          let result = changes.join('、')
+          if (details.length > 0) {
+            result += ' (' + details.join('; ') + ')'
+          }
+          return result
         }
         return '更新了事件信息'
       
@@ -717,18 +803,25 @@ const parseLogContent = (log) => {
         return `删除了质量事件：${data.title || data.eventNo || ''}`
       
       case 'COMMENT':
-        return `添加了评论：${data.substring ? data.substring(0, 30) + '...' : data}`
+        const commentContent = typeof data === 'string' ? data : (data.content || '')
+        return `添加了评论：${commentContent.substring(0, 30)}${commentContent.length > 30 ? '...' : ''}`
+      
+      case 'UPLOAD':
+        return `上传了附件：${data.fileName || ''}`
       
       default:
         // 尝试提取有意义的信息
         if (typeof data === 'string') {
-          return data.substring(0, 50)
+          return data.substring(0, 100)
         }
-        return ''
+        if (data.message) {
+          return data.message
+        }
+        return JSON.stringify(data).substring(0, 100)
     }
   } catch (e) {
-    // 如果不是 JSON，直接返回前50个字符
-    return log.new_value.substring(0, 50)
+    // 如果不是 JSON，直接返回前100个字符
+    return log.new_value ? log.new_value.substring(0, 100) : ''
   }
 }
 
