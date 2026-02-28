@@ -804,9 +804,6 @@ const parseLogContent = (log) => {
         
         if (changes.length > 0 || details.length > 0) {
           let result = details.join('; ')
-          if (result) {
-            result = '(' + result + ')'
-          }
           return result || '更新了事件信息'
         }
         return '更新了事件信息'
