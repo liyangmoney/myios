@@ -465,6 +465,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Paperclip } from '@element-plus/icons-vue'
 import { qualityEventApi, userApi } from '@/api'
 import { useUserStore } from '@/store/user'
 import FileList from '@/components/FileList.vue'
@@ -481,6 +482,14 @@ const newComment = ref('')
 const commentFiles = ref([])
 const commentUploadRef = ref(null)
 const userOptions = ref([])
+
+// 上传请求头
+const uploadHeaders = computed(() => {
+  const token = localStorage.getItem('token')
+  return {
+    Authorization: `Bearer ${token}`
+  }
+})
 
 // 编辑对话框
 const editDialogVisible = ref(false)

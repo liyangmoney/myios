@@ -3,6 +3,7 @@ import { authMiddleware } from '../utils/auth.js'
 import { operationLogMiddleware } from '../controllers/operationLog.js'
 import multer from 'multer'
 import path from 'path'
+import fs from 'fs'
 import { fileURLToPath } from 'url'
 import {
   getQualityEvents,
@@ -18,10 +19,16 @@ import {
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+// 确保上传目录存在
+const uploadDir = path.join(__dirname, '../../uploads/quality-events')
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true })
+}
+
 // 配置 multer 存储
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../../uploads/quality-events'))
+    cb(null, uploadDir)
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
