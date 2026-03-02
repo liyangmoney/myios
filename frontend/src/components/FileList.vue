@@ -30,6 +30,7 @@
       :action="uploadUrl"
       :headers="uploadHeaders"
       :data="{ stage }"
+      name="files"
       :multiple="true"
       :limit="5"
       :show-file-list="false"
