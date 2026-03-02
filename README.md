@@ -1,23 +1,33 @@
-# PIS绩效指标管理系统
+# MyIOS - ISO 22163 质量管理体系信息化平台
 
-基于 Vue3 + Node.js + MySQL 的 ISO 22163 绩效指标管理平台。
+基于 Vue3 + Node.js + MySQL 的 ISO 22163 (IRIS) 质量管理体系数字化管理平台。
 
 ## 功能特性
 
-- 📊 项目管理 - 创建项目、分配人员、跟踪进度
-- 📈 指标填报 - 填写PIS指标、上传文档证据
-- 🧮 自动计算 - 实时计算达标率、加权汇总
-- 📑 报表中心 - 达标率看板、趋势分析、导出报告
-- 👥 权限管理 - 角色权限控制、部门隔离
+### 程序文件管理
+- 📑 **42个程序文件** - 完整的 ISO 22163 体系文件（C/M/S分类）
+- 👥 **人员分配** - 为每个程序文件分配编写人、审核人、批准人
+- 📎 **记录归档** - 上传和管理程序文件相关记录
+- 📅 **年份控制** - 支持按年份归档和查询
+
+### 质量事件管理 (PDCA)
+- 📝 **事件创建** - 内部/外部不符合、审核发现、过程异常等
+- 🔄 **PDCA工作流** - Plan → Do → Check → Act 完整闭环
+- 📎 **附件管理** - 各阶段支持文件上传
+- 📊 **统计分析** - 按状态、严重度、月度趋势分析
+
+### 用户与权限
+- 🔐 **JWT认证** - 安全的身份验证机制
+- 👤 **用户管理** - 管理员创建用户，邮件通知
+- 📝 **操作日志** - 完整的审计追踪
 
 ## 技术栈
 
 ### 前端
 - Vue 3 + Vite
 - Element Plus
-- Pinia
+- Pinia 状态管理
 - Vue Router
-- ECharts
 - Axios
 
 ### 后端
@@ -25,186 +35,241 @@
 - MySQL 8.0
 - JWT 认证
 - bcrypt 加密
+- nodemailer 邮件
 
-## 快速开始
+## 快速部署
 
-### 方式一：Docker 运行（推荐）
+### 方式一：Docker 部署（推荐）
 
-#### Windows 环境要求
-- Windows 10/11 专业版或企业版（启用 WSL2）
-- Docker Desktop for Windows
+#### 环境要求
+- Docker 20.10+
+- Docker Compose 2.0+
 
-#### 启动步骤
+#### 部署步骤
 
-1. **安装 Docker Desktop**
-   - 下载：https://www.docker.com/products/docker-desktop
-   - 安装时勾选 "Use WSL 2 instead of Hyper-V"
+1. **克隆项目**
+   ```bash
+   git clone https://github.com/liyangmoney/MyIOS.git
+   cd MyIOS
+   ```
 
-2. **启动项目**
-   ```powershell
-   # 克隆项目
-   git clone https://github.com/liyangmoney/MyIOS22163.git
-   cd MyIOS22163
+2. **配置环境变量**
+   ```bash
+   cp backend/.env.example backend/.env
+   # 编辑 backend/.env，配置数据库和邮件
+   ```
 
-   # 启动所有服务（Docker 会自动构建镜像）
+3. **启动服务**
+   ```bash
    docker-compose up -d
-
-   # 等待 30 秒后访问
-   # 前端：http://localhost
-   # 后端 API：http://localhost:8080
    ```
 
-3. **查看日志**
-   ```powershell
-   docker-compose logs -f
+4. **初始化数据库**（首次运行）
+   ```bash
+   # 等待 MySQL 启动完成（约30秒）
+   docker-compose exec mysql mysql -uroot -proot pis_system < database/schema.sql
    ```
 
-4. **停止服务**
-   ```powershell
-   docker-compose down
-   ```
+5. **访问系统**
+   - 前端：http://localhost:3000
+   - 后端 API：http://localhost:9090
+   - 默认账号：admin / admin123
 
-#### 数据持久化
-- MySQL 数据存储在 Docker Volume `mysql_data`
-- 上传文件存储在 `./backend/uploads`
+#### 常用命令
+```bash
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+
+# 重启服务
+docker-compose restart
+
+# 重新构建
+docker-compose up -d --build
+```
 
 ---
 
-### 方式二：传统方式运行
+### 方式二：手动部署
 
-#### Windows 环境要求
-- Node.js 20+ （https://nodejs.org）
-- MySQL 8.0 （https://dev.mysql.com/downloads/installer/）
+#### 环境要求
+- Node.js 18+
+- MySQL 8.0+
 
-#### 1. 克隆项目
+#### 1. 数据库初始化
 
-```powershell
-git clone https://github.com/liyangmoney/MyIOS22163.git
-cd MyIOS22163
+```bash
+# 创建数据库
+mysql -u root -p -e "CREATE DATABASE pis_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# 导入表结构
+mysql -u root -p pis_system < database/schema.sql
 ```
 
-#### 2. 数据库初始化
+#### 2. 后端部署
 
-```powershell
-# 使用 MySQL 命令行或 MySQL Workbench 导入
-cd database
-mysql -u root -p < pis_system.sql
-```
-
-#### 3. 后端启动
-
-```powershell
+```bash
 cd backend
 
-# 复制配置文件
-copy .env.example .env
+# 安装依赖
+npm install
 
-# 编辑 .env 文件，修改数据库配置
+# 配置环境变量
+cp .env.example .env
+# 编辑 .env 文件：
 # DB_HOST=localhost
 # DB_USER=root
-# DB_PASSWORD=你的密码
+# DB_PASSWORD=your_password
+# JWT_SECRET=your_jwt_secret
+# EMAIL_HOST=smtp.163.com
+# EMAIL_USER=your_email@163.com
+# EMAIL_PASS=your_auth_code
 
-npm install
+# 启动服务
 npm run dev
+# 或生产模式
+npm start
 ```
 
-#### 4. 前端启动
+#### 3. 前端部署
 
-```powershell
+```bash
 cd frontend
+
+# 安装依赖
 npm install
+
+# 开发模式
 npm run dev
+
+# 生产构建
+npm run build
 ```
-
-#### 5. 访问系统
-
-- 前端：http://localhost:3000
-- 后端 API：http://localhost:8080
-- 默认账号：admin / admin123
 
 ## 项目结构
 
 ```
-pis-system/
-├── docker-compose.yml  # Docker 编排配置
-├── frontend/           # Vue3 前端
-│   ├── Dockerfile      # 前端 Docker 配置
-│   ├── nginx.conf      # Nginx 配置
+MyIOS/
+├── docker-compose.yml      # Docker 编排配置
+├── frontend/               # Vue3 前端
 │   ├── src/
-│   │   ├── api/        # API 接口
-│   │   ├── components/ # 组件
-│   │   ├── router/     # 路由
-│   │   ├── store/      # Pinia 状态
-│   │   └── views/      # 页面
+│   │   ├── api/           # API 接口
+│   │   ├── components/    # 组件
+│   │   ├── router/        # 路由
+│   │   ├── store/         # Pinia 状态
+│   │   └── views/         # 页面
 │   └── package.json
-├── backend/            # Node.js 后端
-│   ├── Dockerfile      # 后端 Docker 配置
+├── backend/                # Node.js 后端
 │   ├── src/
-│   │   ├── config/     # 配置
-│   │   ├── controllers/# 控制器
-│   │   ├── routes/     # 路由
-│   │   └── utils/      # 工具
+│   │   ├── controllers/   # 控制器
+│   │   ├── routes/        # 路由
+│   │   └── utils/         # 工具
+│   ├── uploads/           # 上传文件存储
 │   └── package.json
-└── database/           # 数据库脚本
-    └── pis_system.sql
+└── database/
+    └── schema.sql         # 完整数据库脚本
 ```
 
-## 核心功能
+## 配置文件说明
 
-### 达标率计算
+### 后端 .env
+```env
+# 数据库配置
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=pis_system
 
-```
-单个指标达标率 = 实际值 / 目标值 × 100%
+# JWT配置
+JWT_SECRET=your_secret_key
+JWT_EXPIRE=24h
 
-项目整体达标率 = Σ(指标达标率 × 指标权重) / Σ权重
-```
+# 邮件配置（用于用户通知）
+EMAIL_HOST=smtp.163.com
+EMAIL_PORT=465
+EMAIL_SECURE=true
+EMAIL_USER=your_email@163.com
+EMAIL_PASS=your_auth_code
+SYSTEM_URL=http://localhost:3000
 
-### 默认指标模板
-
-| 指标名称 | 权重 | 目标值 | 类型 |
-|---------|------|--------|------|
-| 体系文件完成率 | 20% | 100% | ≥ |
-| 内审不符合项关闭率 | 15% | 100% | ≥ |
-| 培训计划完成率 | 10% | 100% | ≥ |
-| FAI一次通过率 | 15% | 95% | ≥ |
-| 设计评审通过率 | 15% | 100% | ≥ |
-| 变更闭环率 | 15% | 100% | ≥ |
-| 客户满意度 | 10% | 90% | ≥ |
-
-## 开发计划
-
-- [x] 基础架构搭建
-- [x] 用户认证模块
-- [x] 项目管理模块
-- [x] 指标填报模块
-- [x] 达标率计算引擎
-- [x] 报表看板
-- [x] Docker 部署支持
-- [ ] 数据导入导出
-- [ ] 消息通知
-- [ ] 移动端适配
-
-## Windows 常见问题
-
-### 1. 端口被占用
-```powershell
-# 查看 8080 端口占用
-netstat -ano | findstr :8080
-
-# 结束占用进程（将 PID 替换为实际值）
-taskkill /PID 12345 /F
+# 服务器配置
+PORT=9090
 ```
 
-### 2. MySQL 连接失败
+## 升级指南
+
+### 从 v1.0.0 升级到 v1.1.x
+
+1. **备份数据**
+   ```bash
+   mysqldump -u root -p pis_system > backup.sql
+   ```
+
+2. **拉取最新代码**
+   ```bash
+   git pull origin main
+   ```
+
+3. **更新数据库**（如有迁移脚本）
+   ```bash
+   # 查看 database/migrations/ 目录
+   # 按顺序执行迁移脚本
+   ```
+
+4. **重启服务**
+   ```bash
+   docker-compose restart
+   # 或手动重启前后端服务
+   ```
+
+## 常见问题
+
+### 1. 数据库连接失败
 - 检查 MySQL 服务是否启动
+- 确认数据库配置正确
 - 检查防火墙设置
-- 确认 root 密码正确
 
-### 3. Docker 启动失败
-- 确保 Docker Desktop 已启动
-- 检查 WSL2 是否启用
-- 以管理员身份运行 PowerShell
+### 2. 文件上传失败
+- 检查 `backend/uploads` 目录权限
+- 确认文件大小不超过 10MB
+
+### 3. 邮件发送失败
+- 确认邮箱 SMTP 设置正确
+- 检查邮箱授权码（不是登录密码）
+
+### 4. 端口冲突
+```bash
+# 查看端口占用
+netstat -ano | grep :3000
+netstat -ano | grep :9090
+
+# 修改 docker-compose.yml 中的端口映射
+```
+
+## API 文档
+
+启动后端服务后访问：
+- Swagger UI: http://localhost:9090/api-docs
+
+## 版本历史
+
+- **v1.1.1** - PDCA附件功能完善
+  - 各阶段附件上传与评论模块一致
+  - 操作日志显示附件链接
+  - 修复中文文件名乱码
+
+- **v1.0.0** - 初始版本
+  - 程序文件管理
+  - 质量事件管理
+  - 用户权限管理
 
 ## 许可证
 
 MIT
+
+## 联系方式
+
+如有问题，请提交 GitHub Issue 或联系维护者。
