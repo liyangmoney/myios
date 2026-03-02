@@ -466,7 +466,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Paperclip } from '@element-plus/icons-vue'
+import { Paperclip, Document } from '@element-plus/icons-vue'
 import { qualityEventApi, userApi } from '@/api'
 import { useUserStore } from '@/store/user'
 import FileList from '@/components/FileList.vue'
@@ -1199,6 +1199,18 @@ onMounted(() => {
 .comment-content {
   color: #606266;
   line-height: 1.6;
+}
+
+.comment-attachments {
+  margin-top: 8px;
+}
+
+.comment-file {
+  margin-top: 4px;
+}
+
+.comment-upload {
+  margin: 10px 0;
 }
 
 .no-comment {
