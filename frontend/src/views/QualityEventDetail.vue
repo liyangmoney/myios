@@ -355,7 +355,22 @@
               <span class="log-user">{{ log.user_name }}</span>
               <el-tag size="small">{{ getActionLabel(log.action) }}</el-tag>
             </div>
-            <div v-if="parseLogContent(log)" class="log-detail">{{ parseLogContent(log) }}</div>
+            <!-- 操作日志内容 -->
+            <div v-if="parseLogContent(log)" class="log-detail">
+              <!-- 评论且包含附件 -->
+              <template v-if="log.action === 'COMMENT' && log.new_value && log.new_value.includes('[附件:')">
+                <div>{{ log.new_value.split('[附件:')[0] }}</div>
+                <div class="log-attachments">
+                  <div v-for="(fileName, idx) in extractAttachmentNames(log.new_value)" :key="idx" class="log-attachment-item">
+                    <span style="color: #606266; font-size: 13px;">附件: {{ fileName }}</span>
+                  </div>
+                </div>
+              </template>
+              <!-- 普通内容 -->
+              <template v-else>
+                {{ parseLogContent(log) }}
+              </template>
+            </div>
           </div>
         </el-timeline-item>
       </el-timeline>
@@ -1033,6 +1048,16 @@ const getFileUrl = (url) => {
   return `/api/download?filename=${encodeURIComponent(filename)}`
 }
 
+// 从操作日志中提取附件名称
+const extractAttachmentNames = (content) => {
+  if (!content) return []
+  const match = content.match(/\[附件: (.+)\]/)
+  if (match && match[1]) {
+    return match[1].split(', ')
+  }
+  return []
+}
+
 onMounted(() => {
   fetchEventDetail()
   fetchUserList()
@@ -1269,5 +1294,13 @@ onMounted(() => {
   font-size: 13px;
   line-height: 1.6;
   padding-left: 0;
+}
+
+.log-attachments {
+  margin-top: 8px;
+}
+
+.log-attachment-item {
+  margin-top: 4px;
 }
 </style>
