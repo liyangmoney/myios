@@ -265,12 +265,25 @@ export const getQualityEventDetail = async (req, res) => {
     const event = events[0]
     
     // 解析通知人列表
+    let notifyUserIds = []
     if (event.notify_users) {
       try {
-        event.notify_users = JSON.parse(event.notify_users)
+        notifyUserIds = JSON.parse(event.notify_users)
       } catch {
-        event.notify_users = []
+        notifyUserIds = []
       }
+    }
+    event.notify_users = notifyUserIds
+    
+    // 查询通知人姓名
+    if (notifyUserIds.length > 0) {
+      const notifyUsers = await query(
+        'SELECT id, user_name FROM sys_user WHERE id IN (?)',
+        [notifyUserIds]
+      )
+      event.notify_user_names = notifyUsers.map(u => u.user_name)
+    } else {
+      event.notify_user_names = []
     }
     
     // 获取评论记录

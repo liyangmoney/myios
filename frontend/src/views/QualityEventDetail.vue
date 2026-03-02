@@ -89,6 +89,14 @@
         <el-descriptions-item label="更新时间" :span="2">
           {{ formatDateTime(event.updated_at) }}
         </el-descriptions-item>
+        <el-descriptions-item label="通知人" :span="3">
+          <div v-if="event.notify_user_names && event.notify_user_names.length > 0">
+            <el-tag v-for="(name, idx) in event.notify_user_names" :key="idx" size="small" class="mr-2" type="info">
+              {{ name }}
+            </el-tag>
+          </div>
+          <span v-else class="text-gray">无</span>
+        </el-descriptions-item>
       </el-descriptions>
       
       <div class="description-section">
