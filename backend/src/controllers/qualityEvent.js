@@ -714,13 +714,17 @@ export const uploadFiles = async (req, res) => {
     const event = events[0]
     
     // 准备文件信息
-    const newFiles = req.files.map(file => ({
-      name: file.originalname,
-      url: `/uploads/quality-events/${file.filename}`,
-      type: file.mimetype,
-      size: file.size,
-      uploadTime: new Date().toISOString()
-    }))
+    const newFiles = req.files.map(file => {
+      // 正确处理中文文件名
+      const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
+      return {
+        name: originalName,
+        url: `/uploads/quality-events/${file.filename}`,
+        type: file.mimetype,
+        size: file.size,
+        uploadTime: new Date().toISOString()
+      }
+    })
     
     // 根据阶段更新对应的文件字段
     let fieldName

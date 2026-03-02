@@ -32,8 +32,13 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    // 处理中文文件名，保留原始名称用于显示
     const ext = path.extname(file.originalname)
-    cb(null, 'qe-' + uniqueSuffix + ext)
+    // 使用 Buffer 正确处理中文编码
+    const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
+    // 存储文件名：原始名称_唯一ID.扩展名
+    const safeName = originalName.replace(/[^\w\u4e00-\u9fa5.-]/g, '_')
+    cb(null, `${uniqueSuffix}_${safeName}`)
   }
 })
 
