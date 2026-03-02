@@ -695,7 +695,7 @@ export const getStatistics = async (req, res) => {
 export const uploadFiles = async (req, res) => {
   try {
     const { id } = req.params
-    const { stage } = req.body // plan, do, check, act
+    const { stage } = req.query // 从查询参数获取 stage
     const userId = req.userId
     const userName = req.userName
     
