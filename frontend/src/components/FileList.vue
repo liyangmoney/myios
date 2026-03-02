@@ -29,7 +29,6 @@
       class="upload-section"
       :action="uploadUrl"
       :headers="uploadHeaders"
-      :data="{ stage }"
       name="files"
       :multiple="true"
       :limit="5"
@@ -89,7 +88,7 @@ const previewVisible = ref(false)
 const previewUrl = ref('')
 
 const uploadUrl = computed(() => {
-  return `/api/quality-events/${props.eventId}/upload`
+  return `/api/quality-events/${props.eventId}/upload?stage=${props.stage}`
 })
 
 const uploadHeaders = computed(() => {
