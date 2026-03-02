@@ -1318,6 +1318,13 @@ onMounted(() => {
   align-items: center;
 }
 
+.comment-upload .el-button,
+.comment-actions > .el-button {
+  height: 32px;
+  line-height: 32px;
+  padding: 0 15px;
+}
+
 .log-item {
   display: flex;
   flex-direction: column;
