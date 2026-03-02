@@ -319,11 +319,11 @@
             :multiple="true"
             :limit="5"
             name="files"
-            :file-list="commentFiles"
             :on-success="handleCommentFileSuccess"
             :on-remove="handleCommentFileRemove"
             :before-upload="beforeCommentUpload"
-            auto-upload
+            :on-error="handleCommentFileError"
+            :show-file-list="true"
           >
             <el-button type="info" :icon="Paperclip">添加附件</el-button>
             <template #tip>
@@ -671,9 +671,17 @@ const addComment = async () => {
   if (!newComment.value.trim()) return
   
   try {
+    // 从 el-upload 的文件列表中获取附件
+    const attachments = commentUploadRef.value?.uploadFiles?.map(f => ({
+      name: f.name,
+      url: f.response?.data?.[0]?.url || f.url || '',
+      type: f.raw?.type || '',
+      size: f.size
+    })) || []
+    
     await qualityEventApi.addComment(event.value.id, {
       content: newComment.value,
-      attachments: commentFiles.value
+      attachments: attachments
     })
     ElMessage.success('评论添加成功')
     newComment.value = ''
@@ -980,16 +988,27 @@ const formatDateTime = (date) => {
 }
 
 // 评论附件上传成功
-const handleCommentFileSuccess = (response, file) => {
+const handleCommentFileSuccess = (response, file, fileList) => {
   if (response.code === 200) {
-    commentFiles.value.push({
-      name: file.name,
-      url: response.data[0]?.url || '',
-      type: file.raw?.type || '',
-      size: file.size
-    })
-    ElMessage.success('文件上传成功')
+    // 将 URL 保存到 file 对象，方便后续使用
+    file.url = response.data[0]?.url || ''
+    // 更新 commentFiles 数组
+    commentFiles.value = fileList.map(f => ({
+      name: f.name,
+      url: f.response?.data?.[0]?.url || f.url || '',
+      type: f.raw?.type || '',
+      size: f.size
+    }))
+    ElMessage.success(`文件 ${file.name} 上传成功`)
+  } else {
+    ElMessage.error(response.message || '上传失败')
   }
+}
+
+// 评论附件上传失败
+const handleCommentFileError = (error, file) => {
+  console.error('文件上传失败:', error)
+  ElMessage.error(`文件 ${file.name} 上传失败`)
 }
 
 // 评论附件删除
