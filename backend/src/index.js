@@ -81,6 +81,11 @@ app.get('/api/preview', (req, res) => {
   res.status(400).json({ code: 400, message: '该文件类型不支持在线预览' })
 })
 
+// 健康检查接口（用于 Zeabur 等平台的健康检测）
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+})
+
 // 导入路由
 import { query } from './config/database.js'
 import bcrypt from 'bcryptjs'

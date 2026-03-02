@@ -1,0 +1,28 @@
+{
+  "name": "myios",
+  "services": [
+    {
+      "name": "backend",
+      "type": "docker",
+      "build": {
+        "dockerfile": "backend/Dockerfile"
+      },
+      "env": [
+        "DB_HOST",
+        "DB_PORT",
+        "DB_USER",
+        "DB_PASSWORD",
+        "DB_NAME",
+        "JWT_SECRET",
+        "JWT_EXPIRES_IN",
+        "EMAIL_USER",
+        "EMAIL_PASS",
+        "EMAIL_FROM_NAME",
+        "APP_URL",
+        "PORT",
+        "UPLOAD_PATH",
+        "MAX_FILE_SIZE"
+      ]
+    }
+  ]
+}
