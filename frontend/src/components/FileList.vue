@@ -123,7 +123,7 @@ const formatFileSize = (size) => {
 
 const previewFile = (file) => {
   if (isImage(file.type)) {
-    previewUrl.value = file.url
+    previewUrl.value = getFileUrl(file.url)
     previewVisible.value = true
   } else {
     // 非图片文件直接下载
@@ -133,11 +133,20 @@ const previewFile = (file) => {
 
 const downloadFile = (file) => {
   const link = document.createElement('a')
-  link.href = file.url
+  link.href = getFileUrl(file.url)
   link.download = file.name
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
+}
+
+// 获取完整文件URL
+const getFileUrl = (url) => {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  // 提取文件名，使用下载接口
+  const filename = url.split('/').pop()
+  return `/api/download?filename=${encodeURIComponent(filename)}`
 }
 
 const deleteFile = async (index) => {

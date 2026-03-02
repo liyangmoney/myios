@@ -144,8 +144,7 @@
                 :files="parseFiles(event.plan_files)" 
                 :event-id="event.id" 
                 stage="plan"
-                :can-upload="canEditPlan"
-                @upload-success="fetchEventDetail"
+                :can-upload="false"
               />
             </el-descriptions-item>
           </el-descriptions>
@@ -183,8 +182,7 @@
                 :files="parseFiles(event.implementation_files)" 
                 :event-id="event.id" 
                 stage="do"
-                :can-upload="canEditDo"
-                @upload-success="fetchEventDetail"
+                :can-upload="false"
               />
             </el-descriptions-item>
           </el-descriptions>
@@ -224,8 +222,7 @@
                 :files="parseFiles(event.check_files)" 
                 :event-id="event.id" 
                 stage="check"
-                :can-upload="canEditCheck"
-                @upload-success="fetchEventDetail"
+                :can-upload="false"
               />
             </el-descriptions-item>
           </el-descriptions>
@@ -265,8 +262,7 @@
                 :files="parseFiles(event.act_files)" 
                 :event-id="event.id" 
                 stage="act"
-                :can-upload="canEditAct"
-                @upload-success="fetchEventDetail"
+                :can-upload="false"
               />
             </el-descriptions-item>
           </el-descriptions>
@@ -359,7 +355,7 @@
               <el-tag size="small">{{ getActionLabel(log.action) }}</el-tag>
             </div>
             <!-- 操作日志内容 -->
-            <div v-if="parseLogContent(log)" class="log-detail">
+            <div class="log-detail">
               <!-- 评论且包含附件 -->
               <template v-if="log.action === 'COMMENT' && log.new_value">
                 <template v-if="isJson(log.new_value)">
@@ -385,17 +381,55 @@
                   {{ log.new_value }}
                 </template>
               </template>
-              <!-- 附件上传操作（UPDATE 且有 files 字段）-->
-              <template v-else-if="log.action === 'UPDATE' && log.new_value && isJson(log.new_value) && JSON.parse(log.new_value).files?.length > 0">
+              <!-- PDCA阶段附件上传（检测planFiles/doFiles/checkFiles/actFiles） -->
+              <template v-else-if="log.action === 'UPDATE' && log.new_value && isJson(log.new_value)">
                 <template v-for="(data, idx) in [JSON.parse(log.new_value)]" :key="idx">
-                  <div>{{ data.message?.split(':')[0] }}:</div>
-                  <div class="log-attachments">
-                    <div v-for="(file, fidx) in data.files" :key="fidx" class="log-attachment-item">
-                      <el-link :href="getFileUrl(file.url)" target="_blank" type="primary">
-                        <el-icon><Document /></el-icon> {{ file.name }}
-                      </el-link>
+                  <!-- Plan附件 -->
+                  <template v-if="data.planFiles?.length > 0">
+                    <div>上传了 {{ data.planFiles.length }} 个 Plan 阶段附件:</div>
+                    <div class="log-attachments">
+                      <div v-for="(file, fidx) in data.planFiles" :key="fidx" class="log-attachment-item">
+                        <el-link :href="getFileUrl(file.url)" target="_blank" type="primary">
+                          <el-icon><Document /></el-icon> {{ file.name }}
+                        </el-link>
+                      </div>
                     </div>
-                  </div>
+                  </template>
+                  <!-- Do附件 -->
+                  <template v-if="data.doFiles?.length > 0">
+                    <div>上传了 {{ data.doFiles.length }} 个 Do 阶段附件:</div>
+                    <div class="log-attachments">
+                      <div v-for="(file, fidx) in data.doFiles" :key="fidx" class="log-attachment-item">
+                        <el-link :href="getFileUrl(file.url)" target="_blank" type="primary">
+                          <el-icon><Document /></el-icon> {{ file.name }}
+                        </el-link>
+                      </div>
+                    </div>
+                  </template>
+                  <!-- Check附件 -->
+                  <template v-if="data.checkFiles?.length > 0">
+                    <div>上传了 {{ data.checkFiles.length }} 个 Check 阶段附件:</div>
+                    <div class="log-attachments">
+                      <div v-for="(file, fidx) in data.checkFiles" :key="fidx" class="log-attachment-item">
+                        <el-link :href="getFileUrl(file.url)" target="_blank" type="primary">
+                          <el-icon><Document /></el-icon> {{ file.name }}
+                        </el-link>
+                      </div>
+                    </div>
+                  </template>
+                  <!-- Act附件 -->
+                  <template v-if="data.actFiles?.length > 0">
+                    <div>上传了 {{ data.actFiles.length }} 个 Act 阶段附件:</div>
+                    <div class="log-attachments">
+                      <div v-for="(file, fidx) in data.actFiles" :key="fidx" class="log-attachment-item">
+                        <el-link :href="getFileUrl(file.url)" target="_blank" type="primary">
+                          <el-icon><Document /></el-icon> {{ file.name }}
+                        </el-link>
+                      </div>
+                    </div>
+                  </template>
+                  <!-- 其他变更内容 -->
+                  <div v-if="getOtherChanges(data)">{{ getOtherChanges(data) }}</div>
                 </template>
               </template>
               <!-- 普通内容 -->
@@ -1014,6 +1048,35 @@ const getStepLabel = (step) => {
     ACT: '处理阶段'
   }
   return labels[step] || step
+}
+
+// 获取操作日志中的其他变更（排除附件上传）
+const getOtherChanges = (data) => {
+  if (!data) return ''
+  const details = []
+  
+  // 文本字段变更
+  if (data.rootCause) details.push(`根本原因: ${data.rootCause}`)
+  if (data.correctiveAction) details.push(`纠正措施: ${data.correctiveAction}`)
+  if (data.implementation) details.push(`实施记录: ${data.implementation}`)
+  if (data.verificationResult) details.push(`验证结果: ${data.verificationResult}`)
+  if (data.standardization) details.push(`标准化措施: ${data.standardization}`)
+  
+  // 状态变更
+  if (data.status) {
+    const statusLabels = {
+      'NEW': '新建', 'PLAN': '计划阶段', 'DO': '执行阶段',
+      'CHECK': '检查阶段', 'ACT': '处理阶段', 'CLOSED': '已关闭'
+    }
+    details.push(`状态变更为: ${statusLabels[data.status] || data.status}`)
+  }
+  
+  // 处理人变更
+  if (data.currentHandlerName) {
+    details.push(`指派给: ${data.currentHandlerName}`)
+  }
+  
+  return details.join('; ')
 }
 
 // 截止日期显示相关函数
