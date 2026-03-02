@@ -430,6 +430,16 @@
             />
           </el-form-item>
           
+          <el-form-item label="附件">
+            <FileList 
+              :files="planFiles" 
+              :event-id="event?.id" 
+              stage="plan"
+              :can-upload="true"
+              @upload-success="(res, file) => handleStageFileSuccess('plan', res, file)"
+            />
+          </el-form-item>
+          
           <el-form-item label="指派下一步">
             <el-select-v2
               v-model="editForm.nextHandlerId"
@@ -451,6 +461,16 @@
             />
           </el-form-item>
           
+          <el-form-item label="附件">
+            <FileList 
+              :files="doFiles" 
+              :event-id="event?.id" 
+              stage="do"
+              :can-upload="true"
+              @upload-success="(res, file) => handleStageFileSuccess('do', res, file)"
+            />
+          </el-form-item>
+          
           <el-form-item label="指派下一步">
             <el-select-v2
               v-model="editForm.nextHandlerId"
@@ -469,6 +489,16 @@
               type="textarea"
               :rows="4"
               placeholder="记录验证结果..."
+            />
+          </el-form-item>
+          
+          <el-form-item label="附件">
+            <FileList 
+              :files="checkFiles" 
+              :event-id="event?.id" 
+              stage="check"
+              :can-upload="true"
+              @upload-success="(res, file) => handleStageFileSuccess('check', res, file)"
             />
           </el-form-item>
           
@@ -497,6 +527,16 @@
               type="textarea"
               :rows="4"
               placeholder="记录标准化措施，防止问题再发..."
+            />
+          </el-form-item>
+          
+          <el-form-item label="附件">
+            <FileList 
+              :files="actFiles" 
+              :event-id="event?.id" 
+              stage="act"
+              :can-upload="true"
+              @upload-success="(res, file) => handleStageFileSuccess('act', res, file)"
             />
           </el-form-item>
           
@@ -540,6 +580,16 @@ const userOptions = ref([])
 // 评论附件存储
 const uploadedCommentFiles = ref([])
 const commentUploadRef = ref(null)
+
+// PDCA 各阶段附件存储
+const planFiles = ref([])
+const doFiles = ref([])
+const checkFiles = ref([])
+const actFiles = ref([])
+const planUploadRef = ref(null)
+const doUploadRef = ref(null)
+const checkUploadRef = ref(null)
+const actUploadRef = ref(null)
 
 // 上传请求头
 const uploadHeaders = computed(() => {
@@ -632,6 +682,8 @@ const editPlan = () => {
     rootCause: event.value.root_cause || '',
     correctiveAction: event.value.corrective_action || ''
   }
+  // 加载已有附件
+  planFiles.value = parseFiles(event.value.plan_files)
   editDialogVisible.value = true
 }
 
@@ -640,6 +692,8 @@ const editDo = () => {
   editForm.value = {
     implementation: event.value.implementation || ''
   }
+  // 加载已有附件
+  doFiles.value = parseFiles(event.value.implementation_files)
   editDialogVisible.value = true
 }
 
@@ -649,6 +703,8 @@ const editCheck = () => {
     verificationResult: event.value.verification_result || '',
     passed: true
   }
+  // 加载已有附件
+  checkFiles.value = parseFiles(event.value.check_files)
   editDialogVisible.value = true
 }
 
@@ -658,6 +714,8 @@ const editAct = () => {
     standardization: event.value.standardization || '',
     status: 'CLOSED'
   }
+  // 加载已有附件
+  actFiles.value = parseFiles(event.value.act_files)
   editDialogVisible.value = true
 }
 
@@ -1052,6 +1110,56 @@ const handleCommentFileRemove = (file) => {
   const index = uploadedCommentFiles.value.findIndex(f => f.name === file.name)
   if (index > -1) {
     uploadedCommentFiles.value.splice(index, 1)
+  }
+}
+
+// 各阶段附件上传成功
+const handleStageFileSuccess = (stage, response, file) => {
+  if (response.code === 200 && response.data && response.data.length > 0) {
+    const fileData = {
+      name: file.name,
+      url: response.data[0].url,
+      type: file.raw?.type || '',
+      size: file.size
+    }
+    switch (stage) {
+      case 'plan':
+        planFiles.value.push(fileData)
+        break
+      case 'do':
+        doFiles.value.push(fileData)
+        break
+      case 'check':
+        checkFiles.value.push(fileData)
+        break
+      case 'act':
+        actFiles.value.push(fileData)
+        break
+    }
+    ElMessage.success(`文件 ${file.name} 上传成功`)
+  }
+}
+
+// 各阶段附件删除
+const handleStageFileRemove = (stage, file) => {
+  let filesArray
+  switch (stage) {
+    case 'plan':
+      filesArray = planFiles
+      break
+    case 'do':
+      filesArray = doFiles
+      break
+    case 'check':
+      filesArray = checkFiles
+      break
+    case 'act':
+      filesArray = actFiles
+      break
+  }
+  const index = filesArray.value.findIndex(f => f.name === file.name)
+  if (index > -1) {
+    filesArray.value.splice(index, 1)
   }
 }
 

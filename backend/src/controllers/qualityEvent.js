@@ -497,6 +497,23 @@ export const updateQualityEvent = async (req, res) => {
       fields.push('notify_users = ?')
       values.push(JSON.stringify(updateData.notifyUsers))
     }
+    // 处理各阶段附件
+    if (updateData.planFiles !== undefined) {
+      fields.push('plan_files = ?')
+      values.push(JSON.stringify(updateData.planFiles))
+    }
+    if (updateData.doFiles !== undefined) {
+      fields.push('implementation_files = ?')
+      values.push(JSON.stringify(updateData.doFiles))
+    }
+    if (updateData.checkFiles !== undefined) {
+      fields.push('check_files = ?')
+      values.push(JSON.stringify(updateData.checkFiles))
+    }
+    if (updateData.actFiles !== undefined) {
+      fields.push('act_files = ?')
+      values.push(JSON.stringify(updateData.actFiles))
+    }
     if (updateData.status !== undefined) {
       fields.push('status = ?')
       values.push(updateData.status)
@@ -730,8 +747,9 @@ export const uploadFiles = async (req, res) => {
     let fieldName
     let existingFiles = []
     
-    // 如果是评论附件，直接返回文件信息，不更新事件表
-    if (stage === 'comment') {
+    // 如果是评论附件或PDCA阶段附件，直接返回文件信息，不更新事件表
+    // 由前端在提交时统一处理
+    if (stage === 'comment' || stage === 'plan' || stage === 'do' || stage === 'check' || stage === 'act') {
       res.json({
         code: 200,
         message: '文件上传成功',
