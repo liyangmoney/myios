@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # MySQL 数据库
   mysql:
@@ -34,8 +36,7 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      mysql:
-        condition: service_healthy
+      - mysql
     volumes:
       - ./backend/uploads:/app/uploads
 
@@ -58,11 +59,11 @@ services:
       - JWT_ENABLED=false
     volumes:
       - onlyoffice_data:/var/www/onlyoffice/Data
-      - onlyoffice_logs:/var/log/onlyoffice
+      - onlyofficelogs:/var/log/onlyoffice
     depends_on:
       - backend
 
 volumes:
   mysql_data:
   onlyoffice_data:
-  onlyoffice_logs:
+  onlyofficelogs:
