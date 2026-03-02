@@ -385,6 +385,19 @@
                   {{ log.new_value }}
                 </template>
               </template>
+              <!-- 附件上传操作（UPDATE 且有 files 字段）-->
+              <template v-else-if="log.action === 'UPDATE' && log.new_value && isJson(log.new_value) && JSON.parse(log.new_value).files?.length > 0">
+                <template v-for="(data, idx) in [JSON.parse(log.new_value)]" :key="idx">
+                  <div>{{ data.message?.split(':')[0] }}:</div>
+                  <div class="log-attachments">
+                    <div v-for="(file, fidx) in data.files" :key="fidx" class="log-attachment-item">
+                      <el-link :href="getFileUrl(file.url)" target="_blank" type="primary">
+                        <el-icon><Document /></el-icon> {{ file.name }}
+                      </el-link>
+                    </div>
+                  </div>
+                </template>
+              </template>
               <!-- 普通内容 -->
               <template v-else>
                 {{ parseLogContent(log) }}
