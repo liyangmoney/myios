@@ -728,18 +728,21 @@ const savePDCA = async () => {
     if (editType.value === 'PLAN') {
       data.rootCause = editForm.value.rootCause
       data.correctiveAction = editForm.value.correctiveAction
+      data.planFiles = planFiles.value
       data.status = 'DO' // Plan填写完成，进入DO阶段
       data.currentHandlerId = editForm.value.nextHandlerId || currentUserId.value
       data.nextHandlerId = editForm.value.nextHandlerId
       data.nextStep = 'DO'
     } else if (editType.value === 'DO') {
       data.implementation = editForm.value.implementation
+      data.doFiles = doFiles.value
       data.status = 'CHECK' // Do填写完成，进入CHECK阶段
       data.currentHandlerId = editForm.value.nextHandlerId || currentUserId.value
       data.nextHandlerId = editForm.value.nextHandlerId
       data.nextStep = 'CHECK'
     } else if (editType.value === 'CHECK') {
       data.verificationResult = editForm.value.verificationResult
+      data.checkFiles = checkFiles.value
       if (editForm.value.passed) {
         data.status = 'ACT' // 验证通过，进入ACT阶段
         data.currentHandlerId = editForm.value.nextHandlerId || currentUserId.value
@@ -753,6 +756,7 @@ const savePDCA = async () => {
       }
     } else if (editType.value === 'ACT') {
       data.standardization = editForm.value.standardization
+      data.actFiles = actFiles.value
       data.status = editForm.value.status // CLOSED 或保持 ACT
       if (editForm.value.status === 'CLOSED') {
         data.currentHandlerId = null
