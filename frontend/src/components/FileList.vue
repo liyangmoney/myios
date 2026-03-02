@@ -153,7 +153,13 @@ const handleUploadSuccess = () => {
 
 const handleUploadError = (error) => {
   console.error('上传失败:', error)
-  ElMessage.error('文件上传失败')
+  let message = '文件上传失败'
+  if (error?.response?.data?.message) {
+    message = error.response.data.message
+  } else if (error?.message) {
+    message = error.message
+  }
+  ElMessage.error(message)
 }
 </script>
 
