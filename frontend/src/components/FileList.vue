@@ -1,8 +1,8 @@
 <template>
   <div class="file-list">
     <!-- 文件列表 -->
-    <div v-if="files.length > 0" class="files-container">
-      <div v-for="(file, index) in files" :key="index" class="file-item">
+    <div v-if="localFiles.length > 0" class="files-container">
+      <div v-for="(file, index) in localFiles" :key="index" class="file-item">
         <div class="file-info" @click="previewFile(file)">
           <el-icon class="file-icon">
             <Document v-if="isDocument(file.type)" />
@@ -58,7 +58,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Document, Picture, Folder, Upload } from '@element-plus/icons-vue'
 import { qualityEventApi } from '@/api'
@@ -82,7 +82,15 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['upload-success'])
+const emit = defineEmits(['upload-success', 'update:files'])
+
+// 本地文件列表副本
+const localFiles = ref([...props.files])
+
+// 监听 prop 变化，同步更新本地副本
+watch(() => props.files, (newFiles) => {
+  localFiles.value = [...newFiles]
+}, { deep: true })
 
 const previewVisible = ref(false)
 const previewUrl = ref('')
@@ -133,8 +141,11 @@ const downloadFile = (file) => {
 }
 
 const deleteFile = async (index) => {
-  // TODO: 实现删除文件功能
-  ElMessage.info('删除功能待实现')
+  // 从本地列表中删除
+  localFiles.value.splice(index, 1)
+  // 通知父组件更新
+  emit('update:files', [...localFiles.value])
+  ElMessage.success('文件已删除')
 }
 
 const beforeUpload = (file) => {
@@ -146,9 +157,21 @@ const beforeUpload = (file) => {
   return true
 }
 
-const handleUploadSuccess = () => {
+const handleUploadSuccess = (response, file) => {
   ElMessage.success('文件上传成功')
-  emit('upload-success')
+  if (response.code === 200 && response.data && response.data.length > 0) {
+    // 添加新文件到本地列表
+    const newFile = {
+      name: response.data[0].name || file.name,
+      url: response.data[0].url,
+      type: response.data[0].type || file.raw?.type || '',
+      size: response.data[0].size || file.size
+    }
+    localFiles.value.push(newFile)
+    // 通知父组件
+    emit('upload-success', response, file)
+    emit('update:files', [...localFiles.value])
+  }
 }
 
 const handleUploadError = (error) => {
