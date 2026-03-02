@@ -777,10 +777,18 @@ export const uploadFiles = async (req, res) => {
     const allFiles = [...existingFiles, ...newFiles]
     
     // 更新数据库
-    await query(`UPDATE quality_event SET ${fieldName} = ? WHERE id = ?`, [
-      JSON.stringify(allFiles),
-      id
-    ])
+    try {
+      await query(`UPDATE quality_event SET ${fieldName} = ? WHERE id = ?`, [
+        JSON.stringify(allFiles),
+        id
+      ])
+    } catch (dbError) {
+      console.error('数据库更新失败:', dbError)
+      return res.status(500).json({ 
+        code: 500, 
+        message: '数据库更新失败：' + dbError.message 
+      })
+    }
     
     // 记录操作日志
     const stageLabels = { plan: 'Plan', do: 'Do', check: 'Check', act: 'Act' }
