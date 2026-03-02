@@ -2,8 +2,12 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import path from 'path'
+import fs from 'fs'
 import { fileURLToPath } from 'url'
 import jwt from 'jsonwebtoken'
+
+// 确保上传目录存在
+import './config/upload.js'
 
 dotenv.config()
 
@@ -20,6 +24,26 @@ app.use(express.urlencoded({ extended: true }))
 
 // 静态文件 - 上传的文件需要公开访问（OnlyOffice 需要）
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
+
+// 文件下载接口
+app.get('/api/download', (req, res) => {
+  const { filename } = req.query
+  if (!filename) {
+    return res.status(400).json({ code: 400, message: '缺少文件名参数' })
+  }
+  
+  // 安全检查：只允许下载 uploads/quality-events 目录下的文件
+  const safePath = path.normalize(filename).replace(/^(\.\.[\/\\])+/, '')
+  const filePath = path.join(__dirname, '../uploads/quality-events', safePath)
+  
+  // 检查文件是否存在
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ code: 404, message: '文件不存在' })
+  }
+  
+  // 发送文件
+  res.sendFile(filePath)
+})
 
 // 文件预览接口
 app.get('/api/preview', (req, res) => {

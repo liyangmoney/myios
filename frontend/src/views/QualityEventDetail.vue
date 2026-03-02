@@ -1028,8 +1028,9 @@ const parseFiles = (filesStr) => {
 const getFileUrl = (url) => {
   if (!url) return ''
   if (url.startsWith('http')) return url
-  // 直接返回URL，因为后端静态文件服务在 /uploads 路径
-  return url
+  // 提取文件名，使用下载接口
+  const filename = url.split('/').pop()
+  return `/api/download?filename=${encodeURIComponent(filename)}`
 }
 
 onMounted(() => {
