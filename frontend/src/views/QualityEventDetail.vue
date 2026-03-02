@@ -321,6 +321,7 @@
             name="files"
             :on-success="handleCommentFileSuccess"
             :on-remove="handleCommentFileRemove"
+            :on-change="handleCommentFileChange"
             :before-upload="beforeCommentUpload"
             :on-error="handleCommentFileError"
             :show-file-list="true"
@@ -672,12 +673,15 @@ const addComment = async () => {
   
   try {
     // 从 el-upload 的文件列表中获取附件
-    const attachments = commentUploadRef.value?.uploadFiles?.map(f => ({
+    const uploadFiles = commentUploadRef.value?.uploadFiles || []
+    const attachments = uploadFiles.map(f => ({
       name: f.name,
       url: f.response?.data?.[0]?.url || f.url || '',
       type: f.raw?.type || '',
       size: f.size
-    })) || []
+    })).filter(f => f.url) // 只保留已上传成功的文件
+    
+    console.log('提交的附件:', attachments)
     
     await qualityEventApi.addComment(event.value.id, {
       content: newComment.value,
@@ -987,12 +991,21 @@ const formatDateTime = (date) => {
   return `${year}/${month}/${day} ${hour}:${minute}`
 }
 
+// 评论附件列表变化
+const handleCommentFileChange = (file, fileList) => {
+  commentFiles.value = fileList.map(f => ({
+    name: f.name,
+    url: f.response?.data?.[0]?.url || f.url || '',
+    type: f.raw?.type || '',
+    size: f.size
+  }))
+}
+
 // 评论附件上传成功
 const handleCommentFileSuccess = (response, file, fileList) => {
   if (response.code === 200) {
-    // 将 URL 保存到 file 对象，方便后续使用
     file.url = response.data[0]?.url || ''
-    // 更新 commentFiles 数组
+    // 更新 commentFiles
     commentFiles.value = fileList.map(f => ({
       name: f.name,
       url: f.response?.data?.[0]?.url || f.url || '',
@@ -1013,6 +1026,7 @@ const handleCommentFileError = (error, file) => {
 
 // 评论附件删除
 const handleCommentFileRemove = (file, fileList) => {
+  // 文件删除时更新 commentFiles
   commentFiles.value = fileList.map(f => ({
     name: f.name,
     url: f.response?.data?.[0]?.url || f.url || '',
