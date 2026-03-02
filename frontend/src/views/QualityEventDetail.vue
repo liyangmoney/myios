@@ -1308,13 +1308,14 @@ onMounted(() => {
 .comment-actions {
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-end;
   gap: 10px;
   margin-top: 10px;
 }
 
 .comment-upload {
   display: flex;
+  align-items: flex-end;
 }
 
 .log-item {
