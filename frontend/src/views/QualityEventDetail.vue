@@ -1009,10 +1009,6 @@ const beforeCommentUpload = (file) => {
   }
   return true
 }
-    return false
-  }
-  return true
-}
 
 // 解析文件列表
 const parseFiles = (filesStr) => {
