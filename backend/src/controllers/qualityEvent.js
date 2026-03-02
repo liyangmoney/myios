@@ -630,13 +630,14 @@ export const addComment = async (req, res) => {
     `, [id, userId, userName, content, JSON.stringify(attachments || [])])
     
     // 记录操作日志
-    const logContent = attachments && attachments.length > 0 
-      ? `${content.substring(0, 50)} [附件: ${attachments.map(a => a.name).join(', ')}]`
-      : content
+    const logData = {
+      content: content.substring(0, 100),
+      attachments: attachments || []
+    }
     await query(`
       INSERT INTO quality_event_log (event_id, user_id, user_name, action, new_value)
       VALUES (?, ?, ?, 'COMMENT', ?)
-    `, [id, userId, userName, logContent])
+    `, [id, userId, userName, JSON.stringify(logData)])
     
     res.json({
       code: 200,

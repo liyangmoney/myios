@@ -358,13 +358,29 @@
             <!-- 操作日志内容 -->
             <div v-if="parseLogContent(log)" class="log-detail">
               <!-- 评论且包含附件 -->
-              <template v-if="log.action === 'COMMENT' && log.new_value && log.new_value.includes('[附件:')">
-                <div>{{ log.new_value.split('[附件:')[0] }}</div>
-                <div class="log-attachments">
-                  <div v-for="(fileName, idx) in extractAttachmentNames(log.new_value)" :key="idx" class="log-attachment-item">
-                    <span style="color: #606266; font-size: 13px;">附件: {{ fileName }}</span>
+              <template v-if="log.action === 'COMMENT' && log.new_value">
+                <template v-if="isJson(log.new_value)">
+                  <div>{{ JSON.parse(log.new_value).content }}</div>
+                  <div v-if="JSON.parse(log.new_value).attachments?.length > 0" class="log-attachments">
+                    <div v-for="(file, idx) in JSON.parse(log.new_value).attachments" :key="idx" class="log-attachment-item">
+                      <el-link :href="getFileUrl(file.url)" target="_blank" type="primary">
+                        <el-icon><Document /></el-icon> {{ file.name }}
+                      </el-link>
+                    </div>
                   </div>
-                </div>
+                </template>
+                <!-- 兼容旧数据格式 -->
+                <template v-else-if="log.new_value.includes('[附件:')">
+                  <div>{{ log.new_value.split('[附件:')[0] }}</div>
+                  <div class="log-attachments">
+                    <div v-for="(fileName, idx) in extractAttachmentNames(log.new_value)" :key="idx" class="log-attachment-item">
+                      <span style="color: #606266; font-size: 13px;">附件: {{ fileName }}</span>
+                    </div>
+                  </div>
+                </template>
+                <template v-else>
+                  {{ log.new_value }}
+                </template>
               </template>
               <!-- 普通内容 -->
               <template v-else>
@@ -884,9 +900,13 @@ const parseLogContent = (log) => {
         return `删除了质量事件：${data.title || data.eventNo || ''}`
       
       case 'COMMENT': {
-        // 后端存储的是纯字符串评论内容
-        const commentContent = typeof data === 'string' ? data : (data.content || JSON.stringify(data))
-        return `添加了评论：${commentContent}`
+        // 新的格式是对象，包含 content 和 attachments
+        if (typeof data === 'object' && data.content) {
+          return data.content
+        }
+        // 兼容旧格式：纯字符串
+        const commentContent = typeof data === 'string' ? data : JSON.stringify(data)
+        return commentContent
       }
       
       case 'UPLOAD':
@@ -1048,7 +1068,18 @@ const getFileUrl = (url) => {
   return `/api/download?filename=${encodeURIComponent(filename)}`
 }
 
-// 从操作日志中提取附件名称
+// 判断字符串是否为JSON
+const isJson = (str) => {
+  if (!str) return false
+  try {
+    JSON.parse(str)
+    return true
+  } catch {
+    return false
+  }
+}
+
+// 从操作日志中提取附件名称（兼容旧格式）
 const extractAttachmentNames = (content) => {
   if (!content) return []
   const match = content.match(/\[附件: (.+)\]/)
