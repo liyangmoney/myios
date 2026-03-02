@@ -165,8 +165,9 @@ export const getQualityEvents = async (req, res) => {
     }
     
     if (currentHandlerId) {
-      sql += ' AND e.current_handler_id = ?'
-      params.push(currentHandlerId)
+      // 筛选当前处理人的事件（包括状态为 CLOSED 的）
+      sql += ' AND (e.current_handler_id = ? OR e.responsible_id = ? OR e.reporter_id = ?)'
+      params.push(currentHandlerId, currentHandlerId, currentHandlerId)
     }
     
     sql += ' ORDER BY e.created_at DESC'
@@ -214,8 +215,8 @@ export const getQualityEvents = async (req, res) => {
       countParams.push(eventType)
     }
     if (currentHandlerId) {
-      countSql += ' AND current_handler_id = ?'
-      countParams.push(currentHandlerId)
+      countSql += ' AND (current_handler_id = ? OR responsible_id = ? OR reporter_id = ?)'
+      countParams.push(currentHandlerId, currentHandlerId, currentHandlerId)
     }
     
     const countResult = await query(countSql, countParams)
