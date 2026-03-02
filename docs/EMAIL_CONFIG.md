@@ -22,7 +22,7 @@ cp .env.example .env
 EMAIL_USER=your_email@163.com
 EMAIL_PASS=your_auth_code
 EMAIL_FROM_NAME=PIS系统
-APP_URL=http://localhost:3000
+APP_URL=http://localhost:13000
 ```
 
 ### 3. 获取163邮箱授权码

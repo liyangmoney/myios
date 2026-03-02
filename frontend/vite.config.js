@@ -10,7 +10,7 @@ export default defineConfig({
     }
   },
   server: {
-    port: 3000,
+    port: 13000,
     host: true,  // 允许局域网访问
     proxy: {
       '/api': {

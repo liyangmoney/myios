@@ -71,7 +71,7 @@
    ```
 
 5. **访问系统**
-   - 前端：http://localhost:3000
+   - 前端：http://localhost:13000
    - 后端 API：http://localhost:9090
    - 默认账号：admin / admin123
 
@@ -193,7 +193,7 @@ EMAIL_PORT=465
 EMAIL_SECURE=true
 EMAIL_USER=your_email@163.com
 EMAIL_PASS=your_auth_code
-SYSTEM_URL=http://localhost:3000
+SYSTEM_URL=http://localhost:13000
 
 # 服务器配置
 PORT=9090
