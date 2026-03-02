@@ -337,6 +337,14 @@ export const createQualityEvent = async (req, res) => {
       return res.status(400).json({ code: 400, message: '标题和描述不能为空' })
     }
     
+    if (!responsibleId) {
+      return res.status(400).json({ code: 400, message: '责任人不能为空' })
+    }
+    
+    if (!dueDate) {
+      return res.status(400).json({ code: 400, message: '截止日期不能为空' })
+    }
+    
     const eventNo = await generateEventNo()
     const reporterId = req.userId
     const reporterName = req.userName

@@ -233,7 +233,7 @@
         
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="责任人">
+            <el-form-item label="责任人" prop="responsibleId">
               <el-select-v2
                 v-model="formData.responsibleId"
                 :options="userOptions"
@@ -244,7 +244,7 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="截止日期">
+            <el-form-item label="截止日期" prop="dueDate">
               <el-date-picker
                 v-model="formData.dueDate"
                 type="date"
@@ -342,6 +342,8 @@ const formRules = {
   title: [{ required: true, message: '请输入事件标题', trigger: 'blur' }],
   eventType: [{ required: true, message: '请选择事件类型', trigger: 'change' }],
   severity: [{ required: true, message: '请选择严重程度', trigger: 'change' }],
+  responsibleId: [{ required: true, message: '请选择责任人', trigger: 'change' }],
+  dueDate: [{ required: true, message: '请选择截止日期', trigger: 'change' }],
   description: [{ required: true, message: '请输入问题描述', trigger: 'blur' }]
 }
 
