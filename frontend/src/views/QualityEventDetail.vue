@@ -310,6 +310,7 @@
             :headers="uploadHeaders"
             :multiple="true"
             :limit="5"
+            name="files"
             :file-list="commentFiles"
             :on-success="handleCommentFileSuccess"
             :on-remove="handleCommentFileRemove"
