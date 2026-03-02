@@ -319,17 +319,12 @@
             :multiple="true"
             :limit="5"
             name="files"
-            :on-success="handleCommentFileSuccess"
-            :on-remove="handleCommentFileRemove"
-            :on-change="handleCommentFileChange"
+            :auto-upload="true"
+            :on-success="(res, file) => handleCommentFileSuccess(res, file)"
+            :on-remove="(file) => handleCommentFileRemove(file)"
             :before-upload="beforeCommentUpload"
-            :on-error="handleCommentFileError"
-            :show-file-list="true"
           >
             <el-button type="info" :icon="Paperclip">添加附件</el-button>
-            <template #tip>
-              <div class="upload-tip">最多5个文件，单个不超过10MB</div>
-            </template>
           </el-upload>
         </div>
         
@@ -489,9 +484,11 @@ const event = ref(null)
 const comments = ref([])
 const logs = ref([])
 const newComment = ref('')
-const commentFiles = ref([])
-const commentUploadRef = ref(null)
 const userOptions = ref([])
+
+// 评论附件存储
+const uploadedCommentFiles = ref([])
+const commentUploadRef = ref(null)
 
 // 上传请求头
 const uploadHeaders = computed(() => {
@@ -672,27 +669,18 @@ const addComment = async () => {
   if (!newComment.value.trim()) return
   
   try {
-    // 从 el-upload 的文件列表中获取附件
-    const uploadFiles = commentUploadRef.value?.uploadFiles || []
-    const attachments = uploadFiles.map(f => ({
-      name: f.name,
-      url: f.response?.data?.[0]?.url || f.url || '',
-      type: f.raw?.type || '',
-      size: f.size
-    })).filter(f => f.url) // 只保留已上传成功的文件
-    
-    console.log('提交的附件:', attachments)
+    // 使用 uploadedCommentFiles 数组
+    const attachments = [...uploadedCommentFiles.value]
     
     await qualityEventApi.addComment(event.value.id, {
       content: newComment.value,
       attachments: attachments
     })
+    
     ElMessage.success('评论添加成功')
     newComment.value = ''
-    commentFiles.value = []
-    if (commentUploadRef.value) {
-      commentUploadRef.value.clearFiles()
-    }
+    uploadedCommentFiles.value = []
+    commentUploadRef.value?.clearFiles()
     fetchEventDetail()
   } catch (error) {
     console.error('添加评论失败:', error)
@@ -991,48 +979,25 @@ const formatDateTime = (date) => {
   return `${year}/${month}/${day} ${hour}:${minute}`
 }
 
-// 评论附件列表变化
-const handleCommentFileChange = (file, fileList) => {
-  commentFiles.value = fileList.map(f => ({
-    name: f.name,
-    url: f.response?.data?.[0]?.url || f.url || '',
-    type: f.raw?.type || '',
-    size: f.size
-  }))
-}
-
 // 评论附件上传成功
-const handleCommentFileSuccess = (response, file, fileList) => {
-  if (response.code === 200) {
-    file.url = response.data[0]?.url || ''
-    // 更新 commentFiles
-    commentFiles.value = fileList.map(f => ({
-      name: f.name,
-      url: f.response?.data?.[0]?.url || f.url || '',
-      type: f.raw?.type || '',
-      size: f.size
-    }))
+const handleCommentFileSuccess = (response, file) => {
+  if (response.code === 200 && response.data && response.data.length > 0) {
+    uploadedCommentFiles.value.push({
+      name: file.name,
+      url: response.data[0].url,
+      type: file.raw?.type || '',
+      size: file.size
+    })
     ElMessage.success(`文件 ${file.name} 上传成功`)
-  } else {
-    ElMessage.error(response.message || '上传失败')
   }
 }
 
-// 评论附件上传失败
-const handleCommentFileError = (error, file) => {
-  console.error('文件上传失败:', error)
-  ElMessage.error(`文件 ${file.name} 上传失败`)
-}
-
 // 评论附件删除
-const handleCommentFileRemove = (file, fileList) => {
-  // 文件删除时更新 commentFiles
-  commentFiles.value = fileList.map(f => ({
-    name: f.name,
-    url: f.response?.data?.[0]?.url || f.url || '',
-    type: f.raw?.type || '',
-    size: f.size
-  }))
+const handleCommentFileRemove = (file) => {
+  const index = uploadedCommentFiles.value.findIndex(f => f.name === file.name)
+  if (index > -1) {
+    uploadedCommentFiles.value.splice(index, 1)
+  }
 }
 
 // 评论附件上传前检查
@@ -1040,6 +1005,10 @@ const beforeCommentUpload = (file) => {
   const isLt10M = file.size / 1024 / 1024 < 10
   if (!isLt10M) {
     ElMessage.error('文件大小不能超过 10MB!')
+    return false
+  }
+  return true
+}
     return false
   }
   return true
