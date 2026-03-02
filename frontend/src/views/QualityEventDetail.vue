@@ -313,7 +313,10 @@
           type="textarea"
           :rows="3"
           placeholder="添加评论..."
+          style="width: 100%;"
         />
+      </div>
+      <div class="comment-actions">
         <!-- 评论附件上传 -->
         <div class="comment-upload">
           <el-upload
@@ -1296,12 +1299,22 @@ onMounted(() => {
 
 .comment-input {
   margin-top: 20px;
-  display: flex;
-  gap: 10px;
 }
 
-.comment-input .el-button {
-  align-self: flex-end;
+.comment-input .el-textarea {
+  width: 100%;
+}
+
+.comment-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.comment-upload {
+  display: flex;
 }
 
 .log-item {
