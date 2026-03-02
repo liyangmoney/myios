@@ -444,9 +444,9 @@
 
     <!-- PDCA 编辑对话框 -->
     <el-dialog v-model="editDialogVisible" :title="editDialogTitle" width="600px">
-      <el-form :model="editForm" label-width="100px">
+      <el-form ref="editFormRef" :model="editForm" :rules="editFormRules" label-width="100px">
         <template v-if="editType === 'PLAN'">
-          <el-form-item label="根本原因">
+          <el-form-item label="根本原因" prop="rootCause">
             <el-input
               v-model="editForm.rootCause"
               type="textarea"
@@ -455,7 +455,7 @@
             />
           </el-form-item>
           
-          <el-form-item label="纠正措施">
+          <el-form-item label="纠正措施" prop="correctiveAction">
             <el-input
               v-model="editForm.correctiveAction"
               type="textarea"
@@ -474,7 +474,7 @@
             />
           </el-form-item>
           
-          <el-form-item label="指派下一步">
+          <el-form-item label="指派下一步" prop="nextHandlerId">
             <el-select-v2
               v-model="editForm.nextHandlerId"
               :options="userOptions"
@@ -636,6 +636,7 @@ const uploadHeaders = computed(() => {
 // 编辑对话框
 const editDialogVisible = ref(false)
 const editType = ref('')
+const editFormRef = ref(null)
 const editDialogTitle = computed(() => {
   const titles = {
     PLAN: '编辑 Plan（计划）',
@@ -645,6 +646,13 @@ const editDialogTitle = computed(() => {
   }
   return titles[editType.value] || '编辑'
 })
+
+// 表单验证规则
+const editFormRules = {
+  rootCause: [{ required: true, message: '请输入根本原因', trigger: 'blur' }],
+  correctiveAction: [{ required: true, message: '请输入纠正措施', trigger: 'blur' }],
+  nextHandlerId: [{ required: true, message: '请选择下一步处理人', trigger: 'change' }]
+}
 
 const editForm = ref({
   rootCause: '',
@@ -755,6 +763,12 @@ const editAct = () => {
 
 // 保存 PDCA
 const savePDCA = async () => {
+  // PLAN 阶段进行表单验证
+  if (editType.value === 'PLAN') {
+    const valid = await editFormRef.value?.validate().catch(() => false)
+    if (!valid) return
+  }
+  
   saving.value = true
   try {
     const data = {}
