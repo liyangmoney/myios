@@ -1028,8 +1028,8 @@ const parseFiles = (filesStr) => {
 const getFileUrl = (url) => {
   if (!url) return ''
   if (url.startsWith('http')) return url
-  // 添加 API 基础URL前缀
-  return `/api${url}`
+  // 直接返回URL，因为后端静态文件服务在 /uploads 路径
+  return url
 }
 
 onMounted(() => {
