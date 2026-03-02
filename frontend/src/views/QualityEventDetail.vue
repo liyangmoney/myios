@@ -289,9 +289,13 @@
           </div>
           <div class="comment-content">{{ comment.content }}</div>
           <!-- 评论附件 -->
-          <div v-if="comment.attachments" class="comment-attachments">
+          <div v-if="comment.attachments && comment.attachments !== '[]'" class="comment-attachments">
             <div v-for="(file, idx) in parseFiles(comment.attachments)" :key="idx" class="comment-file">
-              <el-link :href="file.url" target="_blank" type="primary">
+              <el-link 
+                :href="getFileUrl(file.url)" 
+                target="_blank" 
+                type="primary"
+              >
                 <el-icon><Document /></el-icon> {{ file.name }}
               </el-link>
             </div>
@@ -1018,6 +1022,14 @@ const parseFiles = (filesStr) => {
   } catch {
     return []
   }
+}
+
+// 获取完整文件URL
+const getFileUrl = (url) => {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  // 添加 API 基础URL前缀
+  return `/api${url}`
 }
 
 onMounted(() => {
