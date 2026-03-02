@@ -517,7 +517,7 @@
         </template>
         
         <template v-if="editType === 'CHECK'">
-          <el-form-item label="验证结果">
+          <el-form-item label="验证结果" prop="verificationResult">
             <el-input
               v-model="editForm.verificationResult"
               type="textarea"
@@ -543,7 +543,7 @@
             </el-radio-group>
           </el-form-item>
           
-          <el-form-item label="指派下一步">
+          <el-form-item label="指派下一步" prop="nextHandlerId">
             <el-select-v2
               v-model="editForm.nextHandlerId"
               :options="userOptions"
@@ -555,7 +555,7 @@
         </template>
         
         <template v-if="editType === 'ACT'">
-          <el-form-item label="标准化措施">
+          <el-form-item label="标准化措施" prop="standardization">
             <el-input
               v-model="editForm.standardization"
               type="textarea"
@@ -574,7 +574,7 @@
             />
           </el-form-item>
           
-          <el-form-item label="状态">
+          <el-form-item label="状态" prop="status">
             <el-select v-model="editForm.status" style="width: 100%">
               <el-option label="关闭事件" value="CLOSED" />
               <el-option label="保持打开" value="CHECK" />
@@ -652,7 +652,10 @@ const editFormRules = {
   rootCause: [{ required: true, message: '请输入根本原因', trigger: 'blur' }],
   correctiveAction: [{ required: true, message: '请输入纠正措施', trigger: 'blur' }],
   nextHandlerId: [{ required: true, message: '请选择下一步处理人', trigger: 'change' }],
-  implementation: [{ required: true, message: '请输入实施记录', trigger: 'blur' }]
+  implementation: [{ required: true, message: '请输入实施记录', trigger: 'blur' }],
+  verificationResult: [{ required: true, message: '请输入验证结果', trigger: 'blur' }],
+  standardization: [{ required: true, message: '请输入标准化措施', trigger: 'blur' }],
+  status: [{ required: true, message: '请选择状态', trigger: 'change' }]
 }
 
 const editForm = ref({
@@ -764,11 +767,9 @@ const editAct = () => {
 
 // 保存 PDCA
 const savePDCA = async () => {
-  // PLAN 和 DO 阶段进行表单验证
-  if (editType.value === 'PLAN' || editType.value === 'DO') {
-    const valid = await editFormRef.value?.validate().catch(() => false)
-    if (!valid) return
-  }
+  // 所有阶段都进行表单验证
+  const valid = await editFormRef.value?.validate().catch(() => false)
+  if (!valid) return
   
   saving.value = true
   try {
