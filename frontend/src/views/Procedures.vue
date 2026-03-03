@@ -858,38 +858,41 @@ watch(() => appStore.currentYear, (newYear, oldYear) => {
     display: block !important;
   }
   
-  .procedures {
+  /* 移动端统计卡片横排 */
+  .stats-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px;
+  }
+  
+  .stats-grid .stat-card :deep(.el-card__body) {
     padding: 10px;
   }
   
-  .stats-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
-  
-  .stat-card :deep(.el-card__body) {
-    padding: 12px;
-  }
-  
-  .stat-content {
+  .stats-grid .stat-content {
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding: 8px;
+    gap: 6px;
+    padding: 0;
   }
   
-  .stat-icon {
-    width: 40px;
-    height: 40px;
+  .stats-grid .stat-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+  
+  .stats-grid .stat-value {
     font-size: 18px;
   }
   
-  .stat-value {
-    font-size: 20px;
+  .stats-grid .stat-label {
+    font-size: 10px;
   }
   
-  .stat-label {
-    font-size: 11px;
+  .procedures {
+    padding: 10px;
   }
   
   .filter-card :deep(.el-card__body) {
@@ -898,6 +901,16 @@ watch(() => appStore.currentYear, (newYear, oldYear) => {
   
   .procedure-list :deep(.el-card__body) {
     padding: 0;
+  }
+  
+  /* 操作列靠右 */
+  .procedure-list :deep(.el-table__fixed-right) {
+    right: 0 !important;
+  }
+  
+  /* 表格横向滚动时操作列固定在右侧 */
+  .procedure-list :deep(.el-table__body-wrapper) {
+    overflow-x: auto;
   }
   
   .card-header {
