@@ -815,6 +815,11 @@ watch(() => appStore.currentYear, (newYear, oldYear) => {
   display: block;
 }
 
+/* 修复 el-row 被 pc-only 覆盖的问题 */
+.el-row.pc-only {
+  display: flex !important;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
