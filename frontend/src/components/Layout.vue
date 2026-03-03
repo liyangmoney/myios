@@ -72,7 +72,7 @@
     </el-aside>
 
     <el-container>
-      <el-header class="header">
+      <el-header class="header" v-if="!isMobile">
         <div class="header-right">
           <span class="current-year-tag">{{ appStore.currentYear }}年度</span>
           
@@ -106,7 +106,7 @@
         </div>
       </el-header>
 
-      <el-main class="main-content">
+      <el-main class="main-content" :class="{ 'mobile-main': isMobile }">
         <router-view />
       </el-main>
     </el-container>
@@ -157,6 +157,20 @@
         <el-button type="primary" @click="handleChangePassword" :loading="changePasswordLoading">确定</el-button>
       </template>
     </el-dialog>
+    
+    <!-- 移动端底部导航 -->
+    <div v-if="isMobile" class="mobile-bottom-nav">
+      <div 
+        v-for="item in mobileNavItems" 
+        :key="item.path"
+        class="mobile-nav-item"
+        :class="{ active: $route.path === item.path }"
+        @click="$router.push(item.path)"
+      >
+        <el-icon><component :is="item.icon" /></el-icon>
+        <span>{{ item.label }}</span>
+      </div>
+    </div>
   </el-container>
 </template>
 
@@ -167,13 +181,23 @@ import { useUserStore } from '@/store/user'
 import { useAppStore } from '@/store/app'
 import { procedureApi, userApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useMobile } from '@/composables/useMobile'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 const appStore = useAppStore()
+const isMobile = useMobile()
 
 const availableYears = ref([])
+
+// 移动端导航项
+const mobileNavItems = [
+  { path: '/dashboard', label: '首页', icon: 'DataLine' },
+  { path: '/procedures', label: '程序文件', icon: 'Document' },
+  { path: '/quality-events', label: '质量事件', icon: 'Warning' },
+  { path: '/reports', label: '报表', icon: 'DocumentCopy' }
+]
 
 // 修改密码相关
 const changePasswordDialogVisible = ref(false)
@@ -472,5 +496,57 @@ const navigateToProcedures = () => {
   padding: 20px;
   background-color: #f5f7fa;
   overflow-y: auto;
+}
+
+.main-content.mobile-main {
+  padding-bottom: 70px;
+}
+
+/* 移动端底部导航 */
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: #fff;
+  border-top: 1px solid #e4e7ed;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 999;
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  color: #909399;
+  font-size: 10px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.mobile-nav-item .el-icon {
+  font-size: 22px;
+  margin-bottom: 2px;
+}
+
+.mobile-nav-item.active {
+  color: #409eff;
+}
+
+.mobile-nav-item:active {
+  opacity: 0.7;
+}
+
+/* 移动端侧边栏隐藏 */
+@media screen and (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
 }
 </style>

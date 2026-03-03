@@ -1,5 +1,7 @@
 <template>
   <div class="dashboard">
+    <!-- PC端布局 -->
+    <template v-if="!isMobile">
     <!-- 统计卡片 -->
     <el-row :gutter="20">
       <el-col :span="6">
@@ -55,6 +57,33 @@
         </el-card>
       </el-col>
     </el-row>
+    </template>
+
+    <!-- 移动端布局 -->
+    <template v-else>
+      <div class="mobile-stats">
+        <div class="mobile-stat-card">
+          <div class="stat-icon" style="background: #409EFF"><el-icon size="24"><Folder /></el-icon></div>
+          <div class="stat-value">{{ stats.totalProjects }}</div>
+          <div class="stat-label">项目总数</div>
+        </div>
+        <div class="mobile-stat-card">
+          <div class="stat-icon" style="background: #67C23A"><el-icon size="24"><CircleCheck /></el-icon></div>
+          <div class="stat-value">{{ stats.achievedProjects }}</div>
+          <div class="stat-label">达标项目</div>
+        </div>
+        <div class="mobile-stat-card">
+          <div class="stat-icon" style="background: #E6A23C"><el-icon size="24"><EditPen /></el-icon></div>
+          <div class="stat-value">{{ stats.pendingIndicators }}</div>
+          <div class="stat-label">待填报</div>
+        </div>
+        <div class="mobile-stat-card">
+          <div class="stat-icon" style="background: #F56C6C"><el-icon size="24"><TrendCharts /></el-icon></div>
+          <div class="stat-value">{{ stats.avgAchievementRate }}%</div>
+          <div class="stat-label">达标率</div>
+        </div>
+      </div>
+    </template>
 
     <!-- 达标率趋势图 -->
     <el-row :gutter="20" style="margin-top: 20px">
@@ -113,8 +142,10 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import { projectApi } from '@/api'
+import { useMobile } from '@/composables/useMobile'
 
 const router = useRouter()
+const isMobile = useMobile()
 const trendChart = ref(null)
 const pieChart = ref(null)
 
@@ -219,6 +250,47 @@ onMounted(() => {
   
   .stat-label {
     font-size: 14px;
+    color: #909399;
+    margin-top: 4px;
+  }
+}
+
+/* 移动端样式 */
+@media screen and (max-width: 768px) {
+  .mobile-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .mobile-stat-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  
+  .mobile-stat-card .stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    margin: 0 auto 8px;
+  }
+  
+  .mobile-stat-card .stat-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #303133;
+  }
+  
+  .mobile-stat-card .stat-label {
+    font-size: 12px;
     color: #909399;
     margin-top: 4px;
   }
