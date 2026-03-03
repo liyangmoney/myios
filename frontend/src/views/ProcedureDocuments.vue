@@ -337,7 +337,7 @@ const handleUpload = async () => {
 
 const downloadFile = (row) => {
   if (row.filePath) {
-    window.open(`http://localhost:9090${row.filePath}`, '_blank')
+    window.open(`${row.filePath}`, '_blank')
   }
 }
 
