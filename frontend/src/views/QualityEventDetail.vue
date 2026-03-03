@@ -34,70 +34,131 @@
         <span>基本信息</span>
       </template>
       
-      <el-descriptions :column="3" border>
-        <el-descriptions-item label="事件标题" :span="3">
-          {{ event.title }}
-        </el-descriptions-item>
-        <el-descriptions-item label="事件类型">
-          {{ event.event_type }}
-        </el-descriptions-item>
-        <el-descriptions-item label="严重程度">
-          <el-tag :type="getSeverityType(event.severity)">{{ event.severity }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="当前状态">
-          <el-tag :type="getStatusType(event.status)">{{ getStatusLabel(event.status) }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="创建人">
-          {{ event.reporter_name }}
-        </el-descriptions-item>
-        <el-descriptions-item label="责任人">
-          {{ event.responsible_name || '未分配' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="当前处理人">
-          <el-tag v-if="event.current_handler_name" type="primary" effect="dark">
+      <!-- PC端表格 -->
+      <div class="pc-only">
+        <el-descriptions :column="3" border>
+          <el-descriptions-item label="事件标题" :span="3">
+            {{ event.title }}
+          </el-descriptions-item>
+          <el-descriptions-item label="事件类型">
+            {{ event.event_type }}
+          </el-descriptions-item>
+          <el-descriptions-item label="严重程度">
+            <el-tag :type="getSeverityType(event.severity)">{{ event.severity }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="当前状态">
+            <el-tag :type="getStatusType(event.status)">{{ getStatusLabel(event.status) }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="创建人">
+            {{ event.reporter_name }}
+          </el-descriptions-item>
+          <el-descriptions-item label="责任人">
+            {{ event.responsible_name || '未分配' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="当前处理人">
+            <el-tag v-if="event.current_handler_name" type="primary" effect="dark">
+              {{ event.current_handler_name }}
+            </el-tag>
+            <span v-else class="text-gray">未分配</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="下一步" :span="2">
+            <div v-if="event.next_step || event.next_handler_name">
+              <el-tag v-if="event.next_step" size="small" class="mr-2">
+                {{ getStepLabel(event.next_step) }}
+              </el-tag>
+              <span v-if="event.next_handler_name" class="text-primary">
+                待 {{ event.next_handler_name }} 处理
+              </span>
+            </div>
+            <span v-else class="text-gray">暂无</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="截止日期" :span="3">
+            <div class="due-date-display">
+              <span :class="getDueDateClass(event.due_date, event.status)" class="due-date-text">
+                {{ formatDueDate(event.due_date) }}
+              </span>
+              <el-tag v-if="event.due_date && event.status !== 'CLOSED'" 
+                      :type="getDueDateTagType(event.due_date)" 
+                      size="small"
+                      class="due-date-tag">
+                {{ getDueDateText(event.due_date) }}
+              </el-tag>
+            </div>
+          </el-descriptions-item>
+          <el-descriptions-item label="创建时间">
+            {{ formatDateTime(event.created_at) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="更新时间" :span="2">
+            {{ formatDateTime(event.updated_at) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="通知人" :span="3">
+            <div v-if="event.notify_user_names && event.notify_user_names.length > 0">
+              <el-tag v-for="(name, idx) in event.notify_user_names" :key="idx" size="small" class="mr-2" type="info">
+                {{ name }}
+              </el-tag>
+            </div>
+            <span v-else class="text-gray">无</span>
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
+
+      <!-- 移动端信息卡片 -->
+      <div class="mobile-only">
+        <div class="mobile-info-item">
+          <span class="mobile-info-label">事件标题</span>
+          <span class="mobile-info-value">{{ event.title }}</span>
+        </div>
+        <div class="mobile-info-grid">
+          <div class="mobile-info-item">
+            <span class="mobile-info-label">事件类型</span>
+            <span class="mobile-info-value">{{ event.event_type }}</span>
+          </div>
+          <div class="mobile-info-item">
+            <span class="mobile-info-label">严重程度</span>
+            <el-tag :type="getSeverityType(event.severity)" size="small">{{ event.severity }}</el-tag>
+          </div>
+        </div>
+        <div class="mobile-info-grid">
+          <div class="mobile-info-item">
+            <span class="mobile-info-label">当前状态</span>
+            <el-tag :type="getStatusType(event.status)" size="small">{{ getStatusLabel(event.status) }}</el-tag>
+          </div>
+          <div class="mobile-info-item">
+            <span class="mobile-info-label">责任人</span>
+            <span class="mobile-info-value">{{ event.responsible_name || '未分配' }}</span>
+          </div>
+        </div>
+        <div class="mobile-info-item">
+          <span class="mobile-info-label">当前处理人</span>
+          <el-tag v-if="event.current_handler_name" type="primary" size="small" effect="dark">
             {{ event.current_handler_name }}
           </el-tag>
           <span v-else class="text-gray">未分配</span>
-        </el-descriptions-item>
-        <el-descriptions-item label="下一步" :span="2">
+        </div>
+        <div class="mobile-info-item">
+          <span class="mobile-info-label">下一步</span>
           <div v-if="event.next_step || event.next_handler_name">
-            <el-tag v-if="event.next_step" size="small" class="mr-2">
-              {{ getStepLabel(event.next_step) }}
-            </el-tag>
-            <span v-if="event.next_handler_name" class="text-primary">
-              待 {{ event.next_handler_name }} 处理
-            </span>
+            <el-tag v-if="event.next_step" size="small">{{ getStepLabel(event.next_step) }}</el-tag>
+            <span v-if="event.next_handler_name" class="text-primary"> 待 {{ event.next_handler_name }} 处理</span>
           </div>
           <span v-else class="text-gray">暂无</span>
-        </el-descriptions-item>
-        <el-descriptions-item label="截止日期" :span="3">
+        </div>
+        <div class="mobile-info-item">
+          <span class="mobile-info-label">截止日期</span>
           <div class="due-date-display">
-            <span :class="getDueDateClass(event.due_date, event.status)" class="due-date-text">
+            <span :class="getDueDateClass(event.due_date, event.status)">
               {{ formatDueDate(event.due_date) }}
             </span>
-            <el-tag v-if="event.due_date && event.status !== 'CLOSED'" 
-                    :type="getDueDateTagType(event.due_date)" 
-                    size="small"
-                    class="due-date-tag">
+            <el-tag v-if="event.due_date && event.status !== 'CLOSED'" :type="getDueDateTagType(event.due_date)" size="small">
               {{ getDueDateText(event.due_date) }}
             </el-tag>
           </div>
-        </el-descriptions-item>
-        <el-descriptions-item label="创建时间">
-          {{ formatDateTime(event.created_at) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="更新时间" :span="2">
-          {{ formatDateTime(event.updated_at) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="通知人" :span="3">
-          <div v-if="event.notify_user_names && event.notify_user_names.length > 0">
-            <el-tag v-for="(name, idx) in event.notify_user_names" :key="idx" size="small" class="mr-2" type="info">
-              {{ name }}
-            </el-tag>
-          </div>
-          <span v-else class="text-gray">无</span>
-        </el-descriptions-item>
-      </el-descriptions>
+        </div>
+        <div class="mobile-info-item">
+          <span class="mobile-info-label">问题描述</span>
+          <span class="mobile-info-value">{{ event.description || '暂无描述' }}</span>
+        </div>
+      </div>
       
       <div class="description-section">
         <h4>问题描述</h4>
@@ -1558,5 +1619,92 @@ onMounted(() => {
 
 .log-attachment-item {
   margin-top: 4px;
+}
+
+/* 移动端信息卡片 */
+.mobile-only {
+  display: none;
+}
+
+.mobile-info-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.mobile-info-item:last-child {
+  border-bottom: none;
+}
+
+.mobile-info-label {
+  display: block;
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 6px;
+}
+
+.mobile-info-value {
+  font-size: 14px;
+  color: #303133;
+  word-break: break-all;
+}
+
+.mobile-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mobile-info-grid .mobile-info-item {
+  border-bottom: none;
+  padding: 8px 0;
+}
+
+/* 响应式显示控制 */
+@media screen and (max-width: 768px) {
+  .pc-only {
+    display: none;
+  }
+  
+  .mobile-only {
+    display: block;
+  }
+  
+  .quality-event-detail {
+    padding: 10px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .header-left {
+    flex-wrap: wrap;
+  }
+  
+  .header-right {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .event-no {
+    font-size: 16px;
+  }
+  
+  .pdca-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .pdca-title {
+    font-size: 14px;
+  }
+  
+  .pdca-content {
+    padding: 12px;
+  }
 }
 </style>
