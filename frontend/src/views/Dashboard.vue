@@ -85,8 +85,8 @@
       </div>
     </template>
 
-    <!-- 达标率趋势图 -->
-    <el-row :gutter="20" style="margin-top: 20px">
+    <!-- 达标率趋势图 - PC端 -->
+    <el-row :gutter="20" style="margin-top: 20px" class="pc-only">
       <el-col :span="16">
         <el-card>
           <template #header>
@@ -98,6 +98,28 @@
       <el-col :span="8">
         <el-card>
           <template #header>
+            <span>项目达标分布</span>
+          </template>
+          <div ref="pieChart" style="height: 350px"></div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- 达标率趋势图 - 移动端 -->
+    <div class="mobile-only" style="margin-top: 15px">
+      <el-card>
+        <template #header>
+          <span>达标率趋势</span>
+        </template>
+        <div ref="trendChartMobile" style="height: 250px"></div>
+      </el-card>
+      <el-card style="margin-top: 15px">
+        <template #header>
+          <span>项目达标分布</span>
+        </template>
+        <div ref="pieChartMobile" style="height: 250px"></div>
+      </el-card>
+    </div>
             <span>项目达标分布</span>
           </template>
           <div ref="pieChart" style="height: 350px"></div>
@@ -148,6 +170,8 @@ const router = useRouter()
 const isMobile = useMobile()
 const trendChart = ref(null)
 const pieChart = ref(null)
+const trendChartMobile = ref(null)
+const pieChartMobile = ref(null)
 
 const stats = ref({
   totalProjects: 0,
@@ -169,8 +193,7 @@ const viewProject = (id) => {
 }
 
 const initTrendChart = () => {
-  const chart = echarts.init(trendChart.value)
-  chart.setOption({
+  const option = {
     tooltip: { trigger: 'axis' },
     xAxis: {
       type: 'category',
@@ -197,12 +220,23 @@ const initTrendChart = () => {
       },
       itemStyle: { color: '#409EFF' }
     }]
-  })
+  }
+  
+  // PC端
+  if (trendChart.value) {
+    const chart = echarts.init(trendChart.value)
+    chart.setOption(option)
+  }
+  
+  // 移动端
+  if (trendChartMobile.value) {
+    const chartMobile = echarts.init(trendChartMobile.value)
+    chartMobile.setOption(option)
+  }
 }
 
 const initPieChart = () => {
-  const chart = echarts.init(pieChart.value)
-  chart.setOption({
+  const option = {
     tooltip: { trigger: 'item' },
     legend: { bottom: '5%' },
     series: [{
@@ -215,7 +249,19 @@ const initPieChart = () => {
         { value: 1, name: '待改进(<70%)', itemStyle: { color: '#F56C6C' } }
       ]
     }]
-  })
+  }
+  
+  // PC端
+  if (pieChart.value) {
+    const chart = echarts.init(pieChart.value)
+    chart.setOption(option)
+  }
+  
+  // 移动端
+  if (pieChartMobile.value) {
+    const chartMobile = echarts.init(pieChartMobile.value)
+    chartMobile.setOption(option)
+  }
 }
 
 onMounted(() => {
@@ -255,8 +301,25 @@ onMounted(() => {
   }
 }
 
+/* PC端和移动端显示控制 */
+.pc-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none !important;
+}
+
 /* 移动端样式 */
 @media screen and (max-width: 768px) {
+  .pc-only {
+    display: none !important;
+  }
+  
+  .mobile-only {
+    display: block !important;
+  }
+  
   .mobile-stats {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
