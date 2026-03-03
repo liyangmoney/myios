@@ -12,6 +12,7 @@ export default defineConfig({
   server: {
     port: 13000,
     host: true,  // 允许局域网访问
+    allowedHosts: ['myjghy.myds.me'],  // 允许访问的域名
     proxy: {
       '/api': {
         target: 'http://localhost:9090',
