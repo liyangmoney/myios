@@ -808,7 +808,7 @@ watch(() => appStore.currentYear, (newYear, oldYear) => {
 
 /* 移动端适配 */
 .mobile-only {
-  display: none;
+  display: none !important;
 }
 
 .pc-only {
