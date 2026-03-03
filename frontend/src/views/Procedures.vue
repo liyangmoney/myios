@@ -2,8 +2,8 @@
   <div class="procedures">
     <!-- 列表视图 -->
     <div v-if="!showDetail">
-      <!-- 统计卡片 -->
-      <el-row :gutter="20">
+      <!-- 统计卡片 - PC端 -->
+      <el-row :gutter="20" class="pc-only">
         <el-col :span="8">
           <el-card class="stat-card c-class">
             <div class="stat-content">
@@ -39,8 +39,39 @@
         </el-col>
       </el-row>
 
-      <!-- 筛选栏 -->
-      <el-card class="filter-card">
+      <!-- 统计卡片 - 移动端 -->
+      <div class="stats-grid mobile-only">
+        <el-card class="stat-card c-class">
+          <div class="stat-content">
+            <div class="stat-icon">C</div>
+            <div class="stat-info">
+              <div class="stat-value">{{ categoryCount.C || 0 }}</div>
+              <div class="stat-label">程序文件</div>
+            </div>
+          </div>
+        </el-card>
+        <el-card class="stat-card m-class">
+          <div class="stat-content">
+            <div class="stat-icon">M</div>
+            <div class="stat-info">
+              <div class="stat-value">{{ categoryCount.M || 0 }}</div>
+              <div class="stat-label">管理文件</div>
+            </div>
+          </div>
+        </el-card>
+        <el-card class="stat-card s-class">
+          <div class="stat-content">
+            <div class="stat-icon">S</div>
+            <div class="stat-info">
+              <div class="stat-value">{{ categoryCount.S || 0 }}</div>
+              <div class="stat-label">支持文件</div>
+            </div>
+          </div>
+        </el-card>
+      </div>
+
+      <!-- 筛选栏 - PC端 -->
+      <el-card class="filter-card pc-only">
         <div class="filter-header">
           <el-form :inline="true" :model="searchForm">
             <el-form-item label="文件分类">
@@ -89,6 +120,48 @@
             >
               <el-icon><FolderChecked /></el-icon> 年度归档
             </el-button>
+          </div>
+        </div>
+      </el-card>
+
+      <!-- 筛选栏 - 移动端 -->
+      <el-card class="filter-card mobile-only">
+        <div class="mobile-filter">
+          <el-input 
+            v-model="searchForm.keyword" 
+            placeholder="搜索文件编号/名称" 
+            clearable
+            @keyup.enter="handleSearch"
+            class="mobile-search-input"
+          >
+            <template #append>
+              <el-button @click="handleSearch">
+                <el-icon><Search /></el-icon>
+              </el-button>
+            </template>
+          </el-input>
+          
+          <div class="mobile-filter-row">
+            <el-select v-model="searchForm.category" placeholder="分类" clearable size="small" @change="handleSearch">
+              <el-option label="全部" value="" />
+              <el-option label="C" value="C" />
+              <el-option label="M" value="M" />
+              <el-option label="S" value="S" />
+            </el-select>
+            
+            <el-select v-model="searchForm.department" placeholder="部门" clearable size="small" @change="handleSearch">
+              <el-option label="全部" value="" />
+              <el-option 
+                v-for="dept in departments" 
+                :key="dept" 
+                :label="dept" 
+                :value="dept" 
+              />
+            </el-select>
+            
+            <el-tag type="info" size="small" effect="plain">
+              {{ appStore.currentYear }}年度
+            </el-tag>
           </div>
         </div>
       </el-card>
@@ -730,6 +803,100 @@ watch(() => appStore.currentYear, (newYear, oldYear) => {
 .detail-view {
   .el-card {
     margin-bottom: 20px;
+  }
+}
+
+/* 移动端适配 */
+.mobile-only {
+  display: none;
+}
+
+.pc-only {
+  display: block;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.mobile-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mobile-search-input {
+  width: 100%;
+}
+
+.mobile-filter-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.mobile-filter-row .el-select {
+  flex: 1;
+  min-width: 80px;
+}
+
+@media screen and (max-width: 768px) {
+  .pc-only {
+    display: none !important;
+  }
+  
+  .mobile-only {
+    display: block !important;
+  }
+  
+  .procedures {
+    padding: 10px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  
+  .stat-card :deep(.el-card__body) {
+    padding: 12px;
+  }
+  
+  .stat-content {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+  }
+  
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+  
+  .stat-value {
+    font-size: 20px;
+  }
+  
+  .stat-label {
+    font-size: 11px;
+  }
+  
+  .filter-card :deep(.el-card__body) {
+    padding: 12px;
+  }
+  
+  .procedure-list :deep(.el-card__body) {
+    padding: 0;
+  }
+  
+  .card-header {
+    padding: 12px 15px;
   }
 }
 </style>
