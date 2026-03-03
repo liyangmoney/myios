@@ -1,7 +1,7 @@
 <template>
   <div class="procedure-documents">
-    <!-- 页面标题和统计 -->
-    <el-row :gutter="20">
+    <!-- 统计卡片 - PC端 -->
+    <el-row :gutter="20" class="pc-only">
       <el-col :span="8">
         <el-card class="stat-card c-class">
           <div class="stat-content">
@@ -37,8 +37,39 @@
       </el-col>
     </el-row>
 
-    <!-- 筛选栏 -->
-    <el-card class="filter-card">
+    <!-- 统计卡片 - 移动端 -->
+    <div class="stats-grid mobile-only">
+      <el-card class="stat-card c-class">
+        <div class="stat-content">
+          <div class="stat-icon">C</div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.C || 0 }}</div>
+            <div class="stat-label">程序文件</div>
+          </div>
+        </div>
+      </el-card>
+      <el-card class="stat-card m-class">
+        <div class="stat-content">
+          <div class="stat-icon">M</div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.M || 0 }}</div>
+            <div class="stat-label">管理文件</div>
+          </div>
+        </div>
+      </el-card>
+      <el-card class="stat-card s-class">
+        <div class="stat-content">
+          <div class="stat-icon">S</div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.S || 0 }}</div>
+            <div class="stat-label">支持文件</div>
+          </div>
+        </div>
+      </el-card>
+    </div>
+
+    <!-- 筛选栏 - PC端 -->
+    <el-card class="filter-card pc-only">
       <el-form :inline="true" :model="searchForm">
         <el-form-item label="文件分类">
           <el-select v-model="searchForm.categoryCode" placeholder="全部分类" clearable @change="handleSearch">
@@ -84,8 +115,53 @@
       </el-form>
     </el-card>
 
-    <!-- 文件列表 -->
-    <el-card class="document-list">
+    <!-- 筛选栏 - 移动端 -->
+    <el-card class="filter-card mobile-only">
+      <div class="mobile-filter">
+        <el-input
+          v-model="searchForm.keyword"
+          placeholder="搜索文件编号/名称"
+          clearable
+          @keyup.enter="handleSearch"
+          class="mobile-search-input"
+        >
+          <template #append>
+            <el-button @click="handleSearch">
+              <el-icon><Search /></el-icon>
+            </el-button>
+          </template>
+        </el-input>
+        
+        <div class="mobile-filter-row">
+          <el-select v-model="searchForm.categoryCode" placeholder="分类" clearable size="small" @change="handleSearch">
+            <el-option label="全部" value="" />
+            <el-option label="C-程序" value="C" />
+            <el-option label="M-管理" value="M" />
+            <el-option label="S-支持" value="S" />
+          </el-select>
+          
+          <el-select v-model="searchForm.department" placeholder="部门" clearable size="small" @change="handleSearch">
+            <el-option label="全部" value="" />
+            <el-option
+              v-for="dept in departments"
+              :key="dept"
+              :label="dept"
+              :value="dept"
+            />
+          </el-select>
+          
+          <el-select v-model="searchForm.priority" placeholder="优先级" clearable size="small" @change="handleSearch">
+            <el-option label="全部" value="" />
+            <el-option label="P0" value="P0" />
+            <el-option label="P1" value="P1" />
+            <el-option label="P2" value="P2" />
+          </el-select>
+        </div>
+      </div>
+    </el-card>
+
+    <!-- 文件列表 - PC端表格 -->
+    <el-card class="document-list pc-only">
       <template #header>
         <div class="card-header">
           <span>42个体系文件列表</span>
@@ -95,7 +171,6 @@
         </div>
       </template>
 
-      <!-- 按分类分组显示 -->
       <el-empty v-if="groupedDocuments.length === 0 && !loading" description="暂无数据" />
 
       <div v-for="group in groupedDocuments" :key="group.category" class="document-group">
@@ -158,6 +233,71 @@
         </el-table>
       </div>
     </el-card>
+
+    <!-- 文件列表 - 移动端卡片 -->
+    <div class="mobile-list mobile-only">
+      <div class="mobile-list-header">
+        <span>42个体系文件列表</span>
+        <el-button type="primary" size="small" @click="showImportDialog">
+          <el-icon><Upload /></el-icon>批量上传
+        </el-button>
+      </div>
+      
+      <el-empty v-if="groupedDocuments.length === 0 && !loading" description="暂无数据" />
+      
+      <div v-for="group in groupedDocuments" :key="group.category" class="mobile-group">
+        <div class="mobile-group-header">
+          <span class="category-badge" :class="'badge-' + group.category">{{ group.category }}</span>
+          <span class="category-name">{{ group.categoryName }}</span>
+          <span class="group-count">共 {{ group.documents.length }} 个</span>
+        </div>
+        
+        <div class="mobile-document-cards">
+          <div 
+            v-for="(doc, index) in group.documents" 
+            :key="doc.id" 
+            class="mobile-doc-card"
+          >
+            <div class="mobile-doc-header">
+              <span class="mobile-doc-index">{{ index + 1 }}</span>
+              <span class="mobile-doc-code">{{ doc.documentCode }}</span>
+            </div>
+            
+            <div class="mobile-doc-name">{{ doc.documentName }}</div>
+            
+            <div class="mobile-doc-tags">
+              <el-tag :type="getPriorityType(doc.priority)" size="small">{{ doc.priority }}</el-tag>
+              <el-tag :type="getStatusType(doc.status)" size="small">{{ getStatusText(doc.status) }}</el-tag>
+            </div>
+            
+            <div class="mobile-doc-info">
+              <span>部门：{{ doc.department }}</span>
+              <span>版本：{{ doc.version }}</span>
+            </div>
+            
+            <div class="mobile-doc-actions">
+              <el-button
+                v-if="!doc.filePath"
+                type="primary"
+                size="small"
+                @click="showUploadDialog(doc)"
+              >
+                上传
+              </el-button>
+              <el-button
+                v-else
+                type="success"
+                size="small"
+                @click="downloadFile(doc)"
+              >
+                下载
+              </el-button>
+              <el-button type="primary" size="small" @click="showEditDialog(doc)">编辑</el-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 上传对话框 -->
     <el-dialog v-model="uploadDialogVisible" title="上传体系文件" width="500px">
@@ -479,5 +619,197 @@ onMounted(() => {
 
 .document-list {
   margin-top: 20px;
+}
+
+/* 移动端适配 */
+.mobile-only {
+  display: none;
+}
+
+.pc-only {
+  display: block;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.mobile-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mobile-search-input {
+  width: 100%;
+}
+
+.mobile-filter-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mobile-filter-row .el-select {
+  flex: 1;
+  min-width: 80px;
+}
+
+/* 移动端列表 */
+.mobile-list {
+  margin-bottom: 20px;
+}
+
+.mobile-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: #fff;
+  border-bottom: 1px solid #e4e7ed;
+  font-weight: 500;
+}
+
+.mobile-group {
+  margin-bottom: 15px;
+}
+
+.mobile-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 15px;
+  background: #f5f7fa;
+  font-size: 14px;
+}
+
+.mobile-document-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 15px;
+  background: #fff;
+}
+
+.mobile-doc-card {
+  background: #fff;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.mobile-doc-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.mobile-doc-index {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #f5f7fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #909399;
+}
+
+.mobile-doc-code {
+  font-family: monospace;
+  font-size: 13px;
+  color: #409eff;
+}
+
+.mobile-doc-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.mobile-doc-tags {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.mobile-doc-info {
+  display: flex;
+  gap: 15px;
+  font-size: 12px;
+  color: #606266;
+  margin-bottom: 10px;
+}
+
+.mobile-doc-actions {
+  display: flex;
+  gap: 8px;
+}
+
+@media screen and (max-width: 768px) {
+  .pc-only {
+    display: none !important;
+  }
+  
+  .mobile-only {
+    display: block !important;
+  }
+  
+  .procedure-documents {
+    padding: 10px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  
+  .stat-card :deep(.el-card__body) {
+    padding: 12px;
+  }
+  
+  .stat-content {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+  }
+  
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+  
+  .stat-value {
+    font-size: 20px;
+  }
+  
+  .stat-label {
+    font-size: 11px;
+  }
+  
+  .filter-card :deep(.el-card__body) {
+    padding: 12px;
+  }
+  
+  .document-list :deep(.el-card__body) {
+    padding: 0;
+  }
+  
+  .card-header {
+    padding: 12px 15px;
+  }
+  
+  .group-header {
+    padding: 10px 15px;
+  }
 }
 </style>
