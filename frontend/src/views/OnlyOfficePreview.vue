@@ -54,7 +54,7 @@ const loadOnlyOfficeScript = () => {
     
     // 动态加载 OnlyOffice API
     const script = document.createElement('script')
-    script.src = 'http://localhost:9000/web-apps/apps/api/documents/api.js'
+    script.src = `${import.meta.env.VITE_ONLYOFFICE_URL || 'http://myjghy.myds.me:9000'}/web-apps/apps/api/documents/api.js`
     script.onload = resolve
     script.onerror = () => reject(new Error('加载 OnlyOffice 失败，请确保服务已启动'))
     document.head.appendChild(script)

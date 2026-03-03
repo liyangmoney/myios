@@ -536,7 +536,7 @@ const previewFile = async (row) => {
   
   // PDF 直接浏览器打开预览
   if (ext === 'pdf') {
-    window.open(`http://localhost:9090${row.filePath}`, '_blank')
+    window.open(row.filePath, '_blank')
     return
   }
   
@@ -590,7 +590,7 @@ const handleArchive = async () => {
       archiveDialogVisible.value = false
       
       // 自动下载归档文件
-      const downloadUrl = `http://localhost:9090${res.data.downloadUrl}`
+      const downloadUrl = res.data.downloadUrl
       const link = document.createElement('a')
       link.href = downloadUrl
       link.download = res.data.zipFileName
