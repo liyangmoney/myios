@@ -881,14 +881,34 @@ watch(() => appStore.currentYear, (newYear, oldYear) => {
     padding: 0;
   }
   
-  /* 操作列靠右 */
+  /* 操作列靠右 - 移动端优化 */
   .procedure-list :deep(.el-table__fixed-right) {
     right: 0 !important;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .procedure-list :deep(.el-table__fixed-right .el-table__fixed-header-wrapper),
+  .procedure-list :deep(.el-table__fixed-right .el-table__fixed-body-wrapper) {
+    right: 0 !important;
+  }
+  
+  /* 操作列宽度调整 */
+  .procedure-list :deep(.el-table__fixed-right .el-table__cell) {
+    padding: 8px 4px !important;
   }
   
   /* 表格横向滚动时操作列固定在右侧 */
   .procedure-list :deep(.el-table__body-wrapper) {
     overflow-x: auto;
+  }
+  
+  /* 调整表格整体布局 */
+  .procedure-list :deep(.el-table) {
+    width: 100% !important;
+  }
+  
+  .procedure-list :deep(.el-table__inner-wrapper) {
+    position: relative;
   }
   
   .card-header {
