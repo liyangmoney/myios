@@ -2,8 +2,8 @@
   <div class="procedures">
     <!-- 列表视图 -->
     <div v-if="!showDetail">
-      <!-- 统计卡片 - PC端 -->
-      <el-row :gutter="20" class="pc-only">
+      <!-- 统计卡片 -->
+      <el-row :gutter="20">
         <el-col :span="8">
           <el-card class="stat-card c-class">
             <div class="stat-content">
@@ -38,37 +38,6 @@
           </el-card>
         </el-col>
       </el-row>
-
-      <!-- 统计卡片 - 移动端 -->
-      <div class="stats-grid mobile-only">
-        <el-card class="stat-card c-class">
-          <div class="stat-content">
-            <div class="stat-icon">C</div>
-            <div class="stat-info">
-              <div class="stat-value">{{ categoryCount.C || 0 }}</div>
-              <div class="stat-label">程序文件</div>
-            </div>
-          </div>
-        </el-card>
-        <el-card class="stat-card m-class">
-          <div class="stat-content">
-            <div class="stat-icon">M</div>
-            <div class="stat-info">
-              <div class="stat-value">{{ categoryCount.M || 0 }}</div>
-              <div class="stat-label">管理文件</div>
-            </div>
-          </div>
-        </el-card>
-        <el-card class="stat-card s-class">
-          <div class="stat-content">
-            <div class="stat-icon">S</div>
-            <div class="stat-info">
-              <div class="stat-value">{{ categoryCount.S || 0 }}</div>
-              <div class="stat-label">支持文件</div>
-            </div>
-          </div>
-        </el-card>
-      </div>
 
       <!-- 筛选栏 - PC端 -->
       <el-card class="filter-card pc-only">
@@ -858,41 +827,50 @@ watch(() => appStore.currentYear, (newYear, oldYear) => {
     display: block !important;
   }
   
-  /* 移动端统计卡片横排 */
-  .stats-grid {
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 8px;
-  }
-  
-  .stats-grid .stat-card :deep(.el-card__body) {
+  .procedures {
     padding: 10px;
   }
   
-  .stats-grid .stat-content {
+  /* 移动端统计卡片横排显示 */
+  .el-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  
+  .el-row .el-col-8 {
+    flex: 0 0 33.333% !important;
+    max-width: 33.333% !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+  
+  .el-row .stat-card :deep(.el-card__body) {
+    padding: 8px;
+  }
+  
+  .el-row .stat-content {
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     padding: 0;
   }
   
-  .stats-grid .stat-icon {
-    width: 36px;
-    height: 36px;
+  .el-row .stat-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+    border-radius: 6px;
+  }
+  
+  .el-row .stat-value {
     font-size: 16px;
-    border-radius: 8px;
+    margin-bottom: 0;
   }
   
-  .stats-grid .stat-value {
-    font-size: 18px;
-  }
-  
-  .stats-grid .stat-label {
+  .el-row .stat-label {
     font-size: 10px;
-  }
-  
-  .procedures {
-    padding: 10px;
   }
   
   .filter-card :deep(.el-card__body) {
