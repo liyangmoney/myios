@@ -1704,7 +1704,47 @@ onMounted(() => {
   }
   
   .pdca-content {
-    padding: 12px;
+    padding: 0;
+  }
+  
+  /* PDCA 描述列表移动端适配 */
+  .pdca-content :deep(.el-descriptions__table) {
+    width: 100%;
+  }
+  
+  .pdca-content :deep(.el-descriptions__label) {
+    width: 80px !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+    font-size: 12px;
+    padding: 10px 8px !important;
+  }
+  
+  .pdca-content :deep(.el-descriptions__content) {
+    font-size: 13px;
+    padding: 10px 8px !important;
+    word-break: break-all;
+  }
+  
+  /* 评论区域移动端适配 */
+  .comment-item {
+    padding: 12px 0;
+  }
+  
+  .comment-header {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .comment-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .comment-upload,
+  .comment-actions > .el-button {
+    width: 100%;
   }
 }
 </style>
