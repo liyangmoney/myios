@@ -1,0 +1,29 @@
+# ============================================
+# Docker Compose 自动备份配置
+# ============================================
+# 将以下内容添加到 docker-compose.yml 文件中
+# 用于定时自动备份数据库和上传文件
+
+  # 自动备份服务（使用 ofelia 调度器）
+  backup:
+    image: mcuadros/ofelia:latest
+    container_name: pis-backup
+    depends_on:
+      - mysql
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./scripts:/scripts:ro
+      - /opt/backups/pis-system:/backups
+    command: daemon --docker
+    labels:
+      # 每天凌晨 2 点执行备份
+      - "ofelia.job-run.backup.schedule=0 0 2 * * *"
+      - "ofelia.job-run.backup.container=pis-mysql"
+      - "ofelia.job-run.backup.command=/scripts/backup-docker.sh"
+    networks:
+      - pis-network
+
+# 需要在 docker-compose.yml 底部添加：
+# networks:
+#   pis-network:
+#     driver: bridge
