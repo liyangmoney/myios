@@ -143,8 +143,8 @@
       </div>
     </el-card>
 
-    <!-- 事件列表 -->
-    <el-card class="table-card">
+    <!-- 事件列表 - PC端表格 -->
+    <el-card class="table-card pc-only">
       <el-table :data="eventList" v-loading="loading" stripe @row-click="handleRowClick">
         <el-table-column prop="event_no" label="事件编号" width="130">
           <template #default="{ row }">
@@ -220,6 +220,70 @@
         />
       </div>
     </el-card>
+
+    <!-- 事件列表 - 移动端卡片 -->
+    <div class="mobile-list mobile-only">
+      <div 
+        v-for="event in eventList" 
+        :key="event.id" 
+        class="mobile-event-card"
+        @click="viewDetail(event)"
+      >
+        <div class="mobile-event-header">
+          <el-link type="primary" @click.stop="viewDetail(event)">{{ event.event_no }}</el-link>
+          <div class="mobile-event-actions">
+            <el-button 
+              v-if="event.reporter_id === currentUserId" 
+              link type="danger" 
+              size="small"
+              @click.stop="handleDelete(event)"
+            >
+              删除
+            </el-button>
+          </div>
+        </div>
+        
+        <div class="mobile-event-title">{{ event.title }}</div>
+        
+        <div class="mobile-event-tags">
+          <el-tag :type="getSeverityType(event.severity)" size="small">{{ event.severity }}</el-tag>
+          <el-tag :type="getStatusType(event.status)" size="small">{{ getStatusLabel(event.status) }}</el-tag>
+        </div>
+        
+        <div class="mobile-event-info">
+          <div class="mobile-info-row">
+            <span class="mobile-info-label">责任人：</span>
+            <span>{{ event.responsible_name || '-' }}</span>
+          </div>
+          <div class="mobile-info-row">
+            <span class="mobile-info-label">当前处理：</span>
+            <el-tag v-if="event.current_handler_name" type="primary" size="small">{{ event.current_handler_name }}</el-tag>
+            <span v-else class="text-gray">未分配</span>
+          </div>
+          <div class="mobile-info-row">
+            <span class="mobile-info-label">创建人：</span>
+            <span>{{ event.reporter_name }}</span>
+          </div>
+          <div class="mobile-info-row">
+            <span class="mobile-info-label">截止：</span>
+            <span :class="{ 'overdue': isOverdue(event.due_date, event.status) }">
+              {{ event.due_date ? formatDateTime(event.due_date).split(' ')[0] : '-' }}
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 分页 -->
+      <div class="mobile-pagination">
+        <el-pagination
+          v-model:current-page="pagination.page"
+          :total="pagination.total"
+          :page-size="pagination.pageSize"
+          layout="prev, pager, next"
+          @current-change="handlePageChange"
+        />
+      </div>
+    </div>
 
     <!-- 新建/编辑事件对话框 -->
     <el-dialog 
@@ -815,6 +879,71 @@ onMounted(() => {
   .pagination :deep(.el-pagination__total),
   .pagination :deep(.el-pagination__sizes) {
     display: none;
+  }
+  
+  /* 移动端卡片列表 */
+  .mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .mobile-event-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  
+  .mobile-event-card:active {
+    background: #f5f7fa;
+  }
+  
+  .mobile-event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  
+  .mobile-event-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: #303133;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  
+  .mobile-event-tags {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  
+  .mobile-event-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    font-size: 12px;
+    color: #606266;
+  }
+  
+  .mobile-info-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .mobile-info-label {
+    color: #909399;
+    white-space: nowrap;
+  }
+  
+  .mobile-pagination {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
   }
 }
 </style>
