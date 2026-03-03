@@ -8,63 +8,55 @@
     </div>
 
     <!-- 统计卡片 -->
-    <el-row :gutter="20" style="margin-bottom: 20px">
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-item">
-            <div class="stat-icon" style="background: #F56C6C">
-              <el-icon size="28"><Warning /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.new || 0 }}</div>
-              <div class="stat-label">待处理</div>
-            </div>
+    <div class="stats-grid">
+      <el-card class="stat-card">
+        <div class="stat-item">
+          <div class="stat-icon" style="background: #F56C6C">
+            <el-icon size="28"><Warning /></el-icon>
           </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-item">
-            <div class="stat-icon" style="background: #E6A23C">
-              <el-icon size="28"><Clock /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.processing || 0 }}</div>
-              <div class="stat-label">处理中</div>
-            </div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.new || 0 }}</div>
+            <div class="stat-label">待处理</div>
           </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-item">
-            <div class="stat-icon" style="background: #409EFF">
-              <el-icon size="28"><View /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.checking || 0 }}</div>
-              <div class="stat-label">验证中</div>
-            </div>
+        </div>
+      </el-card>
+      <el-card class="stat-card">
+        <div class="stat-item">
+          <div class="stat-icon" style="background: #E6A23C">
+            <el-icon size="28"><Clock /></el-icon>
           </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-item">
-            <div class="stat-icon" style="background: #67C23A">
-              <el-icon size="28"><CircleCheck /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.closed || 0 }}</div>
-              <div class="stat-label">已关闭</div>
-            </div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.processing || 0 }}</div>
+            <div class="stat-label">处理中</div>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+        </div>
+      </el-card>
+      <el-card class="stat-card">
+        <div class="stat-item">
+          <div class="stat-icon" style="background: #409EFF">
+            <el-icon size="28"><View /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.checking || 0 }}</div>
+            <div class="stat-label">验证中</div>
+          </div>
+        </div>
+      </el-card>
+      <el-card class="stat-card">
+        <div class="stat-item">
+          <div class="stat-icon" style="background: #67C23A">
+            <el-icon size="28"><CircleCheck /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.closed || 0 }}</div>
+            <div class="stat-label">已关闭</div>
+          </div>
+        </div>
+      </el-card>
+    </div>
 
-    <!-- 搜索栏 -->
-    <el-card class="search-card">
+    <!-- 搜索栏 - PC端 -->
+    <el-card class="search-card pc-only">
       <el-form :inline="true" :model="searchForm">
         <el-form-item label="关键词">
           <el-input 
@@ -109,6 +101,46 @@
           <el-button @click="resetSearch">重置</el-button>
         </el-form-item>
       </el-form>
+    </el-card>
+
+    <!-- 搜索栏 - 移动端 -->
+    <el-card class="search-card mobile-only">
+      <div class="mobile-search">
+        <el-input 
+          v-model="searchForm.keyword" 
+          placeholder="搜索编号/标题"
+          clearable
+          @keyup.enter="handleSearch"
+          class="mobile-search-input"
+        >
+          <template #append>
+            <el-button @click="handleSearch">
+              <el-icon><Search /></el-icon>
+            </el-button>
+          </template>
+        </el-input>
+        
+        <div class="mobile-filter-row">
+          <el-select v-model="searchForm.status" placeholder="状态" clearable size="small">
+            <el-option label="全部" value="" />
+            <el-option label="新建" value="NEW" />
+            <el-option label="计划中" value="PLAN" />
+            <el-option label="执行中" value="DO" />
+            <el-option label="验证中" value="CHECK" />
+            <el-option label="已关闭" value="CLOSED" />
+          </el-select>
+          
+          <el-select v-model="searchForm.severity" placeholder="严重程度" clearable size="small">
+            <el-option label="全部" value="" />
+            <el-option label="轻微" value="轻微" />
+            <el-option label="一般" value="一般" />
+            <el-option label="严重" value="严重" />
+            <el-option label="致命" value="致命" />
+          </el-select>
+          
+          <el-checkbox v-model="searchForm.myEvents" size="small">我的</el-checkbox>
+        </div>
+      </div>
     </el-card>
 
     <!-- 事件列表 -->
@@ -653,5 +685,136 @@ onMounted(() => {
 
 :deep(.el-table__row:hover) {
   background-color: #f5f7fa;
+}
+
+/* 移动端适配 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.mobile-only {
+  display: none;
+}
+
+.pc-only {
+  display: block;
+}
+
+/* 移动端搜索 */
+.mobile-search {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mobile-search-input {
+  width: 100%;
+}
+
+.mobile-filter-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.mobile-filter-row .el-select {
+  width: auto;
+  flex: 1;
+  min-width: 80px;
+}
+
+@media screen and (max-width: 768px) {
+  .pc-only {
+    display: none !important;
+  }
+  
+  .mobile-only {
+    display: block !important;
+  }
+  
+  .quality-event {
+    padding: 10px;
+  }
+  
+  .page-header {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  
+  .page-header h2 {
+    font-size: 18px;
+  }
+  
+  /* 统计卡片网格 */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 15px;
+  }
+  
+  .stat-card {
+    margin-bottom: 0;
+  }
+  
+  .stat-card :deep(.el-card__body) {
+    padding: 12px;
+  }
+  
+  .stat-item {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .stat-icon .el-icon {
+    font-size: 18px;
+  }
+  
+  .stat-value {
+    font-size: 18px;
+  }
+  
+  .stat-label {
+    font-size: 11px;
+  }
+  
+  /* 搜索卡片 */
+  .search-card {
+    margin-bottom: 15px;
+  }
+  
+  .search-card :deep(.el-card__body) {
+    padding: 12px;
+  }
+  
+  /* 表格卡片 */
+  .table-card {
+    margin-bottom: 15px;
+  }
+  
+  .table-card :deep(.el-card__body) {
+    padding: 0;
+  }
+  
+  /* 分页 */
+  .pagination {
+    justify-content: center;
+    padding: 10px;
+  }
+  
+  .pagination :deep(.el-pagination__total),
+  .pagination :deep(.el-pagination__sizes) {
+    display: none;
+  }
 }
 </style>
