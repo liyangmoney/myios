@@ -57,10 +57,31 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <!-- 达标率趋势图 - PC端 -->
+    <el-row :gutter="20" style="margin-top: 20px">
+      <el-col :span="16">
+        <el-card>
+          <template #header>
+            <span>达标率趋势</span>
+          </template>
+          <div ref="trendChart" style="height: 350px"></div>
+        </el-card>
+      </el-col>
+      <el-col :span="8">
+        <el-card>
+          <template #header>
+            <span>项目达标分布</span>
+          </template>
+          <div ref="pieChart" style="height: 350px"></div>
+        </el-card>
+      </el-col>
+    </el-row>
     </template>
 
     <!-- 移动端布局 -->
     <template v-else>
+      <!-- 统计卡片 -->
       <div class="mobile-stats">
         <div class="mobile-stat-card">
           <div class="stat-icon" style="background: #409EFF"><el-icon size="24"><Folder /></el-icon></div>
@@ -83,52 +104,26 @@
           <div class="stat-label">达标率</div>
         </div>
       </div>
-    </template>
 
-    <!-- 达标率趋势图 - PC端 -->
-    <el-row :gutter="20" style="margin-top: 20px" class="pc-only">
-      <el-col :span="16">
+      <!-- 达标率趋势图 - 移动端 -->
+      <div style="margin-top: 15px">
         <el-card>
           <template #header>
             <span>达标率趋势</span>
           </template>
-          <div ref="trendChart" style="height: 350px"></div>
+          <div ref="trendChartMobile" style="height: 250px"></div>
         </el-card>
-      </el-col>
-      <el-col :span="8">
-        <el-card>
+        <el-card style="margin-top: 15px">
           <template #header>
             <span>项目达标分布</span>
           </template>
-          <div ref="pieChart" style="height: 350px"></div>
+          <div ref="pieChartMobile" style="height: 250px"></div>
         </el-card>
-      </el-col>
-    </el-row>
-
-    <!-- 达标率趋势图 - 移动端 -->
-    <div class="mobile-only" style="margin-top: 15px">
-      <el-card>
-        <template #header>
-          <span>达标率趋势</span>
-        </template>
-        <div ref="trendChartMobile" style="height: 250px"></div>
-      </el-card>
-      <el-card style="margin-top: 15px">
-        <template #header>
-          <span>项目达标分布</span>
-        </template>
-        <div ref="pieChartMobile" style="height: 250px"></div>
-      </el-card>
-    </div>
-            <span>项目达标分布</span>
-          </template>
-          <div ref="pieChart" style="height: 350px"></div>
-        </el-card>
-      </el-col>
-    </el-row>
+      </div>
+    </template>
 
     <!-- 最近项目 -->
-    <el-row style="margin-top: 20px">
+    <el-row style="margin-top: 20px" :class="isMobile ? 'mobile-only' : ''">
       <el-col :span="24">
         <el-card>
           <template #header>
