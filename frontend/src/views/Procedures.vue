@@ -184,9 +184,9 @@
             </template>
           </el-table-column>
           
-          <el-table-column label="操作" width="100" fixed="right">
+          <el-table-column label="操作" width="70" fixed="right" align="center">
             <template #default="{ row }">
-              <el-button type="primary" link @click.stop="viewDetail(row)">进入</el-button>
+              <el-button type="primary" link size="small" @click.stop="viewDetail(row)">进入</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -892,9 +892,21 @@ watch(() => appStore.currentYear, (newYear, oldYear) => {
     right: 0 !important;
   }
   
-  /* 操作列宽度调整 */
+  /* 操作列宽度调整 - 更窄 */
   .procedure-list :deep(.el-table__fixed-right .el-table__cell) {
-    padding: 8px 4px !important;
+    padding: 8px 2px !important;
+  }
+  
+  .procedure-list :deep(.el-table__fixed-right th.el-table__cell),
+  .procedure-list :deep(.el-table__fixed-right td.el-table__cell) {
+    width: 60px !important;
+    min-width: 60px !important;
+  }
+  
+  /* 操作按钮样式 */
+  .procedure-list :deep(.el-table__fixed-right .el-button) {
+    padding: 4px 0 !important;
+    font-size: 13px;
   }
   
   /* 表格横向滚动时操作列固定在右侧 */
