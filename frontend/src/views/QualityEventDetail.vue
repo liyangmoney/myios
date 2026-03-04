@@ -391,6 +391,14 @@
             <el-progress :percentage="commentUploadProgress" :stroke-width="6" />
             <span class="progress-text">{{ commentUploadingFileName }}</span>
           </div>
+          <!-- 已上传附件列表 -->
+          <div v-if="uploadedCommentFiles.length > 0" class="uploaded-files">
+            <div v-for="(file, idx) in uploadedCommentFiles" :key="idx" class="uploaded-file-item">
+              <el-icon><Document /></el-icon>
+              <span class="file-name">{{ file.name }}</span>
+              <el-button link type="danger" size="small" @click="removeUploadedCommentFile(idx)">删除</el-button>
+            </div>
+          </div>
         </div>
         
         <el-button type="primary" @click="addComment" :disabled="!newComment.trim()">
@@ -1295,6 +1303,32 @@ const handleCommentFileRemove = async (file) => {
   }
 }
 
+// 删除已上传的评论附件（未发表评论前）
+const removeUploadedCommentFile = async (idx) => {
+  const file = uploadedCommentFiles.value[idx]
+  if (!file) return
+  
+  // 调用后端删除物理文件
+  try {
+    const filename = file.url.split('/').pop()
+    const eventNo = file.url.split('/')[3]
+    const filePath = `${eventNo}/${filename}`
+    
+    await fetch('/api/files', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ filename: filePath })
+    })
+  } catch (error) {
+    console.error('删除物理文件失败:', error)
+  }
+  
+  uploadedCommentFiles.value.splice(idx, 1)
+}
+
 // 各阶段附件上传成功
 const handleStageFileSuccess = (stage, response, file) => {
   if (response.code === 200 && response.data && response.data.length > 0) {
@@ -1721,6 +1755,27 @@ onMounted(() => {
   margin-top: 6px;
   font-size: 12px;
   color: #606266;
+  word-break: break-all;
+}
+
+.uploaded-files {
+  margin-top: 10px;
+}
+
+.uploaded-file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #f5f7fa;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.uploaded-file-item .file-name {
+  flex: 1;
+  font-size: 13px;
+  color: #303133;
   word-break: break-all;
 }
 
