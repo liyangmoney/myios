@@ -1,5 +1,14 @@
 import { query } from '../config/database.js'
 import { sendMail } from '../utils/mail.js'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+// 上传目录
+const uploadDir = path.join(__dirname, '../../uploads/quality-events')
 
 // 生成事件编号
 const generateEventNo = async () => {
@@ -621,6 +630,20 @@ export const deleteQualityEvent = async (req, res) => {
     // 仅创建人可删除
     if (event.reporter_id !== userId) {
       return res.status(403).json({ code: 403, message: '只有创建人可以删除该事件' })
+    }
+    
+    // 删除相关文件和文件夹
+    const eventNo = event.event_no
+    const eventDir = path.join(uploadDir, eventNo)
+    
+    // 如果文件夹存在，递归删除
+    if (fs.existsSync(eventDir)) {
+      try {
+        fs.rmSync(eventDir, { recursive: true, force: true })
+        console.log(`已删除事件文件夹: ${eventDir}`)
+      } catch (err) {
+        console.error('删除事件文件夹失败:', err)
+      }
     }
     
     await query('UPDATE quality_event SET deleted_at = NOW() WHERE id = ?', [id])
