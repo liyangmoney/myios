@@ -40,7 +40,7 @@
       <el-button type="primary" :icon="Upload">上传文件</el-button>
       <template #tip>
         <div class="upload-tip">
-          支持图片、PDF、Word、Excel，单个文件不超过10MB
+          支持图片、PDF、Word、Excel、MP4，单个文件不超过500MB
         </div>
       </template>
     </el-upload>
@@ -158,9 +158,9 @@ const deleteFile = async (index) => {
 }
 
 const beforeUpload = (file) => {
-  const isLt10M = file.size / 1024 / 1024 < 10
-  if (!isLt10M) {
-    ElMessage.error('文件大小不能超过 10MB!')
+  const isLt500M = file.size / 1024 / 1024 < 500
+  if (!isLt500M) {
+    ElMessage.error('文件大小不能超过 500MB!')
     return false
   }
   return true
@@ -186,11 +186,36 @@ const handleUploadSuccess = (response, file) => {
 const handleUploadError = (error) => {
   console.error('上传失败:', error)
   let message = '文件上传失败'
-  if (error?.response?.data?.message) {
+  
+  // 处理后端返回的JSON字符串
+  if (typeof error === 'string') {
+    try {
+      const parsed = JSON.parse(error)
+      if (parsed.message) {
+        message = parsed.message
+      }
+    } catch {
+      message = error
+    }
+  } else if (error?.response?.data?.message) {
     message = error.response.data.message
+  } else if (error?.response?.data) {
+    // 尝试从data中提取message
+    const data = error.response.data
+    if (typeof data === 'string') {
+      try {
+        const parsed = JSON.parse(data)
+        if (parsed.message) {
+          message = parsed.message
+        }
+      } catch {
+        message = data
+      }
+    }
   } else if (error?.message) {
     message = error.message
   }
+  
   ElMessage.error(message)
 }
 </script>
