@@ -73,7 +73,7 @@ const sendNotificationEmail = async (event, notifyUserIds, action, isReminder = 
               <p><strong>事件标题：</strong> ${event.title}</p>
               <p><strong>严重程度：</strong> ${event.severity}</p>
               <p><strong>当前状态：</strong> ${getStatusLabel(event.status)}</p>
-              <p><strong>当前处理人：</strong> ${event.current_handler_name || '未分配'}</p>
+              <p><strong>责任人：</strong> ${event.responsible_name || '未分配'}</p>
               
               <div style="background: white; padding: 15px; border-radius: 8px; margin: 20px 0;">
                 <p><strong>问题描述：</strong></p>
