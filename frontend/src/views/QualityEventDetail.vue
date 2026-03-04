@@ -1244,7 +1244,6 @@ const handleCommentFileSuccess = (response, file) => {
       type: file.raw?.type || '',
       size: file.size
     })
-    ElMessage.success(`文件 ${file.name} 上传成功`)
     
     // 清除 el-upload 内部文件列表
     commentUploadRef.value?.clearFiles()
@@ -1300,7 +1299,6 @@ const handleStageFileSuccess = (stage, response, file) => {
         actFiles.value.push(fileData)
         break
     }
-    ElMessage.success(`文件 ${file.name} 上传成功`)
     
     // 清除 el-upload 内部文件列表
     switch (stage) {
