@@ -486,8 +486,8 @@ const fetchStatistics = async () => {
       const statusStats = res.data.byStatus
       stats.value = {
         new: statusStats.find(s => s.status === 'NEW')?.count || 0,
-        processing: (statusStats.find(s => s.status === 'PLAN')?.count || 0) + 
-                   (statusStats.find(s => s.status === 'DO')?.count || 0),
+        processing: (statusStats.find(s => s.status === 'DO')?.count || 0) + 
+                   (statusStats.find(s => s.status === 'ACT')?.count || 0),
         checking: statusStats.find(s => s.status === 'CHECK')?.count || 0,
         closed: statusStats.find(s => s.status === 'CLOSED')?.count || 0
       }
