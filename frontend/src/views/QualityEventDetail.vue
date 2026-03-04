@@ -1484,9 +1484,12 @@ const parseFiles = (filesStr) => {
 const getFileUrl = (url) => {
   if (!url) return ''
   if (url.startsWith('http')) return url
-  // 提取文件名，使用下载接口
-  const filename = url.split('/').pop()
-  return `/api/download?filename=${encodeURIComponent(filename)}`
+  // 提取事件编号/文件名路径，使用下载接口
+  // URL格式: /uploads/quality-events/QE-xxx/filename.ext
+  const parts = url.split('/')
+  const eventNo = parts[parts.length - 2] // 倒数第二是事件编号
+  const filename = parts[parts.length - 1] // 最后是文件名
+  return `/api/download?filename=${encodeURIComponent(`${eventNo}/${filename}`)}`
 }
 
 // 判断字符串是否为JSON
