@@ -26,6 +26,7 @@
     <!-- 上传按钮 -->
     <el-upload
       v-if="canUpload"
+      ref="uploadRef"
       class="upload-section"
       :action="uploadUrl"
       :headers="uploadHeaders"
@@ -87,6 +88,7 @@ const emit = defineEmits(['upload-success', 'update:files'])
 
 // 本地文件列表副本
 const localFiles = ref([...props.files])
+const uploadRef = ref(null)
 
 // 监听 prop 变化，同步更新本地副本
 watch(() => props.files, (newFiles) => {
@@ -151,6 +153,27 @@ const getFileUrl = (url) => {
 }
 
 const deleteFile = async (index) => {
+  const file = localFiles.value[index]
+  if (!file) return
+  
+  // 调用后端删除物理文件
+  try {
+    const filename = file.url.split('/').pop()
+    const eventNo = file.url.split('/')[3] // 从 /uploads/quality-events/QE-xxx/filename 提取事件编号
+    const filePath = `${eventNo}/${filename}`
+    
+    await fetch('/api/files', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ filename: filePath })
+    })
+  } catch (error) {
+    console.error('删除物理文件失败:', error)
+  }
+  
   // 从本地列表中删除
   localFiles.value.splice(index, 1)
   // 通知父组件更新
@@ -181,6 +204,11 @@ const handleUploadSuccess = (response, file) => {
     // 通知父组件
     emit('upload-success', response, file)
     emit('update:files', [...localFiles.value])
+    
+    // 清除 el-upload 内部文件列表，防止已删除文件再次显示
+    if (uploadRef.value) {
+      uploadRef.value.clearFiles()
+    }
   }
 }
 

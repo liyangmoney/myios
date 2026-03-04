@@ -51,6 +51,32 @@ app.get('/api/download', (req, res) => {
   res.sendFile(filePath)
 })
 
+// 文件删除接口
+app.delete('/api/files', (req, res) => {
+  const { filename } = req.body
+  if (!filename) {
+    return res.status(400).json({ code: 400, message: '缺少文件名参数' })
+  }
+  
+  // 安全检查：只允许删除 uploads/quality-events 目录下的文件
+  const safePath = path.normalize(filename).replace(/^(\.\.[\/\\])+/, '')
+  const filePath = path.join(__dirname, '../uploads/quality-events', safePath)
+  
+  // 检查文件是否存在
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ code: 404, message: '文件不存在' })
+  }
+  
+  // 删除文件
+  try {
+    fs.unlinkSync(filePath)
+    res.json({ code: 200, message: '文件删除成功' })
+  } catch (error) {
+    console.error('删除文件失败:', error)
+    res.status(500).json({ code: 500, message: '文件删除失败' })
+  }
+})
+
 // 文件预览接口
 app.get('/api/preview', (req, res) => {
   const { url } = req.query

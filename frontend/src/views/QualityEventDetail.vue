@@ -1241,11 +1241,32 @@ const handleCommentFileSuccess = (response, file) => {
       size: file.size
     })
     ElMessage.success(`文件 ${file.name} 上传成功`)
+    
+    // 清除 el-upload 内部文件列表
+    commentUploadRef.value?.clearFiles()
   }
 }
 
 // 评论附件删除
-const handleCommentFileRemove = (file) => {
+const handleCommentFileRemove = async (file) => {
+  // 调用后端删除物理文件
+  try {
+    const filename = file.url.split('/').pop()
+    const eventNo = file.url.split('/')[3] // 从 /uploads/quality-events/QE-xxx/filename 提取事件编号
+    const filePath = `${eventNo}/${filename}`
+    
+    await fetch('/api/files', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ filename: filePath })
+    })
+  } catch (error) {
+    console.error('删除物理文件失败:', error)
+  }
+  
   const index = uploadedCommentFiles.value.findIndex(f => f.name === file.name)
   if (index > -1) {
     uploadedCommentFiles.value.splice(index, 1)
@@ -1276,11 +1297,45 @@ const handleStageFileSuccess = (stage, response, file) => {
         break
     }
     ElMessage.success(`文件 ${file.name} 上传成功`)
+    
+    // 清除 el-upload 内部文件列表
+    switch (stage) {
+      case 'plan':
+        planUploadRef.value?.clearFiles()
+        break
+      case 'do':
+        doUploadRef.value?.clearFiles()
+        break
+      case 'check':
+        checkUploadRef.value?.clearFiles()
+        break
+      case 'act':
+        actUploadRef.value?.clearFiles()
+        break
+    }
   }
 }
 
 // 各阶段附件删除
-const handleStageFileRemove = (stage, file) => {
+const handleStageFileRemove = async (stage, file) => {
+  // 调用后端删除物理文件
+  try {
+    const filename = file.url.split('/').pop()
+    const eventNo = file.url.split('/')[3] // 从 /uploads/quality-events/QE-xxx/filename 提取事件编号
+    const filePath = `${eventNo}/${filename}`
+    
+    await fetch('/api/files', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ filename: filePath })
+    })
+  } catch (error) {
+    console.error('删除物理文件失败:', error)
+  }
+  
   let filesArray
   switch (stage) {
     case 'plan':
