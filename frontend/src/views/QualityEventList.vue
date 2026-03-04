@@ -336,6 +336,7 @@
                 placeholder="请选择责任人"
                 style="width: 100%"
                 clearable
+                filterable
               />
             </el-form-item>
           </el-col>

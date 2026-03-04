@@ -538,6 +538,7 @@
               placeholder="选择下一步处理人"
               style="width: 100%"
               clearable
+              filterable
             />
           </el-form-item>
         </template>
@@ -570,6 +571,7 @@
               placeholder="选择下一步处理人"
               style="width: 100%"
               clearable
+              filterable
             />
           </el-form-item>
         </template>
@@ -609,6 +611,7 @@
               placeholder="选择下一步处理人"
               style="width: 100%"
               clearable
+              filterable
             />
           </el-form-item>
         </template>
