@@ -369,6 +369,7 @@
             style="width: 100%"
             multiple
             clearable
+            filterable
           />
         </el-form-item>
       </el-form>
