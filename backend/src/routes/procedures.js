@@ -58,6 +58,18 @@ router.put('/records/:id', operationLogMiddleware('程序文件', 'UPDATE', '修
 router.delete('/records/:id', operationLogMiddleware('程序文件', 'DELETE', '删除记录'), deleteRecord)
 router.post('/persons', operationLogMiddleware('程序文件', 'CREATE', '添加人员'), addPerson)
 router.delete('/persons/:id', operationLogMiddleware('程序文件', 'DELETE', '删除人员'), deletePerson)
-router.post('/upload', operationLogMiddleware('程序文件', 'UPLOAD', '上传文件'), upload.single('file'), uploadProcedureFile)
+
+// 错误处理中间件 - 处理 multer 文件类型错误
+const handleMulterError = (err, req, res, next) => {
+  if (err.message === '不支持的文件类型') {
+    return res.status(400).json({ code: 400, message: '文件格式不对' })
+  }
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ code: 400, message: '文件大小超过限制（最大50MB）' })
+  }
+  next(err)
+}
+
+router.post('/upload', operationLogMiddleware('程序文件', 'UPLOAD', '上传文件'), upload.single('file'), handleMulterError, uploadProcedureFile)
 
 export default router

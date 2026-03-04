@@ -67,6 +67,18 @@ router.post('/', operationLogMiddleware('质量事件', 'CREATE', '创建质量�
 router.put('/:id', operationLogMiddleware('质量事件', 'UPDATE', '更新质量事件'), updateQualityEvent)
 router.delete('/:id', operationLogMiddleware('质量事件', 'DELETE', '删除质量事件'), deleteQualityEvent)
 router.post('/:id/comments', operationLogMiddleware('质量事件', 'COMMENT', '添加评论'), addComment)
-router.post('/:id/upload', upload.array('files', 5), uploadFiles)
+
+// 错误处理中间件 - 处理 multer 文件类型错误
+const handleMulterError = (err, req, res, next) => {
+  if (err.message === '不支持的文件类型') {
+    return res.status(400).json({ code: 400, message: '文件格式不对' })
+  }
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ code: 400, message: '文件大小超过限制（最大10MB）' })
+  }
+  next(err)
+}
+
+router.post('/:id/upload', upload.array('files', 5), handleMulterError, uploadFiles)
 
 export default router

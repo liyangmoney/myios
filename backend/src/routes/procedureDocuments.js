@@ -48,6 +48,18 @@ router.get('/departments', getDepartments)
 router.get('/', getDocuments)
 router.get('/:id', getDocumentDetail)
 router.put('/:id', updateDocument)
-router.post('/upload', upload.single('file'), uploadProcedureDocument)
+
+// 错误处理中间件 - 处理 multer 文件类型错误
+const handleMulterError = (err, req, res, next) => {
+  if (err.message && err.message.includes('不支持的文件类型')) {
+    return res.status(400).json({ code: 400, message: '文件格式不对' })
+  }
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ code: 400, message: '文件大小超过限制（最大50MB）' })
+  }
+  next(err)
+}
+
+router.post('/upload', upload.single('file'), handleMulterError, uploadProcedureDocument)
 
 export default router
