@@ -318,7 +318,7 @@
             :auto-upload="false"
             :on-change="handleFileChange"
             :limit="1"
-            accept=".pdf,.doc,.docx,.xls,.xlsx"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4"
           >
             <el-button type="primary">选择文件</el-button>
             <template #tip>

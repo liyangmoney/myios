@@ -315,11 +315,11 @@
             :auto-upload="false"
             :on-change="handleFileChange"
             :limit="1"
-            accept=".pdf,.doc,.docx,.xls,.xlsx"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4"
           >
             <el-button type="primary">选择文件</el-button>
             <template #tip>
-              <div class="el-upload__tip">支持 PDF/Word/Excel 格式，最大 50MB</div>
+              <div class="el-upload__tip">支持 PDF/Word/Excel/PPT/MP4 格式，最大 500MB</div>
             </template>
           </el-upload>
         </el-form-item>

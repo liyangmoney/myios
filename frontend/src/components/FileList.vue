@@ -33,6 +33,7 @@
       :multiple="true"
       :limit="5"
       :show-file-list="false"
+      accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4"
       :before-upload="beforeUpload"
       :on-success="handleUploadSuccess"
       :on-error="handleUploadError"
