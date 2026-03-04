@@ -386,6 +386,7 @@
             :auto-upload="true"
             :on-success="(res, file) => handleCommentFileSuccess(res, file)"
             :on-remove="(file) => handleCommentFileRemove(file)"
+            :on-error="handleUploadError"
             :before-upload="beforeCommentUpload"
           >
             <el-button type="info" :icon="Paperclip">添加附件</el-button>
@@ -1305,6 +1306,42 @@ const handleStageFileRemove = (stage, file) => {
   if (index > -1) {
     filesArray.value.splice(index, 1)
   }
+}
+
+// 上传错误处理
+const handleUploadError = (error) => {
+  console.error('上传失败:', error)
+  let message = '文件上传失败'
+  
+  // 处理后端返回的JSON字符串
+  if (typeof error === 'string') {
+    try {
+      const parsed = JSON.parse(error)
+      if (parsed.message) {
+        message = parsed.message
+      }
+    } catch {
+      message = error
+    }
+  } else if (error?.response?.data?.message) {
+    message = error.response.data.message
+  } else if (error?.response?.data) {
+    const data = error.response.data
+    if (typeof data === 'string') {
+      try {
+        const parsed = JSON.parse(data)
+        if (parsed.message) {
+          message = parsed.message
+        }
+      } catch {
+        message = data
+      }
+    }
+  } else if (error?.message) {
+    message = error.message
+  }
+  
+  ElMessage.error(message)
 }
 
 // 评论附件上传前检查
