@@ -1,6 +1,7 @@
 import express from 'express'
 import { authMiddleware } from '../utils/auth.js'
 import { operationLogMiddleware } from '../controllers/operationLog.js'
+import { query } from '../config/database.js'
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
@@ -25,10 +26,28 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true })
 }
 
-// 配置 multer 存储
+// 配置 multer 存储 - 按事件编号创建文件夹
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir)
+  destination: async (req, file, cb) => {
+    try {
+      // 从 URL 参数获取事件ID
+      const eventId = req.params.id
+      
+      // 查询事件编号
+      const events = await query('SELECT event_no FROM quality_event WHERE id = ?', [eventId])
+      const eventNo = events.length > 0 ? events[0].event_no : 'unknown'
+      
+      // 创建事件编号对应的文件夹
+      const eventDir = path.join(uploadDir, eventNo)
+      if (!fs.existsSync(eventDir)) {
+        fs.mkdirSync(eventDir, { recursive: true })
+      }
+      
+      cb(null, eventDir)
+    } catch (error) {
+      console.error('创建上传目录失败:', error)
+      cb(error, uploadDir)
+    }
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)

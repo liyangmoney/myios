@@ -42,7 +42,9 @@ app.get('/api/download', (req, res) => {
   }
   
   // 提取原始文件名（去掉时间戳前缀）
-  const originalName = filename.replace(/^\d+-\d+_/, '')
+  const pathParts = safePath.split('/')
+  const actualFilename = pathParts[pathParts.length - 1] // 获取最后一部分（文件名）
+  const originalName = actualFilename.replace(/^\d+-\d+_/, '')
   
   // 发送文件，设置下载文件名
   res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(originalName)}`)

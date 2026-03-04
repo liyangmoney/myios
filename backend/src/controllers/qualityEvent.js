@@ -738,13 +738,13 @@ export const uploadFiles = async (req, res) => {
     
     const event = events[0]
     
-    // 准备文件信息
+    // 准备文件信息 - 包含事件编号文件夹路径
     const newFiles = req.files.map(file => {
       // 正确处理中文文件名
       const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
       return {
         name: originalName,
-        url: `/uploads/quality-events/${file.filename}`,
+        url: `/uploads/quality-events/${event.event_no}/${file.filename}`,
         type: file.mimetype,
         size: file.size,
         uploadTime: new Date().toISOString()
