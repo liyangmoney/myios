@@ -435,7 +435,10 @@ const formData = reactive({
 })
 
 const formRules = {
-  title: [{ required: true, message: '请输入事件标题', trigger: 'blur' }],
+  title: [
+    { required: true, message: '请输入事件标题', trigger: 'blur' },
+    { max: 100, message: '事件标题长度不能超过100个字符', trigger: 'blur' }
+  ],
   eventType: [{ required: true, message: '请选择事件类型', trigger: 'change' }],
   severity: [{ required: true, message: '请选择严重程度', trigger: 'change' }],
   responsibleId: [{ required: true, message: '请选择责任人', trigger: 'change' }],
