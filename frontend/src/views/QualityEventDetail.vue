@@ -381,10 +381,16 @@
             :on-success="(res, file) => handleCommentFileSuccess(res, file)"
             :on-remove="(file) => handleCommentFileRemove(file)"
             :on-error="handleUploadError"
+            :on-progress="handleCommentUploadProgress"
             :before-upload="beforeCommentUpload"
           >
-            <el-button type="info" :icon="Paperclip">添加附件</el-button>
+            <el-button type="info" :icon="Paperclip" :loading="commentUploading">添加附件</el-button>
           </el-upload>
+          <!-- 评论上传进度条 -->
+          <div v-if="commentUploadProgress > 0 && commentUploadProgress < 100" class="upload-progress">
+            <el-progress :percentage="commentUploadProgress" :stroke-width="6" />
+            <span class="progress-text">{{ commentUploadingFileName }}</span>
+          </div>
         </div>
         
         <el-button type="primary" @click="addComment" :disabled="!newComment.trim()">
@@ -687,6 +693,9 @@ const planUploadRef = ref(null)
 const doUploadRef = ref(null)
 const checkUploadRef = ref(null)
 const actUploadRef = ref(null)
+const commentUploading = ref(false)
+const commentUploadProgress = ref(0)
+const commentUploadingFileName = ref('')
 
 // 上传请求头
 const uploadHeaders = computed(() => {
@@ -1240,6 +1249,13 @@ const formatDateTime = (date) => {
 
 // 评论附件上传成功
 const handleCommentFileSuccess = (response, file) => {
+  commentUploading.value = false
+  commentUploadProgress.value = 100
+  setTimeout(() => {
+    commentUploadProgress.value = 0
+    commentUploadingFileName.value = ''
+  }, 1000)
+  
   if (response.code === 200 && response.data && response.data.length > 0) {
     uploadedCommentFiles.value.push({
       name: file.name,
@@ -1364,6 +1380,10 @@ const handleStageFileRemove = async (stage, file) => {
 
 // 上传错误处理
 const handleUploadError = (error) => {
+  commentUploading.value = false
+  commentUploadProgress.value = 0
+  commentUploadingFileName.value = ''
+  
   console.error('上传失败:', error)
   let message = '文件上传失败'
   
@@ -1398,13 +1418,21 @@ const handleUploadError = (error) => {
   ElMessage.error(message)
 }
 
+// 评论附件上传进度
+const handleCommentUploadProgress = (event, file) => {
+  commentUploadProgress.value = Math.round(event.percent)
+}
+
 // 评论附件上传前检查
 const beforeCommentUpload = (file) => {
-  const isLt10M = file.size / 1024 / 1024 < 10
-  if (!isLt10M) {
-    ElMessage.error('文件大小不能超过 10MB!')
+  const isLt500M = file.size / 1024 / 1024 < 500
+  if (!isLt500M) {
+    ElMessage.error('文件大小不能超过 500MB!')
     return false
   }
+  commentUploading.value = true
+  commentUploadProgress.value = 0
+  commentUploadingFileName.value = file.name
   return true
 }
 
@@ -1679,6 +1707,21 @@ onMounted(() => {
   height: 32px;
   line-height: 32px;
   padding: 0 15px;
+}
+
+.upload-progress {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #f5f7fa;
+  border-radius: 4px;
+}
+
+.progress-text {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #606266;
+  word-break: break-all;
 }
 
 .log-item {

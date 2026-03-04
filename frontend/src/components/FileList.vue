@@ -38,14 +38,21 @@
       :before-upload="beforeUpload"
       :on-success="handleUploadSuccess"
       :on-error="handleUploadError"
+      :on-progress="handleUploadProgress"
     >
-      <el-button type="primary" :icon="Upload">上传文件</el-button>
+      <el-button type="primary" :icon="Upload" :loading="uploading">上传文件</el-button>
       <template #tip>
         <div class="upload-tip">
           支持图片、PDF、Word、Excel、MP4，单个文件不超过500MB
         </div>
       </template>
     </el-upload>
+    
+    <!-- 上传进度条 -->
+    <div v-if="uploadProgress > 0 && uploadProgress < 100" class="upload-progress">
+      <el-progress :percentage="uploadProgress" :stroke-width="8" />
+      <span class="progress-text">{{ uploadingFileName }}</span>
+    </div>
     
     <!-- 图片预览对话框 -->
     <el-dialog
@@ -89,6 +96,9 @@ const emit = defineEmits(['upload-success', 'update:files'])
 // 本地文件列表副本
 const localFiles = ref([...props.files])
 const uploadRef = ref(null)
+const uploading = ref(false)
+const uploadProgress = ref(0)
+const uploadingFileName = ref('')
 
 // 监听 prop 变化，同步更新本地副本
 watch(() => props.files, (newFiles) => {
@@ -187,10 +197,24 @@ const beforeUpload = (file) => {
     ElMessage.error('文件大小不能超过 500MB!')
     return false
   }
+  uploading.value = true
+  uploadProgress.value = 0
+  uploadingFileName.value = file.name
   return true
 }
 
+const handleUploadProgress = (event, file) => {
+  uploadProgress.value = Math.round(event.percent)
+}
+
 const handleUploadSuccess = (response, file) => {
+  uploading.value = false
+  uploadProgress.value = 100
+  setTimeout(() => {
+    uploadProgress.value = 0
+    uploadingFileName.value = ''
+  }, 1000)
+  
   ElMessage.success('文件上传成功')
   if (response.code === 200 && response.data && response.data.length > 0) {
     // 添加新文件到本地列表
@@ -213,6 +237,10 @@ const handleUploadSuccess = (response, file) => {
 }
 
 const handleUploadError = (error) => {
+  uploading.value = false
+  uploadProgress.value = 0
+  uploadingFileName.value = ''
+  
   console.error('上传失败:', error)
   let message = '文件上传失败'
   
@@ -323,5 +351,20 @@ const handleUploadError = (error) => {
   font-size: 12px;
   color: #909399;
   margin-top: 8px;
+}
+
+.upload-progress {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: 4px;
+}
+
+.progress-text {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #606266;
+  word-break: break-all;
 }
 </style>
