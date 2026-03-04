@@ -527,6 +527,7 @@
               stage="plan"
               :can-upload="true"
               @upload-success="(res, file) => handleStageFileSuccess('plan', res, file)"
+              @update:files="(files) => planFiles = files"
             />
           </el-form-item>
           
@@ -558,6 +559,7 @@
               stage="do"
               :can-upload="true"
               @upload-success="(res, file) => handleStageFileSuccess('do', res, file)"
+              @update:files="(files) => doFiles = files"
             />
           </el-form-item>
           
@@ -589,6 +591,7 @@
               stage="check"
               :can-upload="true"
               @upload-success="(res, file) => handleStageFileSuccess('check', res, file)"
+              @update:files="(files) => checkFiles = files"
             />
           </el-form-item>
           
@@ -627,6 +630,7 @@
               stage="act"
               :can-upload="true"
               @upload-success="(res, file) => handleStageFileSuccess('act', res, file)"
+              @update:files="(files) => actFiles = files"
             />
           </el-form-item>
           
