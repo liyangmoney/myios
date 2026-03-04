@@ -27,9 +27,9 @@ const __dirname = path.dirname(__filename)
 // 使用内存存储，让控制器处理文件保存逻辑
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024 },
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx']
+    const allowedTypes = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.mp4']
     const ext = path.extname(file.originalname).toLowerCase()
     if (allowedTypes.includes(ext)) {
       cb(null, true)
@@ -65,7 +65,7 @@ const handleMulterError = (err, req, res, next) => {
     return res.status(400).json({ code: 400, message: '文件格式不对' })
   }
   if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(400).json({ code: 400, message: '文件大小超过限制（最大50MB）' })
+    return res.status(400).json({ code: 400, message: '文件大小超过限制（最大500MB）' })
   }
   next(err)
 }

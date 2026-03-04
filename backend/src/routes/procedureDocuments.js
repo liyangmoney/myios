@@ -27,14 +27,14 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx']
+    const allowedTypes = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.mp4']
     const ext = path.extname(file.originalname).toLowerCase()
     if (allowedTypes.includes(ext)) {
       cb(null, true)
     } else {
-      cb(new Error('不支持的文件类型，只允许 PDF/Word/Excel/PPT'))
+      cb(new Error('不支持的文件类型，只允许 PDF/Word/Excel/PPT/MP4'))
     }
   }
 })
@@ -55,7 +55,7 @@ const handleMulterError = (err, req, res, next) => {
     return res.status(400).json({ code: 400, message: '文件格式不对' })
   }
   if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(400).json({ code: 400, message: '文件大小超过限制（最大50MB）' })
+    return res.status(400).json({ code: 400, message: '文件大小超过限制（最大500MB）' })
   }
   next(err)
 }
