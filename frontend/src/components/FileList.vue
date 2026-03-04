@@ -235,41 +235,49 @@ const handleUploadError = (error) => {
 .file-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 8px 12px;
   background: #f5f7fa;
   border-radius: 4px;
+  gap: 8px;
 }
 
 .file-info {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   cursor: pointer;
   flex: 1;
+  min-width: 0;
 }
 
 .file-icon {
   font-size: 20px;
   color: #409eff;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .file-name {
   flex: 1;
   color: #303133;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-all;
+  line-height: 1.5;
 }
 
 .file-size {
   color: #909399;
   font-size: 12px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .file-actions {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
+  align-items: flex-start;
+  padding-top: 2px;
 }
 
 .no-files {
