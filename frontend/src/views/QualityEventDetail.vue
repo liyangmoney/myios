@@ -12,13 +12,6 @@
       </div>
       <div class="header-right">
         <el-button 
-          v-if="canEdit" 
-          type="primary" 
-          @click="showEditDialog"
-        >
-          编辑
-        </el-button>
-        <el-button 
           v-if="event.reporter_id === currentUserId" 
           type="danger" 
           @click="handleDelete"
