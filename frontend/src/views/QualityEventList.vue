@@ -71,6 +71,7 @@
             <el-option label="新建" value="NEW" />
             <el-option label="执行中" value="DO" />
             <el-option label="验证中" value="CHECK" />
+            <el-option label="处理中" value="ACT" />
             <el-option label="已关闭" value="CLOSED" />
           </el-select>
         </el-form-item>
@@ -125,6 +126,7 @@
             <el-option label="新建" value="NEW" />
             <el-option label="执行中" value="DO" />
             <el-option label="验证中" value="CHECK" />
+            <el-option label="处理中" value="ACT" />
             <el-option label="已关闭" value="CLOSED" />
           </el-select>
           
@@ -634,6 +636,7 @@ const getStatusLabel = (status) => {
     PLAN: '计划中',
     DO: '执行中',
     CHECK: '验证中',
+    ACT: '处理中',
     CLOSED: '已关闭',
     REJECTED: '已驳回'
   }
@@ -647,6 +650,7 @@ const getStatusType = (status) => {
     PLAN: 'warning',
     DO: 'primary',
     CHECK: 'info',
+    ACT: 'warning',
     CLOSED: 'success',
     REJECTED: 'info'
   }
