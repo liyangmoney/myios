@@ -41,7 +41,11 @@ app.get('/api/download', (req, res) => {
     return res.status(404).json({ code: 404, message: '文件不存在' })
   }
   
-  // 发送文件
+  // 提取原始文件名（去掉时间戳前缀）
+  const originalName = filename.replace(/^\d+-\d+_/, '')
+  
+  // 发送文件，设置下载文件名
+  res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(originalName)}`)
   res.sendFile(filePath)
 })
 
