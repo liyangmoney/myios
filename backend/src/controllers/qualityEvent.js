@@ -636,13 +636,28 @@ export const deleteQualityEvent = async (req, res) => {
     const eventNo = event.event_no
     const eventDir = path.join(uploadDir, eventNo)
     
+    console.log('尝试删除事件文件夹:', eventDir)
+    console.log('uploadDir:', uploadDir)
+    console.log('eventNo:', eventNo)
+    
     // 如果文件夹存在，递归删除
     if (fs.existsSync(eventDir)) {
+      console.log('文件夹存在，开始删除...')
       try {
         fs.rmSync(eventDir, { recursive: true, force: true })
         console.log(`已删除事件文件夹: ${eventDir}`)
       } catch (err) {
         console.error('删除事件文件夹失败:', err)
+      }
+    } else {
+      console.log('文件夹不存在:', eventDir)
+      // 检查父目录是否存在
+      if (fs.existsSync(uploadDir)) {
+        console.log('父目录存在，列出内容:')
+        const files = fs.readdirSync(uploadDir)
+        console.log(files)
+      } else {
+        console.log('父目录也不存在:', uploadDir)
       }
     }
     
