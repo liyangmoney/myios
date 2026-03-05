@@ -270,7 +270,7 @@ app.use('/api/procedures', procedureRoutes)
 app.use('/api/onlyoffice', onlyofficeRoutes)
 
 // 导入定时任务
-import { startQualityEventReminderJob } from './jobs/qualityEventReminder.js'
+import { startAllQualityEventJobs } from './jobs/qualityEventReminder.js'
 
 // 错误处理
 app.use((err, req, res, next) => {
@@ -282,6 +282,6 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)
   console.log(`JWT_SECRET: ${process.env.JWT_SECRET ? '已设置' : '使用默认值'}`)
   
-  // 启动定时任务
-  startQualityEventReminderJob()
+  // 启动所有定时任务
+  startAllQualityEventJobs()
 })
