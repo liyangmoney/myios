@@ -14,7 +14,9 @@ import {
   deleteQualityEvent,
   addComment,
   getStatistics,
-  uploadFiles
+  uploadFiles,
+  checkDueDateReminders,
+  checkOverdue30DaysEvents
 } from '../controllers/qualityEvent.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -99,5 +101,23 @@ const handleMulterError = (err, req, res, next) => {
 }
 
 router.post('/:id/upload', upload.array('files', 5), handleMulterError, uploadFiles)
+
+// 管理员接口：手动触发超期30天事件检查
+router.post('/admin/check-overdue-30days', async (req, res) => {
+  try {
+    // 检查是否为管理员
+    const userId = req.userId
+    const users = await query('SELECT role FROM sys_user WHERE id = ? AND deleted_at IS NULL', [userId])
+    if (users.length === 0 || users[0].role !== 'admin') {
+      return res.status(403).json({ code: 403, message: '只有管理员可以执行此操作' })
+    }
+    
+    await checkOverdue30DaysEvents()
+    res.json({ code: 200, message: '超期30天事件检查完成' })
+  } catch (error) {
+    console.error('手动触发超期30天检查失败:', error)
+    res.status(500).json({ code: 500, message: '检查失败：' + error.message })
+  }
+})
 
 export default router

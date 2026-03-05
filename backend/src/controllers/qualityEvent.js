@@ -938,3 +938,114 @@ export const checkDueDateReminders = async () => {
     console.error('检查到期提醒失败:', error)
   }
 }
+
+// 检查超过截止日期30天未关闭的质量事件，发送邮件给通知人
+export const checkOverdue30DaysEvents = async () => {
+  try {
+    console.log('[' + new Date().toISOString() + '] 检查超过截止日期30天未关闭的质量事件...')
+    
+    // 查找未关闭且超过截止日期30天的事件
+    const events = await query(`
+      SELECT * FROM quality_event
+      WHERE deleted_at IS NULL
+        AND status != 'CLOSED'
+        AND status != 'REJECTED'
+        AND due_date IS NOT NULL
+        AND due_date <= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    `)
+    
+    console.log(`找到 ${events.length} 个超过截止日期30天未关闭的事件`)
+    
+    for (const event of events) {
+      // 计算超期天数
+      const daysOverdue = Math.floor((new Date() - new Date(event.due_date)) / (1000 * 60 * 60 * 24))
+      
+      // 检查是否已经发送过提醒（每月只发一次）
+      const lastReminder = event.last_reminder_at ? new Date(event.last_reminder_at) : null
+      const now = new Date()
+      const shouldSend = !lastReminder || (now - lastReminder) >= (30 * 24 * 60 * 60 * 1000)
+      
+      if (!shouldSend) {
+        console.log(`事件 ${event.event_no} 本月已发送过提醒，跳过`)
+        continue
+      }
+      
+      // 获取通知人列表
+      let notifyUserIds = []
+      if (event.notify_users) {
+        try {
+          notifyUserIds = JSON.parse(event.notify_users)
+        } catch {}
+      }
+      
+      if (notifyUserIds.length === 0) {
+        console.log(`事件 ${event.event_no} 没有设置通知人，跳过`)
+        continue
+      }
+      
+      // 发送超期提醒邮件
+      await sendOverdue30DaysEmail(event, notifyUserIds, daysOverdue)
+      
+      // 更新最后提醒时间
+      await query(
+        'UPDATE quality_event SET last_reminder_at = NOW() WHERE id = ?',
+        [event.id]
+      )
+      
+      console.log(`已发送超期30天提醒: ${event.event_no}, 超期: ${daysOverdue}天`)
+    }
+    
+    console.log('超期30天事件检查完成')
+  } catch (error) {
+    console.error('检查超期30天事件失败:', error)
+  }
+}
+
+// 发送超期30天提醒邮件
+const sendOverdue30DaysEmail = async (event, notifyUserIds, daysOverdue) => {
+  try {
+    // 获取通知人邮箱
+    const users = await query(
+      'SELECT email, user_name FROM sys_user WHERE id IN (?) AND deleted_at IS NULL',
+      [notifyUserIds]
+    )
+    
+    const appUrl = process.env.APP_URL || 'http://localhost:3000'
+    
+    for (const user of users) {
+      if (!user.email) continue
+      
+      const subject = `【质量事件严重超期提醒】${event.event_no} 已超期${daysOverdue}天未关闭`
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); padding: 20px; text-align: center; color: white;">
+            <h2>⚠️ 质量事件严重超期提醒</h2>
+          </div>
+          
+          <div style="padding: 30px; background-color: #f9f9f9;">
+            <p style="color: #d63031; font-size: 18px; font-weight: bold;">该事件已超期 ${daysOverdue} 天未关闭！</p>
+            <p style="color: #666;">截止日期：${event.due_date ? new Date(event.due_date).toLocaleDateString('zh-CN') : '未设置'}</p>
+            
+            <p><strong>事件编号：</strong> ${event.event_no}</p>
+            <p><strong>事件标题：</strong> ${event.title}</p>
+            <p><strong>严重程度：</strong> ${event.severity}</p>
+            <p><strong>当前状态：</strong> ${getStatusLabel(event.status)}</p>
+            
+            <div style="background: white; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p><strong>问题描述：</strong></p>
+              <p>${event.description || '暂无'}</p>
+            </div>
+            
+            <p style="color: #d63031; font-weight: bold;">请尽快处理或关闭此事件！</p>
+            
+            <p><a href="${appUrl}/quality-events/${event.id}" style="color: #409EFF;">点击查看详情</a></p>
+          </div>
+        </div>
+      `
+      
+      await sendMail(user.email, subject, html)
+    }
+  } catch (error) {
+    console.error('发送超期30天提醒邮件失败:', error)
+  }
+}
