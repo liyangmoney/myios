@@ -60,7 +60,7 @@ const upload = multer({
   storage,
   limits: { fileSize: 500 * 1024 * 1024 }, // 500MB
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.mp4', '.bin']
+    const allowedTypes = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.mp4']
     const ext = path.extname(file.originalname).toLowerCase()
     if (allowedTypes.includes(ext)) {
       // 强制设置mimetype为通用类型，避免视频类型被特殊处理

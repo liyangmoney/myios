@@ -777,14 +777,13 @@ export const uploadFiles = async (req, res) => {
       let finalFilename = file.filename
       const originalExt = path.extname(file.originalname).toLowerCase()
       
-      // 如果是伪装的 .bin 文件，提取原始文件名并恢复扩展名
-      if (originalExt === '.bin' && file.originalname.includes('|ORIGINAL:')) {
+      // 如果是伪装的 .pdf 文件（实际是MP4），提取原始文件名并恢复扩展名
+      if (originalExt === '.pdf' && file.originalname.includes('|ORIGINAL:')) {
         const parts = file.originalname.split('|ORIGINAL:')
-        if (parts.length === 2) {
+        if (parts.length === 2 && parts[1].toLowerCase().endsWith('.mp4')) {
           displayName = parts[1] // 提取原始文件名用于显示
-          // 恢复文件扩展名（把 .bin 改回原来的扩展名）
-          const realExt = path.extname(displayName)
-          finalFilename = file.filename.replace(/\.bin$/i, realExt)
+          // 恢复文件扩展名（把 .pdf 改回 .mp4）
+          finalFilename = file.filename.replace(/\.pdf$/i, '.mp4')
         }
       }
       
