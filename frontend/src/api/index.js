@@ -89,7 +89,15 @@ export const qualityEventApi = {
   uploadFiles: (id, formData) => api.post(`/quality-events/${id}/upload`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: 300000  // 5分钟，大文件上传需要更长时间
-  })
+  }),
+  // 分片上传相关
+  initChunkUpload: (data) => api.post('/upload/init', data),
+  uploadChunk: (formData) => api.post('/upload/chunk', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  getUploadStatus: (uploadId) => api.get(`/upload/status/${uploadId}`),
+  mergeChunks: (data) => api.post('/upload/merge', data),
+  cancelUpload: (uploadId) => api.delete(`/upload/cancel/${uploadId}`)
 }
 
 // 操作日志API
