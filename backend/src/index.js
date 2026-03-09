@@ -229,6 +229,7 @@ import procedureRoutes from './routes/procedures.js'
 import onlyofficeRoutes from './routes/onlyoffice.js'
 import operationLogRoutes from './routes/operationLog.js'
 import qualityEventRoutes from './routes/qualityEvent.js'
+import uploadRoutes from './routes/upload.js'
 import { operationLogMiddleware } from './controllers/operationLog.js'
 
 // 认证中间件
@@ -264,6 +265,7 @@ app.use('/api/documents', documentRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/operation-logs', operationLogRoutes)
 app.use('/api/quality-events', qualityEventRoutes)
+app.use('/api/upload', uploadRoutes)
 // procedures 路由内部自己处理认证
 app.use('/api/procedures', procedureRoutes)
 // OnlyOffice 回调不需要认证（OnlyOffice 服务器调用）
