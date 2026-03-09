@@ -22,16 +22,21 @@ import {
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// 确保上传目录存在
+// 上传目录
 const uploadDir = path.join(__dirname, '../../uploads/quality-events')
+
+// 确保上传目录存在
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true })
+}
+
+// 临时上传目录
 const tempUploadDir = path.join(__dirname, '../../uploads/temp')
 
-// 确保目录存在
-[uploadDir, tempUploadDir].forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true })
-  }
-})
+// 确保临时目录存在
+if (!fs.existsSync(tempUploadDir)) {
+  fs.mkdirSync(tempUploadDir, { recursive: true })
+}
 
 // 配置 multer 存储 - 先上传到临时目录，避免上传时阻塞
 const storage = multer.diskStorage({
