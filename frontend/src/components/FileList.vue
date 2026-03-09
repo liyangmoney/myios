@@ -200,12 +200,25 @@ const deleteFile = async (index) => {
 const customUpload = async (options) => {
   const { file, onProgress, onSuccess, onError } = options
   
+  console.log('开始上传:', file.name, '大小:', file.size, '类型:', file.type)
+  
   uploading.value = true
   uploadProgress.value = 0
   uploadingFileName.value = file.name
   isChunkedUpload.value = file.size > 50 * 1024 * 1024
   
   try {
+    // 验证 eventId 和 eventNo
+    if (!props.eventId || !props.eventNo) {
+      throw new Error('缺少必要参数: eventId 或 eventNo')
+    }
+    
+    console.log('调用 smartUpload:', {
+      eventId: props.eventId,
+      eventNo: props.eventNo,
+      stage: props.stage
+    })
+    
     const result = await smartUpload(
       file,
       props.eventId,
@@ -213,7 +226,6 @@ const customUpload = async (options) => {
       props.stage,
       (percent, uploadedChunks, totalChunks, status) => {
         uploadProgress.value = percent
-        // 更新进度
         onProgress({ percent })
       }
     )
@@ -228,7 +240,6 @@ const customUpload = async (options) => {
     
     ElMessage.success('文件上传成功')
     
-    // 添加新文件到本地列表
     const newFile = result[0]
     localFiles.value.push(newFile)
     emit('upload-success', { code: 200, data: result }, file)
@@ -240,18 +251,31 @@ const customUpload = async (options) => {
     uploadProgress.value = 0
     uploadingFileName.value = ''
     
-    console.error('上传失败:', error)
+    console.error('上传失败详情:', error)
     ElMessage.error(error.message || '文件上传失败')
     onError(error)
   }
 }
 
 const beforeUpload = (file) => {
+  console.log('准备上传文件:', file.name, '类型:', file.type, '大小:', file.size)
+  
   const isLt500M = file.size / 1024 / 1024 < 500
   if (!isLt500M) {
     ElMessage.error('文件大小不能超过 500MB!')
     return false
   }
+  
+  // 检查文件类型（包括手机视频的常见格式）
+  const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.mp4', '.mov', '.3gp', '.m4v']
+  const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
+  
+  if (!allowedExts.includes(ext)) {
+    ElMessage.error(`不支持的文件格式: ${ext}`)
+    console.error('文件类型不支持:', ext, file)
+    return false
+  }
+  
   return true
 }
 

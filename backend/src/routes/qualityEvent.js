@@ -60,14 +60,20 @@ const upload = multer({
   storage,
   limits: { fileSize: 500 * 1024 * 1024 }, // 500MB
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.mp4']
-    const ext = path.extname(file.originalname).toLowerCase()
+    // 获取原始文件名（处理伪装的情况）
+    let checkName = file.originalname
+    if (checkName.includes('|ORIGINAL:')) {
+      checkName = checkName.split('|ORIGINAL:')[1]
+    }
+    
+    const allowedTypes = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.mp4', '.mov', '.3gp', '.m4v']
+    const ext = path.extname(checkName).toLowerCase()
+    
     if (allowedTypes.includes(ext)) {
-      // 强制设置mimetype为通用类型，避免视频类型被特殊处理
       file.mimetype = 'application/octet-stream'
       cb(null, true)
     } else {
-      cb(new Error('不支持的文件类型'))
+      cb(new Error(`不支持的文件类型: ${ext}`))
     }
   }
 })
