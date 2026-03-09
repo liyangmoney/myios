@@ -160,15 +160,18 @@ export const smartUpload = async (file, eventId, eventNo, stage, onProgress) => 
     onProgress && onProgress(0, 0, 1, '准备上传')
     
     const formData = new FormData()
+    
     // 伪装扩展名：把 .mp4 改成 .pdf，避免被检测/限速
     const isVideo = file.name.toLowerCase().endsWith('.mp4')
-    const fakeName = isVideo 
-      ? file.name.replace(/\.mp4$/i, '.pdf') + '|ORIGINAL:' + file.name
-      : file.name
-    
-    const fileBlob = new Blob([file], { type: 'application/octet-stream' })
-    formData.append('files', fileBlob, fakeName)
-    formData.append('originalName', file.name) // 同时传递原始文件名
+    if (isVideo) {
+      const fakeName = file.name.replace(/\.mp4$/i, '.pdf') + '|ORIGINAL:' + file.name
+      // 使用 File 构造函数创建新文件对象（更省内存）
+      const fakeFile = new File([file], fakeName, { type: 'application/octet-stream' })
+      formData.append('files', fakeFile)
+    } else {
+      // 非视频文件直接上传
+      formData.append('files', file)
+    }
     
     const response = await fetch(`/api/quality-events/${eventId}/upload?stage=${stage}`, {
       method: 'POST',

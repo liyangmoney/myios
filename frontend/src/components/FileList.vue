@@ -257,9 +257,21 @@ const customUpload = async (options) => {
   }
 }
 
-const beforeUpload = (file) => {
-  console.log('准备上传文件:', file.name, '类型:', file.type, '大小:', file.size)
+// 全局错误处理，防止页面崩溃
+window.addEventListener('error', (e) => {
+  console.error('全局错误:', e.message, e.filename, e.lineno)
+  ElMessage.error('发生错误: ' + e.message)
+})
+
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('未处理的Promise错误:', e.reason)
+  ElMessage.error('发生错误: ' + (e.reason?.message || '未知错误'))
+})
+
+const beforeUpload = async (file) => {
+  console.log('准备上传文件:', file.name, '类型:', file.type, '大小:', (file.size / 1024 / 1024).toFixed(2) + 'MB')
   
+  // 检查文件大小
   const isLt500M = file.size / 1024 / 1024 < 500
   if (!isLt500M) {
     ElMessage.error('文件大小不能超过 500MB!')
@@ -274,6 +286,11 @@ const beforeUpload = (file) => {
     ElMessage.error(`不支持的文件格式: ${ext}`)
     console.error('文件类型不支持:', ext, file)
     return false
+  }
+  
+  // 大文件提示
+  if (file.size > 50 * 1024 * 1024) {
+    ElMessage.info('文件较大，正在准备上传...')
   }
   
   return true
