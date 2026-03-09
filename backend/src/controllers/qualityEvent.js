@@ -771,7 +771,24 @@ export const uploadFiles = async (req, res) => {
     // 将文件从临时目录移动到事件目录
     const movedFiles = await Promise.all(req.files.map(async (file) => {
       const tempPath = file.path
-      const finalPath = path.join(eventDir, file.filename)
+      
+      // 检查是否是伪装的文件名（|ORIGINAL:原始文件名）
+      let displayName = file.originalname
+      let finalFilename = file.filename
+      const originalExt = path.extname(file.originalname).toLowerCase()
+      
+      // 如果是伪装的 .bin 文件，提取原始文件名并恢复扩展名
+      if (originalExt === '.bin' && file.originalname.includes('|ORIGINAL:')) {
+        const parts = file.originalname.split('|ORIGINAL:')
+        if (parts.length === 2) {
+          displayName = parts[1] // 提取原始文件名用于显示
+          // 恢复文件扩展名（把 .bin 改回原来的扩展名）
+          const realExt = path.extname(displayName)
+          finalFilename = file.filename.replace(/\.bin$/i, realExt)
+        }
+      }
+      
+      const finalPath = path.join(eventDir, finalFilename)
       
       // 移动文件（使用重命名，速度最快）
       try {
@@ -782,14 +799,25 @@ export const uploadFiles = async (req, res) => {
         await fs.promises.unlink(tempPath)
       }
       
-      return file
+      // 返回处理后的文件信息
+      return {
+        ...file,
+        filename: finalFilename,
+        displayName: displayName
+      }
     }))
     
     // 准备文件信息
     const newFiles = movedFiles.map(file => {
-      const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
+      // 使用处理后的显示名称
+      const displayName = file.displayName || Buffer.from(file.originalname, 'latin1').toString('utf8')
+      // 清理显示名称（去掉伪装标记）
+      const cleanName = displayName.includes('|ORIGINAL:') 
+        ? displayName.split('|ORIGINAL:')[1] 
+        : displayName
+      
       return {
-        name: originalName,
+        name: cleanName,
         url: `/uploads/quality-events/${event.event_no}/${file.filename}`,
         type: file.mimetype,
         size: file.size,
