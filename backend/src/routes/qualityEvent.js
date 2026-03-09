@@ -63,6 +63,8 @@ const upload = multer({
     const allowedTypes = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.mp4']
     const ext = path.extname(file.originalname).toLowerCase()
     if (allowedTypes.includes(ext)) {
+      // 强制设置mimetype为通用类型，避免视频类型被特殊处理
+      file.mimetype = 'application/octet-stream'
       cb(null, true)
     } else {
       cb(new Error('不支持的文件类型'))
