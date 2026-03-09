@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename)
 
 // 上传目录
 const uploadDir = path.join(__dirname, '../../uploads/quality-events')
+const tempUploadDir = path.join(__dirname, '../../uploads/temp')
 
 // 生成事件编号
 const generateEventNo = async () => {
@@ -745,7 +746,7 @@ export const getStatistics = async (req, res) => {
 export const uploadFiles = async (req, res) => {
   try {
     const { id } = req.params
-    const { stage } = req.query // 从查询参数获取 stage
+    const { stage } = req.query
     const userId = req.userId
     const userName = req.userName
     
@@ -753,7 +754,7 @@ export const uploadFiles = async (req, res) => {
       return res.status(400).json({ code: 400, message: '没有上传文件' })
     }
     
-    // 获取当前文件列表
+    // 获取事件信息
     const events = await query('SELECT * FROM quality_event WHERE id = ?', [id])
     if (events.length === 0) {
       return res.status(404).json({ code: 404, message: '事件不存在' })
@@ -761,9 +762,31 @@ export const uploadFiles = async (req, res) => {
     
     const event = events[0]
     
-    // 准备文件信息 - 包含事件编号文件夹路径
-    const newFiles = req.files.map(file => {
-      // 正确处理中文文件名
+    // 创建事件目录（如果不存在）
+    const eventDir = path.join(uploadDir, event.event_no)
+    if (!fs.existsSync(eventDir)) {
+      fs.mkdirSync(eventDir, { recursive: true })
+    }
+    
+    // 将文件从临时目录移动到事件目录
+    const movedFiles = await Promise.all(req.files.map(async (file) => {
+      const tempPath = file.path
+      const finalPath = path.join(eventDir, file.filename)
+      
+      // 移动文件（使用重命名，速度最快）
+      try {
+        await fs.promises.rename(tempPath, finalPath)
+      } catch (moveError) {
+        // 如果跨文件系统，使用复制+删除
+        await fs.promises.copyFile(tempPath, finalPath)
+        await fs.promises.unlink(tempPath)
+      }
+      
+      return file
+    }))
+    
+    // 准备文件信息
+    const newFiles = movedFiles.map(file => {
       const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
       return {
         name: originalName,
@@ -774,12 +797,7 @@ export const uploadFiles = async (req, res) => {
       }
     })
     
-    // 根据阶段更新对应的文件字段
-    let fieldName
-    let existingFiles = []
-    
-    // 如果是评论附件或PDCA阶段附件，直接返回文件信息，不更新事件表
-    // 由前端在提交时统一处理
+    // PDCA阶段附件直接返回，不更新事件表
     if (stage === 'comment' || stage === 'plan' || stage === 'do' || stage === 'check' || stage === 'act') {
       res.json({
         code: 200,
@@ -1049,3 +1067,40 @@ const sendOverdue30DaysEmail = async (event, notifyUserIds, daysOverdue) => {
     console.error('发送超期30天提醒邮件失败:', error)
   }
 }
+
+// 定时清理临时上传目录（删除超过2小时的临时文件）
+const cleanupTempUploads = async () => {
+  try {
+    if (!fs.existsSync(tempUploadDir)) return
+    
+    const files = await fs.promises.readdir(tempUploadDir)
+    const now = Date.now()
+    const maxAge = 2 * 60 * 60 * 1000 // 2小时
+    
+    let cleanedCount = 0
+    
+    for (const file of files) {
+      const filePath = path.join(tempUploadDir, file)
+      try {
+        const stats = await fs.promises.stat(filePath)
+        if (now - stats.mtime.getTime() > maxAge) {
+          await fs.promises.unlink(filePath)
+          cleanedCount++
+        }
+      } catch (err) {
+        // 忽略单个文件的错误
+      }
+    }
+    
+    if (cleanedCount > 0) {
+      console.log(`[${new Date().toISOString()}] 清理临时文件: ${cleanedCount} 个`)
+    }
+  } catch (error) {
+    console.error('清理临时上传目录失败:', error)
+  }
+}
+
+// 每小时清理一次临时文件
+setInterval(cleanupTempUploads, 60 * 60 * 1000)
+// 启动时立即执行一次
+cleanupTempUploads()

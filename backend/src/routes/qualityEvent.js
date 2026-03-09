@@ -24,32 +24,20 @@ const __dirname = path.dirname(__filename)
 
 // 确保上传目录存在
 const uploadDir = path.join(__dirname, '../../uploads/quality-events')
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true })
-}
+const tempUploadDir = path.join(__dirname, '../../uploads/temp')
 
-// 配置 multer 存储 - 按事件编号创建文件夹
+// 确保目录存在
+[uploadDir, tempUploadDir].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true })
+  }
+})
+
+// 配置 multer 存储 - 先上传到临时目录，避免上传时阻塞
 const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    try {
-      // 从 URL 参数获取事件ID
-      const eventId = req.params.id
-      
-      // 查询事件编号
-      const events = await query('SELECT event_no FROM quality_event WHERE id = ?', [eventId])
-      const eventNo = events.length > 0 ? events[0].event_no : 'unknown'
-      
-      // 创建事件编号对应的文件夹
-      const eventDir = path.join(uploadDir, eventNo)
-      if (!fs.existsSync(eventDir)) {
-        fs.mkdirSync(eventDir, { recursive: true })
-      }
-      
-      cb(null, eventDir)
-    } catch (error) {
-      console.error('创建上传目录失败:', error)
-      cb(error, uploadDir)
-    }
+  destination: (req, file, cb) => {
+    // 直接写入临时目录，不阻塞上传过程
+    cb(null, tempUploadDir)
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
@@ -57,7 +45,7 @@ const storage = multer.diskStorage({
     const ext = path.extname(file.originalname)
     // 使用 Buffer 正确处理中文编码
     const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
-    // 存储文件名：原始名称_唯一ID.扩展名
+    // 存储文件名：时间戳_唯一ID_原始名称.扩展名
     const safeName = originalName.replace(/[^\w\u4e00-\u9fa5.-]/g, '_')
     cb(null, `${uniqueSuffix}_${safeName}`)
   }
