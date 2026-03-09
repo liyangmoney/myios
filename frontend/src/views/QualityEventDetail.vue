@@ -11,9 +11,9 @@
         <el-tag :type="getStatusType(event.status)" size="small">{{ getStatusLabel(event.status) }}</el-tag>
       </div>
       <div class="header-right">
-        <el-button 
-          v-if="event.reporter_id === currentUserId" 
-          type="danger" 
+        <el-button
+          v-if="event.reporter_id === currentUserId"
+          type="danger"
           @click="handleDelete"
         >
           删除
@@ -26,7 +26,7 @@
       <template #header>
         <span>基本信息</span>
       </template>
-      
+
       <!-- PC端表格 -->
       <div class="pc-only">
         <el-descriptions :column="3" border>
@@ -70,8 +70,8 @@
               <span :class="getDueDateClass(event.due_date, event.status)" class="due-date-text">
                 {{ formatDueDate(event.due_date) }}
               </span>
-              <el-tag v-if="event.due_date && event.status !== 'CLOSED'" 
-                      :type="getDueDateTagType(event.due_date)" 
+              <el-tag v-if="event.due_date && event.status !== 'CLOSED'"
+                      :type="getDueDateTagType(event.due_date)"
                       size="small"
                       class="due-date-tag">
                 {{ getDueDateText(event.due_date) }}
@@ -152,7 +152,7 @@
           <span class="mobile-info-value">{{ event.description || '暂无描述' }}</span>
         </div>
       </div>
-      
+
       <div class="description-section">
         <h4>问题描述</h4>
         <p>{{ event.description || '暂无描述' }}</p>
@@ -164,7 +164,7 @@
       <template #header>
         <span>PDCA 处理流程</span>
       </template>
-      
+
       <!-- Plan -->
       <div class="pdca-section">
         <div class="pdca-header">
@@ -172,16 +172,16 @@
             <span class="pdca-badge plan">P</span>
             Plan 计划
           </div>
-          <el-button 
-            v-if="canEditPlan" 
-            link 
-            type="primary" 
+          <el-button
+            v-if="canEditPlan"
+            link
+            type="primary"
             @click="editPlan"
           >
             {{ event.root_cause ? '编辑' : '填写' }}
           </el-button>
         </div>
-        
+
         <div class="pdca-content">
           <el-descriptions :column="1" border>
             <el-descriptions-item label="根本原因分析">
@@ -194,9 +194,10 @@
               {{ event.plan_filled_by_name || '-' }} {{ event.plan_filled_at ? formatDateTime(event.plan_filled_at) : '' }}
             </el-descriptions-item>
             <el-descriptions-item label="附件">
-              <FileList 
-                :files="parseFiles(event.plan_files)" 
-                :event-id="event.id" 
+              <FileList
+                :files="parseFiles(event.plan_files)"
+                :event-id="event.id"
+                :event-no="event.event_no"
                 stage="plan"
                 :can-upload="false"
               />
@@ -204,7 +205,7 @@
           </el-descriptions>
         </div>
       </div>
-      
+
       <!-- Do -->
       <div class="pdca-section">
         <div class="pdca-header">
@@ -212,29 +213,30 @@
             <span class="pdca-badge do">D</span>
             Do 执行
           </div>
-          <el-button 
-            v-if="canEditDo" 
-            link 
-            type="primary" 
+          <el-button
+            v-if="canEditDo"
+            link
+            type="primary"
             @click="editDo"
           >
             {{ event.implementation ? '编辑' : '填写' }}
           </el-button>
         </div>
-        
+
         <div class="pdca-content">
           <el-descriptions :column="1" border>
             <el-descriptions-item label="实施过程记录">
               {{ event.implementation || '待填写' }}
             </el-descriptions-item>
-            
+
             <el-descriptions-item label="填写人">
               {{ event.do_filled_by_name || '-' }} {{ event.do_filled_at ? formatDateTime(event.do_filled_at) : '' }}
             </el-descriptions-item>
             <el-descriptions-item label="附件">
-              <FileList 
-                :files="parseFiles(event.implementation_files)" 
-                :event-id="event.id" 
+              <FileList
+                :files="parseFiles(event.implementation_files)"
+                :event-id="event.id"
+                :event-no="event.event_no"
                 stage="do"
                 :can-upload="false"
               />
@@ -242,7 +244,7 @@
           </el-descriptions>
         </div>
       </div>
-      
+
       <!-- Check -->
       <div class="pdca-section">
         <div class="pdca-header">
@@ -250,16 +252,16 @@
             <span class="pdca-badge check">C</span>
             Check 检查
           </div>
-          <el-button 
-            v-if="canEditCheck" 
-            link 
-            type="primary" 
+          <el-button
+            v-if="canEditCheck"
+            link
+            type="primary"
             @click="editCheck"
           >
             {{ event.verification_result ? '编辑' : '填写' }}
           </el-button>
         </div>
-        
+
         <div class="pdca-content">
           <el-descriptions :column="1" border>
             <el-descriptions-item label="验证结果">
@@ -272,9 +274,10 @@
               {{ formatDateTime(event.verified_at) || '-' }}
             </el-descriptions-item>
             <el-descriptions-item label="附件">
-              <FileList 
-                :files="parseFiles(event.check_files)" 
-                :event-id="event.id" 
+              <FileList
+                :files="parseFiles(event.check_files)"
+                :event-id="event.id"
+                :event-no="event.event_no"
                 stage="check"
                 :can-upload="false"
               />
@@ -282,7 +285,7 @@
           </el-descriptions>
         </div>
       </div>
-      
+
       <!-- Act -->
       <div class="pdca-section">
         <div class="pdca-header">
@@ -290,16 +293,16 @@
             <span class="pdca-badge act">A</span>
             Act 处理
           </div>
-          <el-button 
-            v-if="canEditAct" 
-            link 
-            type="primary" 
+          <el-button
+            v-if="canEditAct"
+            link
+            type="primary"
             @click="editAct"
           >
             {{ event.standardization ? '编辑' : '填写' }}
           </el-button>
         </div>
-        
+
         <div class="pdca-content">
           <el-descriptions :column="1" border>
             <el-descriptions-item label="标准化措施">
@@ -312,9 +315,10 @@
               {{ formatDateTime(event.closed_at) || '-' }}
             </el-descriptions-item>
             <el-descriptions-item label="附件">
-              <FileList 
-                :files="parseFiles(event.act_files)" 
-                :event-id="event.id" 
+              <FileList
+                :files="parseFiles(event.act_files)"
+                :event-id="event.id"
+                :event-no="event.event_no"
                 stage="act"
                 :can-upload="false"
               />
@@ -329,7 +333,7 @@
       <template #header>
         <span>评论记录</span>
       </template>
-      
+
       <!-- 评论列表 -->
       <div class="comment-list">
         <div v-for="comment in comments" :key="comment.id" class="comment-item">
@@ -341,9 +345,9 @@
           <!-- 评论附件 -->
           <div v-if="comment.attachments && comment.attachments !== '[]'" class="comment-attachments">
             <div v-for="(file, idx) in parseFiles(comment.attachments)" :key="idx" class="comment-file">
-              <el-link 
-                :href="getFileUrl(file.url)" 
-                target="_blank" 
+              <el-link
+                :href="getFileUrl(file.url)"
+                target="_blank"
                 type="primary"
               >
                 <el-icon><Document /></el-icon> {{ file.name }}
@@ -355,7 +359,7 @@
           暂无评论
         </div>
       </div>
-      
+
       <!-- 添加评论 -->
       <div class="comment-input">
         <el-input
@@ -400,7 +404,7 @@
             </div>
           </div>
         </div>
-        
+
         <el-button type="primary" @click="addComment" :disabled="!newComment.trim()">
           发表评论
         </el-button>
@@ -412,10 +416,10 @@
       <template #header>
         <span>操作日志</span>
       </template>
-      
+
       <el-timeline>
         <el-timeline-item
-          v-for="log in logs" 
+          v-for="log in logs"
           :key="log.id"
           :timestamp="formatDateTime(log.created_at)"
         >
@@ -524,7 +528,7 @@
               placeholder="分析问题根本原因..."
             />
           </el-form-item>
-          
+
           <el-form-item label="纠正措施" prop="correctiveAction">
             <el-input
               v-model="editForm.correctiveAction"
@@ -533,18 +537,19 @@
               placeholder="制定纠正措施计划..."
             />
           </el-form-item>
-          
+
           <el-form-item label="附件">
-            <FileList 
-              :files="planFiles" 
-              :event-id="event?.id" 
+            <FileList
+              :files="planFiles"
+              :event-id="event?.id"
+              :event-no="event?.event_no"
               stage="plan"
               :can-upload="true"
               @upload-success="(res, file) => handleStageFileSuccess('plan', res, file)"
               @update:files="(files) => planFiles = files"
             />
           </el-form-item>
-          
+
           <el-form-item label="指派下一步" prop="nextHandlerId">
             <el-select-v2
               v-model="editForm.nextHandlerId"
@@ -556,7 +561,7 @@
             />
           </el-form-item>
         </template>
-        
+
         <template v-if="editType === 'DO'">
           <el-form-item label="实施记录" prop="implementation">
             <el-input
@@ -566,18 +571,19 @@
               placeholder="记录实施过程..."
             />
           </el-form-item>
-          
+
           <el-form-item label="附件">
-            <FileList 
-              :files="doFiles" 
-              :event-id="event?.id" 
+            <FileList
+              :files="doFiles"
+              :event-id="event?.id"
+              :event-no="event?.event_no"
               stage="do"
               :can-upload="true"
               @upload-success="(res, file) => handleStageFileSuccess('do', res, file)"
               @update:files="(files) => doFiles = files"
             />
           </el-form-item>
-          
+
           <el-form-item label="指派下一步" prop="nextHandlerId">
             <el-select-v2
               v-model="editForm.nextHandlerId"
@@ -589,7 +595,7 @@
             />
           </el-form-item>
         </template>
-        
+
         <template v-if="editType === 'CHECK'">
           <el-form-item label="验证结果" prop="verificationResult">
             <el-input
@@ -599,25 +605,26 @@
               placeholder="记录验证结果..."
             />
           </el-form-item>
-          
+
           <el-form-item label="附件">
-            <FileList 
-              :files="checkFiles" 
-              :event-id="event?.id" 
+            <FileList
+              :files="checkFiles"
+              :event-id="event?.id"
+              :event-no="event?.event_no"
               stage="check"
               :can-upload="true"
               @upload-success="(res, file) => handleStageFileSuccess('check', res, file)"
               @update:files="(files) => checkFiles = files"
             />
           </el-form-item>
-          
+
           <el-form-item label="是否通过">
             <el-radio-group v-model="editForm.passed">
               <el-radio :label="true">通过，可以关闭</el-radio>
               <el-radio :label="false">不通过，需要重新处理</el-radio>
             </el-radio-group>
           </el-form-item>
-          
+
           <el-form-item label="指派下一步" prop="nextHandlerId">
             <el-select-v2
               v-model="editForm.nextHandlerId"
@@ -629,7 +636,7 @@
             />
           </el-form-item>
         </template>
-        
+
         <template v-if="editType === 'ACT'">
           <el-form-item label="标准化措施" prop="standardization">
             <el-input
@@ -639,18 +646,19 @@
               placeholder="记录标准化措施，防止问题再发..."
             />
           </el-form-item>
-          
+
           <el-form-item label="附件">
-            <FileList 
-              :files="actFiles" 
-              :event-id="event?.id" 
+            <FileList
+              :files="actFiles"
+              :event-id="event?.id"
+              :event-no="event?.event_no"
               stage="act"
               :can-upload="true"
               @upload-success="(res, file) => handleStageFileSuccess('act', res, file)"
               @update:files="(files) => actFiles = files"
             />
           </el-form-item>
-          
+
           <el-form-item label="状态" prop="status">
             <el-select v-model="editForm.status" style="width: 100%">
               <el-option label="关闭事件" value="CLOSED" />
@@ -659,7 +667,7 @@
           </el-form-item>
         </template>
       </el-form>
-      
+
       <template #footer>
         <el-button @click="editDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="savePDCA" :loading="saving">保存</el-button>
@@ -850,11 +858,11 @@ const savePDCA = async () => {
   // 所有阶段都进行表单验证
   const valid = await editFormRef.value?.validate().catch(() => false)
   if (!valid) return
-  
+
   saving.value = true
   try {
     const data = {}
-    
+
     if (editType.value === 'PLAN') {
       data.rootCause = editForm.value.rootCause
       data.correctiveAction = editForm.value.correctiveAction
@@ -894,7 +902,7 @@ const savePDCA = async () => {
         data.nextStep = null
       }
     }
-    
+
     await qualityEventApi.update(event.value.id, data)
     ElMessage.success('保存成功')
     editDialogVisible.value = false
@@ -910,16 +918,16 @@ const savePDCA = async () => {
 // 添加评论
 const addComment = async () => {
   if (!newComment.value.trim()) return
-  
+
   try {
     // 使用 uploadedCommentFiles 数组
     const attachments = [...uploadedCommentFiles.value]
-    
+
     await qualityEventApi.addComment(event.value.id, {
       content: newComment.value,
       attachments: attachments
     })
-    
+
     ElMessage.success('评论添加成功')
     newComment.value = ''
     uploadedCommentFiles.value = []
@@ -954,7 +962,7 @@ const getSeverityType = (severity) => {
 
 const getStatusLabel = (status) => {
   const labels = {
-    NEW: '新建', PLAN: '计划中', DO: '执行中', 
+    NEW: '新建', PLAN: '计划中', DO: '执行中',
     CHECK: '验证中', CLOSED: '已关闭', REJECTED: '已驳回'
   }
   return labels[status] || status
@@ -979,22 +987,22 @@ const getActionLabel = (action) => {
 // 解析日志内容为中文描述
 const parseLogContent = (log) => {
   if (!log.new_value) return ''
-  
+
   try {
     const data = JSON.parse(log.new_value)
     const action = log.action
     const oldData = log.old_value ? JSON.parse(log.old_value) : {}
-    
+
     // 根据操作类型生成描述
     switch (action) {
       case 'CREATE':
         return `创建了质量事件：${data.title || data.eventNo || ''}`
-      
+
       case 'UPDATE': {
         // 判断更新了哪些字段
         const changes = []
         const details = []
-        
+
         if (data.rootCause !== undefined && data.rootCause !== oldData.rootCause) {
           changes.push('根本原因')
           details.push(`根本原因: ${data.rootCause}`)
@@ -1015,7 +1023,7 @@ const parseLogContent = (log) => {
           changes.push('标准化措施')
           details.push(`标准化措施: ${data.standardization}`)
         }
-        
+
         // 状态变更
         if (data.status !== undefined && data.status !== oldData.status) {
           const statusLabels = {
@@ -1032,7 +1040,7 @@ const parseLogContent = (log) => {
           // 状态变更只记录到 details，不添加到 changes
           details.push(`状态: ${fromStatus} → ${toStatus}`)
         }
-        
+
         // 处理人变更
         if (data.currentHandlerId !== undefined && data.currentHandlerId !== oldData.currentHandlerId) {
           if (data.currentHandlerId) {
@@ -1042,7 +1050,7 @@ const parseLogContent = (log) => {
             details.push('取消了处理人')
           }
         }
-        
+
         // 附件上传 - 直接使用后端记录的 message
         if (data.message && data.message.includes('上传了') && data.message.includes('附件')) {
           details.push(data.message)
@@ -1059,7 +1067,7 @@ const parseLogContent = (log) => {
               }
             } catch {}
           }
-          
+
           if (data.implementation_files !== undefined && data.implementation_files !== oldData.implementation_files) {
             try {
               const newFiles = JSON.parse(data.implementation_files)
@@ -1071,7 +1079,7 @@ const parseLogContent = (log) => {
               }
             } catch {}
           }
-          
+
           if (data.check_files !== undefined && data.check_files !== oldData.check_files) {
             try {
               const newFiles = JSON.parse(data.check_files)
@@ -1083,7 +1091,7 @@ const parseLogContent = (log) => {
               }
             } catch {}
           }
-          
+
           if (data.act_files !== undefined && data.act_files !== oldData.act_files) {
             try {
               const newFiles = JSON.parse(data.act_files)
@@ -1096,17 +1104,17 @@ const parseLogContent = (log) => {
             } catch {}
           }
         }
-        
+
         if (changes.length > 0 || details.length > 0) {
           let result = details.join('; ')
           return result || '更新了事件信息'
         }
         return '更新了事件信息'
       }
-      
+
       case 'DELETE':
         return `删除了质量事件：${data.title || data.eventNo || ''}`
-      
+
       case 'COMMENT': {
         // 新的格式是对象，包含 content 和 attachments
         if (typeof data === 'object' && data.content) {
@@ -1116,10 +1124,10 @@ const parseLogContent = (log) => {
         const commentContent = typeof data === 'string' ? data : JSON.stringify(data)
         return commentContent
       }
-      
+
       case 'UPLOAD':
         return `上传了附件：${data.fileName || ''}`
-      
+
       default:
         // 尝试提取有意义的信息
         if (typeof data === 'string') {
@@ -1150,14 +1158,14 @@ const getStepLabel = (step) => {
 const getOtherChanges = (data) => {
   if (!data) return ''
   const details = []
-  
+
   // 文本字段变更
   if (data.rootCause) details.push(`根本原因: ${data.rootCause}`)
   if (data.correctiveAction) details.push(`纠正措施: ${data.correctiveAction}`)
   if (data.implementation) details.push(`实施记录: ${data.implementation}`)
   if (data.verificationResult) details.push(`验证结果: ${data.verificationResult}`)
   if (data.standardization) details.push(`标准化措施: ${data.standardization}`)
-  
+
   // 状态变更
   if (data.status) {
     const statusLabels = {
@@ -1166,12 +1174,12 @@ const getOtherChanges = (data) => {
     }
     details.push(`状态变更为: ${statusLabels[data.status] || data.status}`)
   }
-  
+
   // 处理人变更
   if (data.currentHandlerName) {
     details.push(`指派给: ${data.currentHandlerName}`)
   }
-  
+
   return details.join('; ')
 }
 
@@ -1182,16 +1190,16 @@ const formatDueDate = (date) => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   d.setHours(0, 0, 0, 0)
-  
+
   // 格式化日期为 YYYY/MM/DD
   const dateObj = new Date(date)
   const year = dateObj.getFullYear()
   const month = String(dateObj.getMonth() + 1).padStart(2, '0')
   const day = String(dateObj.getDate()).padStart(2, '0')
   const formattedDate = `${year}/${month}/${day}`
-  
+
   const diffDays = Math.ceil((d - today) / (1000 * 60 * 60 * 24))
-  
+
   if (diffDays === 0) return `今天 (${formattedDate})`
   if (diffDays === 1) return `明天 (${formattedDate})`
   if (diffDays === -1) return `昨天 (${formattedDate})`
@@ -1205,9 +1213,9 @@ const getDueDateClass = (date, status) => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   d.setHours(0, 0, 0, 0)
-  
+
   const diffDays = Math.ceil((d - today) / (1000 * 60 * 60 * 24))
-  
+
   if (diffDays < 0) return 'overdue'
   if (diffDays <= 1) return 'urgent'
   if (diffDays <= 3) return 'warning'
@@ -1220,9 +1228,9 @@ const getDueDateTagType = (date) => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   d.setHours(0, 0, 0, 0)
-  
+
   const diffDays = Math.ceil((d - today) / (1000 * 60 * 60 * 24))
-  
+
   if (diffDays < 0) return 'danger'
   if (diffDays <= 1) return 'danger'
   if (diffDays <= 3) return 'warning'
@@ -1235,9 +1243,9 @@ const getDueDateText = (date) => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   d.setHours(0, 0, 0, 0)
-  
+
   const diffDays = Math.ceil((d - today) / (1000 * 60 * 60 * 24))
-  
+
   if (diffDays < 0) return `已逾期 ${Math.abs(diffDays)} 天`
   if (diffDays === 0) return '今天到期'
   if (diffDays === 1) return '明天到期'
@@ -1263,7 +1271,7 @@ const handleCommentFileSuccess = (response, file) => {
     commentUploadProgress.value = 0
     commentUploadingFileName.value = ''
   }, 1000)
-  
+
   if (response.code === 200 && response.data && response.data.length > 0) {
     uploadedCommentFiles.value.push({
       name: file.name,
@@ -1271,7 +1279,7 @@ const handleCommentFileSuccess = (response, file) => {
       type: file.raw?.type || '',
       size: file.size
     })
-    
+
     // 清除 el-upload 内部文件列表
     commentUploadRef.value?.clearFiles()
   }
@@ -1284,7 +1292,7 @@ const handleCommentFileRemove = async (file) => {
     const filename = file.url.split('/').pop()
     const eventNo = file.url.split('/')[3] // 从 /uploads/quality-events/QE-xxx/filename 提取事件编号
     const filePath = `${eventNo}/${filename}`
-    
+
     await fetch('/api/files', {
       method: 'DELETE',
       headers: {
@@ -1296,7 +1304,7 @@ const handleCommentFileRemove = async (file) => {
   } catch (error) {
     console.error('删除物理文件失败:', error)
   }
-  
+
   const index = uploadedCommentFiles.value.findIndex(f => f.name === file.name)
   if (index > -1) {
     uploadedCommentFiles.value.splice(index, 1)
@@ -1307,13 +1315,13 @@ const handleCommentFileRemove = async (file) => {
 const removeUploadedCommentFile = async (idx) => {
   const file = uploadedCommentFiles.value[idx]
   if (!file) return
-  
+
   // 调用后端删除物理文件
   try {
     const filename = file.url.split('/').pop()
     const eventNo = file.url.split('/')[3]
     const filePath = `${eventNo}/${filename}`
-    
+
     await fetch('/api/files', {
       method: 'DELETE',
       headers: {
@@ -1325,7 +1333,7 @@ const removeUploadedCommentFile = async (idx) => {
   } catch (error) {
     console.error('删除物理文件失败:', error)
   }
-  
+
   uploadedCommentFiles.value.splice(idx, 1)
 }
 
@@ -1352,7 +1360,7 @@ const handleStageFileSuccess = (stage, response, file) => {
         actFiles.value.push(fileData)
         break
     }
-    
+
     // 清除 el-upload 内部文件列表
     switch (stage) {
       case 'plan':
@@ -1378,7 +1386,7 @@ const handleStageFileRemove = async (stage, file) => {
     const filename = file.url.split('/').pop()
     const eventNo = file.url.split('/')[3] // 从 /uploads/quality-events/QE-xxx/filename 提取事件编号
     const filePath = `${eventNo}/${filename}`
-    
+
     await fetch('/api/files', {
       method: 'DELETE',
       headers: {
@@ -1390,7 +1398,7 @@ const handleStageFileRemove = async (stage, file) => {
   } catch (error) {
     console.error('删除物理文件失败:', error)
   }
-  
+
   let filesArray
   switch (stage) {
     case 'plan':
@@ -1417,10 +1425,10 @@ const handleUploadError = (error) => {
   commentUploading.value = false
   commentUploadProgress.value = 0
   commentUploadingFileName.value = ''
-  
+
   console.error('上传失败:', error)
   let message = '文件上传失败'
-  
+
   // 处理后端返回的JSON字符串
   if (typeof error === 'string') {
     try {
@@ -1448,7 +1456,7 @@ const handleUploadError = (error) => {
   } else if (error?.message) {
     message = error.message
   }
-  
+
   ElMessage.error(message)
 }
 
@@ -1856,54 +1864,54 @@ onMounted(() => {
   .pc-only {
     display: none;
   }
-  
+
   .mobile-only {
     display: block;
   }
-  
+
   .quality-event-detail {
     padding: 10px;
   }
-  
+
   .page-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
   }
-  
+
   .header-left {
     flex-wrap: wrap;
   }
-  
+
   .header-right {
     width: 100%;
     display: flex;
     justify-content: flex-end;
   }
-  
+
   .event-no {
     font-size: 16px;
   }
-  
+
   .pdca-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .pdca-title {
     font-size: 14px;
   }
-  
+
   .pdca-content {
     padding: 0;
   }
-  
+
   /* PDCA 描述列表移动端适配 */
   .pdca-content :deep(.el-descriptions__table) {
     width: 100%;
   }
-  
+
   .pdca-content :deep(.el-descriptions__label) {
     width: 80px !important;
     min-width: 80px !important;
@@ -1911,29 +1919,29 @@ onMounted(() => {
     font-size: 12px;
     padding: 10px 8px !important;
   }
-  
+
   .pdca-content :deep(.el-descriptions__content) {
     font-size: 13px;
     padding: 10px 8px !important;
     word-break: break-all;
   }
-  
+
   /* 评论区域移动端适配 */
   .comment-item {
     padding: 12px 0;
   }
-  
+
   .comment-header {
     flex-direction: column;
     gap: 4px;
   }
-  
+
   .comment-actions {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .comment-upload,
   .comment-actions > .el-button {
     width: 100%;

@@ -28,7 +28,7 @@
       v-if="canUpload"
       ref="uploadRef"
       class="upload-section"
-      :action="uploadUrl"
+      :http-request="customUpload"
       :headers="uploadHeaders"
       name="files"
       :multiple="true"
@@ -71,6 +71,7 @@ import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Document, Picture, Folder, Upload } from '@element-plus/icons-vue'
 import { qualityEventApi } from '@/api'
+import { smartUpload } from '@/utils/chunkUpload'
 
 const props = defineProps({
   files: {
@@ -79,6 +80,10 @@ const props = defineProps({
   },
   eventId: {
     type: [String, Number],
+    required: true
+  },
+  eventNo: {
+    type: String,
     required: true
   },
   stage: {
@@ -99,6 +104,7 @@ const uploadRef = ref(null)
 const uploading = ref(false)
 const uploadProgress = ref(0)
 const uploadingFileName = ref('')
+const isChunkedUpload = ref(false)
 
 // 监听 prop 变化，同步更新本地副本
 watch(() => props.files, (newFiles) => {
@@ -107,10 +113,6 @@ watch(() => props.files, (newFiles) => {
 
 const previewVisible = ref(false)
 const previewUrl = ref('')
-
-const uploadUrl = computed(() => {
-  return `/api/quality-events/${props.eventId}/upload?stage=${props.stage}`
-})
 
 const uploadHeaders = computed(() => {
   const token = localStorage.getItem('token')
@@ -194,89 +196,78 @@ const deleteFile = async (index) => {
   ElMessage.success('文件已删除')
 }
 
+// 自定义上传方法 - 使用智能分片上传
+const customUpload = async (options) => {
+  const { file, onProgress, onSuccess, onError } = options
+  
+  uploading.value = true
+  uploadProgress.value = 0
+  uploadingFileName.value = file.name
+  isChunkedUpload.value = file.size > 50 * 1024 * 1024
+  
+  try {
+    const result = await smartUpload(
+      file,
+      props.eventId,
+      props.eventNo,
+      props.stage,
+      (percent, uploadedChunks, totalChunks, status) => {
+        uploadProgress.value = percent
+        // 更新进度
+        onProgress({ percent })
+      }
+    )
+    
+    uploading.value = false
+    uploadProgress.value = 100
+    
+    setTimeout(() => {
+      uploadProgress.value = 0
+      uploadingFileName.value = ''
+    }, 1000)
+    
+    ElMessage.success('文件上传成功')
+    
+    // 添加新文件到本地列表
+    const newFile = result[0]
+    localFiles.value.push(newFile)
+    emit('upload-success', { code: 200, data: result }, file)
+    emit('update:files', [...localFiles.value])
+    
+    onSuccess({ code: 200, data: result })
+  } catch (error) {
+    uploading.value = false
+    uploadProgress.value = 0
+    uploadingFileName.value = ''
+    
+    console.error('上传失败:', error)
+    ElMessage.error(error.message || '文件上传失败')
+    onError(error)
+  }
+}
+
 const beforeUpload = (file) => {
   const isLt500M = file.size / 1024 / 1024 < 500
   if (!isLt500M) {
     ElMessage.error('文件大小不能超过 500MB!')
     return false
   }
-  uploading.value = true
-  uploadProgress.value = 0
-  uploadingFileName.value = file.name
   return true
 }
 
 const handleUploadProgress = (event, file) => {
-  uploadProgress.value = Math.round(event.percent)
+  // 普通上传的进度，分片上传在 customUpload 中处理
+  if (!isChunkedUpload.value) {
+    uploadProgress.value = Math.round(event.percent)
+  }
 }
 
 const handleUploadSuccess = (response, file) => {
-  uploading.value = false
-  uploadProgress.value = 100
-  setTimeout(() => {
-    uploadProgress.value = 0
-    uploadingFileName.value = ''
-  }, 1000)
-  
-  ElMessage.success('文件上传成功')
-  if (response.code === 200 && response.data && response.data.length > 0) {
-    // 添加新文件到本地列表
-    const newFile = {
-      name: response.data[0].name || file.name,
-      url: response.data[0].url,
-      type: response.data[0].type || file.raw?.type || '',
-      size: response.data[0].size || file.size
-    }
-    localFiles.value.push(newFile)
-    // 通知父组件
-    emit('upload-success', response, file)
-    emit('update:files', [...localFiles.value])
-    
-    // 清除 el-upload 内部文件列表，防止已删除文件再次显示
-    if (uploadRef.value) {
-      uploadRef.value.clearFiles()
-    }
-  }
+  // 已经在 customUpload 中处理
 }
 
 const handleUploadError = (error) => {
-  uploading.value = false
-  uploadProgress.value = 0
-  uploadingFileName.value = ''
-  
-  console.error('上传失败:', error)
-  let message = '文件上传失败'
-  
-  // 处理后端返回的JSON字符串
-  if (typeof error === 'string') {
-    try {
-      const parsed = JSON.parse(error)
-      if (parsed.message) {
-        message = parsed.message
-      }
-    } catch {
-      message = error
-    }
-  } else if (error?.response?.data?.message) {
-    message = error.response.data.message
-  } else if (error?.response?.data) {
-    // 尝试从data中提取message
-    const data = error.response.data
-    if (typeof data === 'string') {
-      try {
-        const parsed = JSON.parse(data)
-        if (parsed.message) {
-          message = parsed.message
-        }
-      } catch {
-        message = data
-      }
-    }
-  } else if (error?.message) {
-    message = error.message
-  }
-  
-  ElMessage.error(message)
+  // 已经在 customUpload 中处理
 }
 </script>
 
