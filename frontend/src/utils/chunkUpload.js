@@ -42,7 +42,9 @@ export const uploadChunkWithRetry = async (file, uploadId, index, totalChunks, m
   const chunk = file.slice(start, end)
   
   const formData = new FormData()
-  formData.append('chunk', chunk)
+  // 强制使用通用MIME类型，避免video/mp4被特殊处理
+  const chunkBlob = new Blob([chunk], { type: 'application/octet-stream' })
+  formData.append('chunk', chunkBlob, `chunk-${index}`)
   formData.append('index', index)
   formData.append('uploadId', uploadId)
   formData.append('totalChunks', totalChunks)
@@ -158,7 +160,9 @@ export const smartUpload = async (file, eventId, eventNo, stage, onProgress) => 
     onProgress && onProgress(0, 0, 1, '准备上传')
     
     const formData = new FormData()
-    formData.append('files', file)
+    // 强制使用 Blob 并指定为通用类型，避免 video/mp4 被特殊处理
+    const fileBlob = new Blob([file], { type: 'application/octet-stream' })
+    formData.append('files', fileBlob, file.name)
     
     const response = await fetch(`/api/quality-events/${eventId}/upload?stage=${stage}`, {
       method: 'POST',
