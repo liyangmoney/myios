@@ -87,7 +87,8 @@ export const qualityEventApi = {
   addComment: (id, data) => api.post(`/quality-events/${id}/comments`, data),
   getStatistics: () => api.get('/quality-events/statistics'),
   uploadFiles: (id, formData) => api.post(`/quality-events/${id}/upload`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 300000  // 5分钟，大文件上传需要更长时间
   })
 }
 
