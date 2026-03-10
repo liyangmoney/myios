@@ -78,6 +78,12 @@ const routes = [
         name: 'QualityEventDetail',
         component: () => import('@/views/QualityEventDetail.vue'),
         meta: { title: '质量事件详情' }
+      },
+      {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('@/views/Profile.vue'),
+        meta: { title: '我的' }
       }
     ]
   }

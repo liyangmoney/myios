@@ -196,7 +196,7 @@ const mobileNavItems = [
   { path: '/dashboard', label: '首页', icon: 'DataLine' },
   { path: '/procedures', label: '程序文件', icon: 'Document' },
   { path: '/quality-events', label: '质量事件', icon: 'Warning' },
-  { path: '/reports', label: '报表', icon: 'DocumentCopy' }
+  { path: '/profile', label: '我的', icon: 'User' }
 ]
 
 // 修改密码相关
