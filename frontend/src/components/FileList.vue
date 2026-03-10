@@ -71,6 +71,7 @@ import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Document, Picture, Folder, Upload } from '@element-plus/icons-vue'
 import { qualityEventApi } from '@/api'
+import apiConfig from '@/api/config'
 import { smartUpload } from '@/utils/chunkUpload'
 
 const props = defineProps({
@@ -147,12 +148,25 @@ const previewFile = (file) => {
 }
 
 const downloadFile = (file) => {
-  const link = document.createElement('a')
-  link.href = getFileUrl(file.url)
-  link.download = file.name
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+  // 使用完整 URL
+  const apiUrl = apiConfig?.baseURL || ''
+  const baseUrl = apiUrl.replace('/api', '')
+  const fullUrl = file.url.startsWith('http') ? file.url : baseUrl + file.url
+  
+  // 在APP中使用系统浏览器打开
+  if (typeof window !== 'undefined' && window.Capacitor) {
+    import('@capacitor/browser').then(({ Browser }) => {
+      Browser.open({ url: fullUrl })
+    })
+  } else {
+    // 网页端下载
+    const link = document.createElement('a')
+    link.href = fullUrl
+    link.download = file.name
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 }
 
 // 获取完整文件URL
@@ -177,7 +191,9 @@ const deleteFile = async (index) => {
     const eventNo = file.url.split('/')[3] // 从 /uploads/quality-events/QE-xxx/filename 提取事件编号
     const filePath = `${eventNo}/${filename}`
     
-    await fetch('/api/files', {
+    // 使用完整 URL
+    const apiUrl = apiConfig?.baseURL || ''
+    await fetch(`${apiUrl.replace('/api', '')}/api/files`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

@@ -123,6 +123,18 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
+// APP 版本检查接口
+app.get('/api/app/version', (req, res) => {
+  res.json({
+    code: 200,
+    data: {
+      version: '1.0.0',
+      downloadUrl: 'https://github.com/liyangmoney/MyIOS/releases',
+      updateLog: '修复已知问题，优化用户体验'
+    }
+  })
+})
+
 // 导入路由
 import { query } from './config/database.js'
 import bcrypt from 'bcryptjs'
