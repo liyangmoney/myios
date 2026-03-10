@@ -31,6 +31,23 @@
         </div>
       </el-card>
       
+      <el-card class="info-card">
+        <template #header>
+          <div class="card-header">
+            <span>服务器配置</span>
+            <el-button type="primary" link @click="openServerConfigDialog">修改</el-button>
+          </div>
+        </template>
+        <div class="info-item">
+          <span class="label">当前服务器</span>
+          <span class="value" style="font-size: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{{ currentServer }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">运行环境</span>
+          <el-tag size="small">{{ isCapacitor ? 'APP' : '浏览器' }}</el-tag>
+        </div>
+      </el-card>
+      
       <div class="action-section">
         <el-button type="primary" size="large" class="action-btn" @click="openChangePasswordDialog">
           <el-icon><Lock /></el-icon>
@@ -90,6 +107,44 @@
         <el-button type="primary" @click="handleChangePassword" :loading="changePasswordLoading">确定</el-button>
       </template>
     </el-dialog>
+    
+    <!-- 服务器配置对话框 -->
+    <el-dialog
+      v-model="serverConfigDialogVisible"
+      title="服务器配置"
+      width="90%"
+      :close-on-click-modal="false"
+      class="mobile-dialog"
+    >
+      <el-form label-width="100px">
+        <el-form-item label="服务器地址">
+          <el-input
+            v-model="serverConfig.baseURL"
+            placeholder="http://192.168.1.100:9090/api"
+          />
+        </el-form-item>
+        
+        <el-alert
+          title="配置说明"
+          type="info"
+          :closable="false"
+          style="margin-bottom: 15px;"
+        >
+          <template #default>
+            <div style="font-size: 12px;">
+              <p>• 请填写完整的后端服务器地址</p>
+              <p>• 例如：http://192.168.1.100:9090/api</p>
+              <p>• 修改后需要重新登录才能生效</p>
+            </div>
+          </template>
+        </el-alert>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="serverConfigDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveServerConfig">保存并重启</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -100,12 +155,20 @@ import { useUserStore } from '@/store/user'
 import { userApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { UserFilled, Lock, SwitchButton } from '@element-plus/icons-vue'
+import apiConfig from '@/api/config'
 
 const router = useRouter()
 const userStore = useUserStore()
 
+// 检测是否在 Capacitor 环境中
+const isCapacitor = ref(false)
+const currentServer = ref(apiConfig.baseURL)
+
 // 加载用户信息
 onMounted(() => {
+  // 检测运行环境
+  isCapacitor.value = typeof window.Capacitor !== 'undefined'
+  
   if (!userStore.userInfo) {
     const savedUserInfo = localStorage.getItem('userInfo')
     if (savedUserInfo) {
@@ -117,6 +180,37 @@ onMounted(() => {
     }
   }
 })
+
+// 服务器配置相关
+const serverConfigDialogVisible = ref(false)
+const serverConfig = ref({
+  baseURL: apiConfig.baseURL
+})
+
+const openServerConfigDialog = () => {
+  serverConfig.value.baseURL = apiConfig.baseURL
+  serverConfigDialogVisible.value = true
+}
+
+const saveServerConfig = () => {
+  if (!serverConfig.value.baseURL) {
+    ElMessage.error('请输入服务器地址')
+    return
+  }
+  
+  // 保存配置
+  localStorage.setItem('api_config', JSON.stringify({
+    baseURL: serverConfig.value.baseURL
+  }))
+  
+  ElMessage.success('配置已保存，即将重启应用')
+  serverConfigDialogVisible.value = false
+  
+  // 延迟刷新页面
+  setTimeout(() => {
+    window.location.reload()
+  }, 1500)
+}
 
 // 修改密码相关
 const changePasswordDialogVisible = ref(false)
