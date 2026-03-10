@@ -46,6 +46,16 @@
           <span class="label">运行环境</span>
           <el-tag size="small">{{ isCapacitor ? 'APP' : '浏览器' }}</el-tag>
         </div>
+        
+        <el-button 
+          v-if="storedConfigExists" 
+          type="warning" 
+          size="small" 
+          style="margin-top: 10px;"
+          @click="clearStoredConfig"
+        >
+          清除本地配置
+        </el-button>
       </el-card>
       
       <div class="action-section">
@@ -155,7 +165,7 @@ import { useUserStore } from '@/store/user'
 import { userApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { UserFilled, Lock, SwitchButton } from '@element-plus/icons-vue'
-import apiConfig from '@/api/config'
+import apiConfig, { clearApiConfig } from '@/api/config'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -186,6 +196,7 @@ const serverConfigDialogVisible = ref(false)
 const serverConfig = ref({
   baseURL: apiConfig.baseURL
 })
+const storedConfigExists = ref(!!localStorage.getItem('api_config'))
 
 const openServerConfigDialog = () => {
   serverConfig.value.baseURL = apiConfig.baseURL
@@ -210,6 +221,10 @@ const saveServerConfig = () => {
   setTimeout(() => {
     window.location.reload()
   }, 1500)
+}
+
+const clearStoredConfig = () => {
+  clearApiConfig()
 }
 
 // 修改密码相关
