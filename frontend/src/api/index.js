@@ -135,5 +135,13 @@ export const procedureApi = {
   upload: (formData) => post('/procedures/upload', formData, { 'Content-Type': 'multipart/form-data' })
 }
 
-// 导出基础请求函数
+// 导出基础请求函数和 api 对象
 export { get, post, put, del as delete }
+
+// 为了兼容性，导出 api 对象
+export const api = {
+  get: (endpoint, params) => request('GET', endpoint, { params }),
+  post: (endpoint, data, headers) => request('POST', endpoint, { data, headers }),
+  put: (endpoint, data) => request('PUT', endpoint, { data }),
+  delete: (endpoint) => request('DELETE', endpoint)
+}
