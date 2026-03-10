@@ -1,41 +1,31 @@
 // 分片上传工具函数
 import apiConfig from '@/api/config'
+import { Capacitor } from '@capacitor/core'
+import { CapacitorHttp } from '@capacitor/core'
 
 const CHUNK_SIZE = 5 * 1024 * 1024 // 5MB 每块
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB 阈值
 
 // 获取完整 API URL
 const getApiUrl = (path) => {
-  return `${apiConfig.baseURL}${path}`
+  const baseURL = apiConfig.baseURL
+  // 如果 baseURL 是相对路径，转换为绝对 URL
+  if (baseURL.startsWith('/')) {
+    // 获取当前域名
+    return `${window.location.origin}${baseURL}${path}`
+  }
+  return `${baseURL}${path}`
 }
 
-/**
- * 查询已上传的分片（断点续传）
- * @param {string} uploadId - 上传ID
- * @returns {Promise<number[]>} 已上传的分片索引数组
- */
-export const getUploadedChunks = async (uploadId) => {
-  try {
-    const response = await fetch(getApiUrl(`/upload/status/${uploadId}`), {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    })
-    
-    if (!response.ok) {
-      return []
-    }
-    
-    const data = await response.json()
-    return data.uploadedChunks || []
-  } catch (error) {
-    console.error('查询已上传分片失败:', error)
-    return []
-  }
-}
+// 判断是否为原生平台
+const isNativePlatform = () => Capacitor.isNativePlatform()
+
+// 获取 Token
+const getToken = () => localStorage.getItem('token')
 
 /**
  * 上传单个分片（带重试）
+ * 原生平台使用 base64 编码上传，浏览器使用 FormData
  * @param {File} file - 原文件
  * @param {string} uploadId - 上传ID
  * @param {number} index - 分片索引
@@ -48,37 +38,67 @@ export const uploadChunkWithRetry = async (file, uploadId, index, totalChunks, m
   const end = Math.min(start + CHUNK_SIZE, file.size)
   const chunk = file.slice(start, end)
   
-  const formData = new FormData()
-  // 强制使用通用MIME类型，避免video/mp4被特殊处理
-  const chunkBlob = new Blob([chunk], { type: 'application/octet-stream' })
-  formData.append('chunk', chunkBlob, `chunk-${index}`)
-  formData.append('index', index)
-  formData.append('uploadId', uploadId)
-  formData.append('totalChunks', totalChunks)
-  
   let lastError
+  const token = getToken()
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await fetch(getApiUrl('/upload/chunk'), {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+      let response
       
-      if (!response.ok) {
-        throw new Error(`Chunk ${index} upload failed: ${response.status}`)
+      if (isNativePlatform()) {
+        // 原生平台：使用 CapacitorHttp，将文件转为 base64
+        const arrayBuffer = await chunk.arrayBuffer()
+        const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+        
+        response = await CapacitorHttp.request({
+          method: 'POST',
+          url: getApiUrl('/upload/chunk'),
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          data: {
+            uploadId,
+            index,
+            totalChunks,
+            chunk: base64Data,
+            filename: file.name
+          }
+        })
+        
+        if (response.status < 200 || response.status >= 300) {
+          throw new Error(`Chunk ${index} upload failed: ${response.status}`)
+        }
+      } else {
+        // 浏览器：使用 fetch + FormData
+        const formData = new FormData()
+        const chunkBlob = new Blob([chunk], { type: 'application/octet-stream' })
+        formData.append('chunk', chunkBlob, `chunk-${index}`)
+        formData.append('index', index)
+        formData.append('uploadId', uploadId)
+        formData.append('totalChunks', totalChunks)
+        
+        response = await fetch(getApiUrl('/upload/chunk'), {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        if (!response.ok) {
+          throw new Error(`Chunk ${index} upload failed: ${response.status}`)
+        }
+        
+        response = { data: await response.json() }
       }
       
-      return await response.json()
+      return response.data
     } catch (error) {
       lastError = error
       console.warn(`分片 ${index} 第 ${attempt} 次上传失败，${attempt < maxRetries ? '重试中...' : '放弃'}`, error)
       
       if (attempt < maxRetries) {
-        // 指数退避重试
         await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000))
       }
     }
@@ -88,26 +108,80 @@ export const uploadChunkWithRetry = async (file, uploadId, index, totalChunks, m
 }
 
 /**
+ * 查询已上传的分片（断点续传）
+ * @param {string} uploadId - 上传ID
+ * @returns {Promise<number[]>} 已上传的分片索引数组
+ */
+export const getUploadedChunks = async (uploadId) => {
+  try {
+    const token = getToken()
+    let data
+    
+    if (isNativePlatform()) {
+      const response = await CapacitorHttp.request({
+        method: 'GET',
+        url: getApiUrl(`/upload/status/${uploadId}`),
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      data = response.data
+    } else {
+      const response = await fetch(getApiUrl(`/upload/status/${uploadId}`), {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      if (!response.ok) return []
+      data = await response.json()
+    }
+    
+    return data.uploadedChunks || []
+  } catch (error) {
+    console.error('查询已上传分片失败:', error)
+    return []
+  }
+}
+
+/**
  * 初始化分片上传
  * @param {string} filename - 文件名
  * @param {number} size - 文件大小
  * @returns {Promise<string>} uploadId
  */
 export const initChunkUpload = async (filename, size) => {
-  const response = await fetch(getApiUrl('/upload/init'), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
-    },
-    body: JSON.stringify({ filename, size })
-  })
+  const token = getToken()
+  let data
   
-  if (!response.ok) {
-    throw new Error('Failed to initialize upload')
+  if (isNativePlatform()) {
+    const response = await CapacitorHttp.request({
+      method: 'POST',
+      url: getApiUrl('/upload/init'),
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      data: { filename, size }
+    })
+    if (response.status < 200 || response.status >= 300) {
+      throw new Error('Failed to initialize upload')
+    }
+    data = response.data
+  } else {
+    const response = await fetch(getApiUrl('/upload/init'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ filename, size })
+    })
+    if (!response.ok) {
+      throw new Error('Failed to initialize upload')
+    }
+    data = await response.json()
   }
   
-  const data = await response.json()
   return data.uploadId
 }
 
@@ -119,20 +193,39 @@ export const initChunkUpload = async (filename, size) => {
  * @returns {Promise<{url: string}>}
  */
 export const mergeChunks = async (uploadId, filename, eventNo) => {
-  const response = await fetch(getApiUrl('/upload/merge'), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
-    },
-    body: JSON.stringify({ uploadId, filename, eventNo })
-  })
+  const token = getToken()
+  let data
   
-  if (!response.ok) {
-    throw new Error('Failed to merge chunks')
+  if (isNativePlatform()) {
+    const response = await CapacitorHttp.request({
+      method: 'POST',
+      url: getApiUrl('/upload/merge'),
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      data: { uploadId, filename, eventNo }
+    })
+    if (response.status < 200 || response.status >= 300) {
+      throw new Error('Failed to merge chunks')
+    }
+    data = response.data
+  } else {
+    const response = await fetch(getApiUrl('/upload/merge'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ uploadId, filename, eventNo })
+    })
+    if (!response.ok) {
+      throw new Error('Failed to merge chunks')
+    }
+    data = await response.json()
   }
   
-  return response.json()
+  return data
 }
 
 /**
@@ -140,15 +233,94 @@ export const mergeChunks = async (uploadId, filename, eventNo) => {
  * @param {string} uploadId - 上传ID
  */
 export const cancelUpload = async (uploadId) => {
+  const token = getToken()
   try {
-    await fetch(getApiUrl(`/upload/cancel/${uploadId}`), {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    })
+    if (isNativePlatform()) {
+      await CapacitorHttp.request({
+        method: 'DELETE',
+        url: getApiUrl(`/upload/cancel/${uploadId}`),
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+    } else {
+      await fetch(getApiUrl(`/upload/cancel/${uploadId}`), {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+    }
   } catch (error) {
     console.error('取消上传失败:', error)
+  }
+}
+
+/**
+ * 直接上传小文件（原生平台使用 base64，浏览器使用 FormData）
+ * @param {File} file - 文件对象
+ * @param {string} eventId - 事件ID
+ * @param {string} stage - 阶段
+ * @returns {Promise<Array>} 上传结果
+ */
+const directUpload = async (file, eventId, stage) => {
+  const token = getToken()
+  const url = getApiUrl(`/quality-events/${eventId}/upload?stage=${stage}`)
+  
+  if (isNativePlatform()) {
+    // 原生平台：将文件转为 base64 上传
+    const arrayBuffer = await file.arrayBuffer()
+    const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+    
+    const response = await CapacitorHttp.request({
+      method: 'POST',
+      url,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      data: {
+        filename: file.name,
+        type: file.type,
+        size: file.size,
+        data: base64Data,
+        isBase64: true
+      }
+    })
+    
+    if (response.status < 200 || response.status >= 300) {
+      throw new Error('Upload failed')
+    }
+    
+    return response.data.data
+  } else {
+    // 浏览器：使用 FormData
+    const formData = new FormData()
+    
+    // 伪装扩展名：把 .mp4 改成 .pdf，避免被检测/限速
+    const isVideo = file.name.toLowerCase().endsWith('.mp4')
+    if (isVideo) {
+      const fakeName = file.name.replace(/\.mp4$/i, '.pdf') + '|ORIGINAL:' + file.name
+      const fakeFile = new File([file], fakeName, { type: 'application/octet-stream' })
+      formData.append('files', fakeFile)
+    } else {
+      formData.append('files', file)
+    }
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error('Upload failed')
+    }
+    
+    const result = await response.json()
+    return result.data
   }
 }
 
@@ -166,35 +338,10 @@ export const smartUpload = async (file, eventId, eventNo, stage, onProgress) => 
   if (file.size <= MAX_FILE_SIZE) {
     onProgress && onProgress(0, 0, 1, '准备上传')
     
-    const formData = new FormData()
+    const result = await directUpload(file, eventId, stage)
     
-    // 伪装扩展名：把 .mp4 改成 .pdf，避免被检测/限速
-    const isVideo = file.name.toLowerCase().endsWith('.mp4')
-    if (isVideo) {
-      const fakeName = file.name.replace(/\.mp4$/i, '.pdf') + '|ORIGINAL:' + file.name
-      // 使用 File 构造函数创建新文件对象（更省内存）
-      const fakeFile = new File([file], fakeName, { type: 'application/octet-stream' })
-      formData.append('files', fakeFile)
-    } else {
-      // 非视频文件直接上传
-      formData.append('files', file)
-    }
-    
-    const response = await fetch(getApiUrl(`/quality-events/${eventId}/upload?stage=${stage}`), {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    })
-    
-    if (!response.ok) {
-      throw new Error('Upload failed')
-    }
-    
-    const result = await response.json()
     onProgress && onProgress(100, 1, 1, '上传完成')
-    return result.data
+    return result
   }
   
   // 大于 50MB，分片上传（支持断点续传）

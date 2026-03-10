@@ -59,10 +59,10 @@ router.post('/init', authMiddleware, async (req, res) => {
   }
 })
 
-// 上传分片
+// 上传分片（支持 FormData 和 JSON base64）
 router.post('/chunk', authMiddleware, upload.single('chunk'), async (req, res) => {
   try {
-    const { uploadId, index, totalChunks } = req.body
+    const { uploadId, index, totalChunks, chunk: base64Chunk, filename } = req.body
     
     if (!uploadId || index === undefined || !totalChunks) {
       return res.status(400).json({ code: 400, message: '缺少必要参数' })
@@ -73,9 +73,19 @@ router.post('/chunk', authMiddleware, upload.single('chunk'), async (req, res) =
       return res.status(404).json({ code: 404, message: '上传任务不存在' })
     }
     
-    // 保存分片
     const chunkPath = path.join(chunkDir, `chunk-${index}`)
-    fs.writeFileSync(chunkPath, req.file.buffer)
+    
+    // 判断是否为 base64 上传（原生平台）
+    if (base64Chunk && !req.file) {
+      // base64 解码
+      const buffer = Buffer.from(base64Chunk, 'base64')
+      fs.writeFileSync(chunkPath, buffer)
+    } else if (req.file) {
+      // FormData 上传（浏览器）
+      fs.writeFileSync(chunkPath, req.file.buffer)
+    } else {
+      return res.status(400).json({ code: 400, message: '没有收到分片数据' })
+    }
     
     // 记录已上传的分片
     const uploadInfo = activeUploads.get(uploadId)

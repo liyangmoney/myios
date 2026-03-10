@@ -101,7 +101,49 @@ const handleMulterError = (err, req, res, next) => {
   next(err)
 }
 
-router.post('/:id/upload', upload.array('files', 5), handleMulterError, uploadFiles)
+// 处理原生平台 base64 文件上传中间件
+const handleBase64Upload = async (req, res, next) => {
+  // 检查是否为 base64 上传（原生平台）
+  if (req.body && req.body.isBase64 && req.body.data) {
+    try {
+      const { filename, type, size, data } = req.body
+      
+      // base64 解码
+      const buffer = Buffer.from(data, 'base64')
+      
+      // 生成临时文件名
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+      const safeName = (filename || 'upload').replace(/[^\w\u4e00-\u9fa5.-]/g, '_')
+      const tempFilename = `${uniqueSuffix}_${safeName}`
+      const tempPath = path.join(tempUploadDir, tempFilename)
+      
+      // 写入临时文件
+      fs.writeFileSync(tempPath, buffer)
+      
+      // 模拟 multer req.files 格式
+      req.files = [{
+        fieldname: 'files',
+        originalname: filename || 'upload',
+        encoding: '7bit',
+        mimetype: type || 'application/octet-stream',
+        destination: tempUploadDir,
+        filename: tempFilename,
+        path: tempPath,
+        size: buffer.length
+      }]
+      
+      return next()
+    } catch (error) {
+      console.error('Base64 文件处理失败:', error)
+      return res.status(400).json({ code: 400, message: '文件处理失败' })
+    }
+  }
+  
+  // 不是 base64 上传，继续 multer 处理
+  next()
+}
+
+router.post('/:id/upload', handleBase64Upload, upload.array('files', 5), handleMulterError, uploadFiles)
 
 // 管理员接口：手动触发超期30天事件检查
 router.post('/admin/check-overdue-30days', async (req, res) => {
