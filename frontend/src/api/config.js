@@ -18,38 +18,27 @@ const getStoredConfig = () => {
 const getEnvConfig = () => {
   const envUrl = import.meta.env.VITE_API_BASE_URL
   console.log('[API Config] VITE_API_BASE_URL from env:', envUrl)
-  if (envUrl) {
+  if (envUrl && envUrl !== 'undefined' && envUrl !== '') {
     return { baseURL: envUrl }
   }
   return {}
 }
 
-const config = {
-  // 开发环境
-  development: {
-    // 默认使用本地代理，如需直接访问后端请修改
-    baseURL: '/api'
-  },
-  
-  // 生产环境（构建后的网页或 APK）
-  production: {
-    // 默认服务器地址，可在 Profile 页面修改
-    baseURL: 'http://localhost:9090/api'
-  }
+// 默认配置
+const defaultConfig = {
+  baseURL: '/api'
 }
 
-// 根据环境获取配置
-const env = import.meta.env.MODE || 'development'
+// 获取各种配置
 const storedConfig = getStoredConfig()
 const envConfig = getEnvConfig()
 
-console.log('[API Config] Environment:', env)
-console.log('[API Config] Env config:', envConfig)
 console.log('[API Config] Stored config:', storedConfig)
+console.log('[API Config] Env config:', envConfig)
 
-// 合并配置：默认配置 + 本地存储配置 + 环境变量配置（环境变量优先级最高）
+// 合并配置：默认配置 + 本地存储配置 + 环境变量配置（优先级最高）
 const finalConfig = {
-  ...config[env],
+  ...defaultConfig,
   ...storedConfig,
   ...envConfig
 }
