@@ -28,8 +28,8 @@ app.use(cors({
 // 显式处理 OPTIONS 预检请求
 app.options('*', cors())
 
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+app.use(express.json({ limit: '50mb' }))
+app.use(express.urlencoded({ extended: true, limit: '50mb' }))
 
 // 静态文件 - 上传的文件需要公开访问（OnlyOffice 需要）
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')))

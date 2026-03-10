@@ -103,13 +103,18 @@ const handleMulterError = (err, req, res, next) => {
 
 // 处理原生平台 base64 文件上传中间件
 const handleBase64Upload = async (req, res, next) => {
+  console.log('[Upload] handleBase64Upload called')
+  console.log('[Upload] req.body:', req.body ? 'has body' : 'no body')
+  
   // 检查是否为 base64 上传（原生平台）
   if (req.body && req.body.isBase64 && req.body.data) {
+    console.log('[Upload] Detected base64 upload, filename:', req.body.filename)
     try {
       const { filename, type, size, data } = req.body
       
       // base64 解码
       const buffer = Buffer.from(data, 'base64')
+      console.log('[Upload] Decoded buffer size:', buffer.length)
       
       // 生成临时文件名
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
@@ -117,8 +122,14 @@ const handleBase64Upload = async (req, res, next) => {
       const tempFilename = `${uniqueSuffix}_${safeName}`
       const tempPath = path.join(tempUploadDir, tempFilename)
       
+      // 确保目录存在
+      if (!fs.existsSync(tempUploadDir)) {
+        fs.mkdirSync(tempUploadDir, { recursive: true })
+      }
+      
       // 写入临时文件
       fs.writeFileSync(tempPath, buffer)
+      console.log('[Upload] File written to:', tempPath)
       
       // 模拟 multer req.files 格式
       req.files = [{
@@ -134,11 +145,12 @@ const handleBase64Upload = async (req, res, next) => {
       
       return next()
     } catch (error) {
-      console.error('Base64 文件处理失败:', error)
-      return res.status(400).json({ code: 400, message: '文件处理失败' })
+      console.error('[Upload] Base64 文件处理失败:', error)
+      return res.status(400).json({ code: 400, message: '文件处理失败: ' + error.message })
     }
   }
   
+  console.log('[Upload] Not base64 upload, passing to multer')
   // 不是 base64 上传，继续 multer 处理
   next()
 }

@@ -53,32 +53,53 @@ const arrayBufferToBase64 = (buffer) => {
  */
 const unifiedUpload = async (url, file, onProgress) => {
   const token = getToken()
+  console.log('[unifiedUpload] URL:', url)
+  console.log('[unifiedUpload] Token exists:', !!token)
   
   // 原生平台：使用 base64 + fetch
   if (isNativePlatform()) {
-    const arrayBuffer = await file.arrayBuffer()
-    const base64Data = arrayBufferToBase64(arrayBuffer)
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+    console.log('[unifiedUpload] Native platform, using base64')
+    try {
+      const arrayBuffer = await file.arrayBuffer()
+      console.log('[unifiedUpload] File read, size:', arrayBuffer.byteLength)
+      
+      const base64Data = arrayBufferToBase64(arrayBuffer)
+      console.log('[unifiedUpload] Base64 encoded, length:', base64Data.length)
+      
+      const body = JSON.stringify({
         filename: file.name,
         type: file.type || 'application/octet-stream',
         size: file.size,
         data: base64Data,
         isBase64: true
       })
-    })
-    
-    if (!response.ok) {
-      throw new Error(`Upload failed: ${response.status}`)
+      console.log('[unifiedUpload] Request body size:', body.length)
+      
+      console.log('[unifiedUpload] Sending fetch request...')
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: body
+      })
+      
+      console.log('[unifiedUpload] Response status:', response.status)
+      
+      if (!response.ok) {
+        const text = await response.text()
+        console.error('[unifiedUpload] Response error:', text)
+        throw new Error(`Upload failed: ${response.status} - ${text}`)
+      }
+      
+      const result = await response.json()
+      console.log('[unifiedUpload] Success:', result)
+      return result
+    } catch (error) {
+      console.error('[unifiedUpload] Error:', error)
+      throw error
     }
-    
-    return response.json()
   }
   
   // 浏览器：使用 FormData + fetch
