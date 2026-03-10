@@ -6,12 +6,12 @@
 
 <script setup>
 import { onMounted } from 'vue'
-import { checkAppVersion } from '@/utils/appUpdate'
+import { checkAndUpdateApp } from '@/utils/appUpdate'
 
 onMounted(() => {
-  // APP 启动时检查版本
+  // APP 启动时检查版本并提示更新
   setTimeout(() => {
-    checkAppVersion()
+    checkAndUpdateApp()
   }, 2000) // 延迟 2 秒检查，避免影响启动速度
 })
 </script>

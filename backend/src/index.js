@@ -128,11 +128,32 @@ app.get('/api/app/version', (req, res) => {
   res.json({
     code: 200,
     data: {
-      version: '1.0.0',
-      downloadUrl: 'https://github.com/liyangmoney/MyIOS/releases',
-      updateLog: '修复已知问题，优化用户体验'
+      version: '1.0.1',
+      apkUrl: `${process.env.APP_URL || 'http://myjghy.myds.me:9090'}/app/pis-latest.apk`,
+      updateLog: '修复附件上传问题，优化移动端体验',
+      forceUpdate: false
     }
   })
+})
+
+// APP APK 下载接口
+app.get('/app/:filename', (req, res) => {
+  const { filename } = req.params
+  const apkPath = path.join(__dirname, '../app', filename)
+  
+  // 安全检查：只允许访问 app 目录下的文件
+  if (!filename.endsWith('.apk')) {
+    return res.status(400).json({ code: 400, message: '只允许下载 APK 文件' })
+  }
+  
+  if (!fs.existsSync(apkPath)) {
+    return res.status(404).json({ code: 404, message: 'APK 文件不存在' })
+  }
+  
+  // 发送 APK 文件
+  res.setHeader('Content-Type', 'application/vnd.android.package-archive')
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+  res.sendFile(apkPath)
 })
 
 // 导入路由
