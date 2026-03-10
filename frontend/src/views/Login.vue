@@ -197,8 +197,8 @@ const handleLogin = async () => {
     }
   } catch (error) {
     console.error('登录错误:', error)
-    errorMsg.value = '连接服务器失败，请检查服务器地址: ' + apiConfig.baseURL
-    ElMessage.error('连接服务器失败')
+    errorMsg.value = '连接失败: ' + (error.message || '网络错误') + '，地址: ' + apiConfig.baseURL
+    ElMessage.error('无法连接到服务器')
   } finally {
     loading.value = false
   }
