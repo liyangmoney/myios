@@ -24,6 +24,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: false
 }))
+
+// 显式处理 OPTIONS 预检请求
+app.options('*', cors())
+
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
