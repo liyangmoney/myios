@@ -1,12 +1,14 @@
 <template>
   <div id="app">
     <router-view />
+    <ScreenLogger />
   </div>
 </template>
 
 <script setup>
 import { onMounted } from 'vue'
 import { checkAndUpdateApp } from '@/utils/appUpdate'
+import ScreenLogger from '@/components/ScreenLogger.vue'
 
 onMounted(() => {
   // APP 启动时检查版本并提示更新
