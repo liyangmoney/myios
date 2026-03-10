@@ -1,7 +1,6 @@
 // 分片上传工具函数
 import apiConfig from '@/api/config'
 import { Capacitor } from '@capacitor/core'
-import { CapacitorHttp } from '@capacitor/core'
 
 const CHUNK_SIZE = 5 * 1024 * 1024 // 5MB 每块
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB 阈值
@@ -9,9 +8,10 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB 阈值
 // 获取完整 API URL
 const getApiUrl = (path) => {
   const baseURL = apiConfig.baseURL
-  // 如果 baseURL 是相对路径，转换为绝对 URL
+  if (baseURL.startsWith('http')) {
+    return `${baseURL}${path}`
+  }
   if (baseURL.startsWith('/')) {
-    // 获取当前域名
     return `${window.location.origin}${baseURL}${path}`
   }
   return `${baseURL}${path}`
@@ -23,80 +23,206 @@ const isNativePlatform = () => Capacitor.isNativePlatform()
 // 获取 Token
 const getToken = () => localStorage.getItem('token')
 
+// 安全的 base64 编码（处理大文件）
+const arrayBufferToBase64 = (buffer) => {
+  const bytes = new Uint8Array(buffer)
+  const chunkSize = 0x8000 // 32KB chunks
+  let result = ''
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize)
+    result += String.fromCharCode.apply(null, chunk)
+  }
+  return btoa(result)
+}
+
 /**
- * 上传单个分片（带重试）
- * 原生平台使用 base64 编码上传，浏览器使用 FormData
- * @param {File} file - 原文件
- * @param {string} uploadId - 上传ID
- * @param {number} index - 分片索引
- * @param {number} totalChunks - 总分片数
- * @param {number} maxRetries - 最大重试次数
- * @returns {Promise<void>}
+ * 原生平台文件上传（使用 XMLHttpRequest，更稳定）
  */
-export const uploadChunkWithRetry = async (file, uploadId, index, totalChunks, maxRetries = 3) => {
+const nativeUpload = async (url, file, eventId, stage) => {
+  return new Promise((resolve, reject) => {
+    const token = getToken()
+    const xhr = new XMLHttpRequest()
+    
+    xhr.open('POST', url, true)
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+    xhr.setRequestHeader('Content-Type', 'application/json')
+    
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText)
+          resolve(response.data || response)
+        } catch (e) {
+          resolve(xhr.responseText)
+        }
+      } else {
+        reject(new Error(`Upload failed: ${xhr.status}`))
+      }
+    }
+    
+    xhr.onerror = () => reject(new Error('Network error'))
+    xhr.ontimeout = () => reject(new Error('Request timeout'))
+    
+    // 读取文件并转为 base64
+    const reader = new FileReader()
+    reader.onload = () => {
+      const arrayBuffer = reader.result
+      const base64Data = arrayBufferToBase64(arrayBuffer)
+      
+      const data = JSON.stringify({
+        filename: file.name,
+        type: file.type || 'application/octet-stream',
+        size: file.size,
+        data: base64Data,
+        isBase64: true
+      })
+      
+      xhr.send(data)
+    }
+    reader.onerror = () => reject(new Error('File read error'))
+    reader.readAsArrayBuffer(file)
+  })
+}
+
+/**
+ * 浏览器端文件上传（使用 fetch + FormData）
+ */
+const browserUpload = async (url, file) => {
+  const token = getToken()
+  const formData = new FormData()
+  
+  // 伪装扩展名：把 .mp4 改成 .pdf
+  const isVideo = file.name.toLowerCase().endsWith('.mp4')
+  if (isVideo) {
+    const fakeName = file.name.replace(/\.mp4$/i, '.pdf') + '|ORIGINAL:' + file.name
+    const fakeFile = new File([file], fakeName, { type: 'application/octet-stream' })
+    formData.append('files', fakeFile)
+  } else {
+    formData.append('files', file)
+  }
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  })
+  
+  if (!response.ok) {
+    throw new Error(`Upload failed: ${response.status}`)
+  }
+  
+  const result = await response.json()
+  return result.data
+}
+
+/**
+ * 直接上传小文件
+ */
+const directUpload = async (file, eventId, stage) => {
+  const url = getApiUrl(`/quality-events/${eventId}/upload?stage=${stage}`)
+  
+  if (isNativePlatform()) {
+    return nativeUpload(url, file, eventId, stage)
+  } else {
+    return browserUpload(url, file)
+  }
+}
+
+/**
+ * 原生平台分片上传
+ */
+const nativeUploadChunk = async (file, uploadId, index, totalChunks) => {
+  return new Promise((resolve, reject) => {
+    const token = getToken()
+    const url = getApiUrl('/upload/chunk')
+    const xhr = new XMLHttpRequest()
+    
+    xhr.open('POST', url, true)
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+    xhr.setRequestHeader('Content-Type', 'application/json')
+    
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText))
+        } catch (e) {
+          resolve({ code: 200 })
+        }
+      } else {
+        reject(new Error(`Chunk ${index} failed: ${xhr.status}`))
+      }
+    }
+    
+    xhr.onerror = () => reject(new Error('Network error'))
+    
+    const start = index * CHUNK_SIZE
+    const end = Math.min(start + CHUNK_SIZE, file.size)
+    const chunk = file.slice(start, end)
+    
+    const reader = new FileReader()
+    reader.onload = () => {
+      const base64Data = arrayBufferToBase64(reader.result)
+      xhr.send(JSON.stringify({
+        uploadId,
+        index,
+        totalChunks,
+        chunk: base64Data,
+        filename: file.name
+      }))
+    }
+    reader.readAsArrayBuffer(chunk)
+  })
+}
+
+/**
+ * 浏览器端分片上传
+ */
+const browserUploadChunk = async (file, uploadId, index, totalChunks) => {
+  const token = getToken()
   const start = index * CHUNK_SIZE
   const end = Math.min(start + CHUNK_SIZE, file.size)
   const chunk = file.slice(start, end)
   
+  const formData = new FormData()
+  const chunkBlob = new Blob([chunk], { type: 'application/octet-stream' })
+  formData.append('chunk', chunkBlob, `chunk-${index}`)
+  formData.append('index', index)
+  formData.append('uploadId', uploadId)
+  formData.append('totalChunks', totalChunks)
+  
+  const response = await fetch(getApiUrl('/upload/chunk'), {
+    method: 'POST',
+    body: formData,
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  })
+  
+  if (!response.ok) {
+    throw new Error(`Chunk ${index} failed: ${response.status}`)
+  }
+  
+  return response.json()
+}
+
+/**
+ * 上传单个分片（带重试）
+ */
+export const uploadChunkWithRetry = async (file, uploadId, index, totalChunks, maxRetries = 3) => {
   let lastError
-  const token = getToken()
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      let response
-      
       if (isNativePlatform()) {
-        // 原生平台：使用 CapacitorHttp，将文件转为 base64
-        const arrayBuffer = await chunk.arrayBuffer()
-        const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
-        
-        response = await CapacitorHttp.request({
-          method: 'POST',
-          url: getApiUrl('/upload/chunk'),
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          data: {
-            uploadId,
-            index,
-            totalChunks,
-            chunk: base64Data,
-            filename: file.name
-          }
-        })
-        
-        if (response.status < 200 || response.status >= 300) {
-          throw new Error(`Chunk ${index} upload failed: ${response.status}`)
-        }
+        return await nativeUploadChunk(file, uploadId, index, totalChunks)
       } else {
-        // 浏览器：使用 fetch + FormData
-        const formData = new FormData()
-        const chunkBlob = new Blob([chunk], { type: 'application/octet-stream' })
-        formData.append('chunk', chunkBlob, `chunk-${index}`)
-        formData.append('index', index)
-        formData.append('uploadId', uploadId)
-        formData.append('totalChunks', totalChunks)
-        
-        response = await fetch(getApiUrl('/upload/chunk'), {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-        
-        if (!response.ok) {
-          throw new Error(`Chunk ${index} upload failed: ${response.status}`)
-        }
-        
-        response = { data: await response.json() }
+        return await browserUploadChunk(file, uploadId, index, totalChunks)
       }
-      
-      return response.data
     } catch (error) {
       lastError = error
-      console.warn(`分片 ${index} 第 ${attempt} 次上传失败，${attempt < maxRetries ? '重试中...' : '放弃'}`, error)
+      console.warn(`分片 ${index} 第 ${attempt} 次上传失败，${attempt < maxRetries ? '重试中...' : '放弃'}`)
       
       if (attempt < maxRetries) {
         await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000))
@@ -108,35 +234,41 @@ export const uploadChunkWithRetry = async (file, uploadId, index, totalChunks, m
 }
 
 /**
- * 查询已上传的分片（断点续传）
- * @param {string} uploadId - 上传ID
- * @returns {Promise<number[]>} 已上传的分片索引数组
+ * 查询已上传的分片
  */
 export const getUploadedChunks = async (uploadId) => {
   try {
     const token = getToken()
-    let data
+    const url = getApiUrl(`/upload/status/${uploadId}`)
     
     if (isNativePlatform()) {
-      const response = await CapacitorHttp.request({
-        method: 'GET',
-        url: getApiUrl(`/upload/status/${uploadId}`),
-        headers: {
-          'Authorization': `Bearer ${token}`
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.open('GET', url, true)
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = JSON.parse(xhr.responseText)
+              resolve(data.uploadedChunks || [])
+            } catch (e) {
+              resolve([])
+            }
+          } else {
+            resolve([])
+          }
         }
+        xhr.onerror = () => resolve([])
+        xhr.send()
       })
-      data = response.data
     } else {
-      const response = await fetch(getApiUrl(`/upload/status/${uploadId}`), {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
       })
       if (!response.ok) return []
-      data = await response.json()
+      const data = await response.json()
+      return data.uploadedChunks || []
     }
-    
-    return data.uploadedChunks || []
   } catch (error) {
     console.error('查询已上传分片失败:', error)
     return []
@@ -145,110 +277,99 @@ export const getUploadedChunks = async (uploadId) => {
 
 /**
  * 初始化分片上传
- * @param {string} filename - 文件名
- * @param {number} size - 文件大小
- * @returns {Promise<string>} uploadId
  */
 export const initChunkUpload = async (filename, size) => {
   const token = getToken()
-  let data
+  const url = getApiUrl('/upload/init')
+  const body = JSON.stringify({ filename, size })
   
   if (isNativePlatform()) {
-    const response = await CapacitorHttp.request({
-      method: 'POST',
-      url: getApiUrl('/upload/init'),
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      data: { filename, size }
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', url, true)
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+      xhr.setRequestHeader('Content-Type', 'application/json')
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const data = JSON.parse(xhr.responseText)
+          resolve(data.uploadId)
+        } else {
+          reject(new Error('Failed to initialize upload'))
+        }
+      }
+      xhr.onerror = () => reject(new Error('Network error'))
+      xhr.send(body)
     })
-    if (response.status < 200 || response.status >= 300) {
-      throw new Error('Failed to initialize upload')
-    }
-    data = response.data
   } else {
-    const response = await fetch(getApiUrl('/upload/init'), {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ filename, size })
+      body
     })
-    if (!response.ok) {
-      throw new Error('Failed to initialize upload')
-    }
-    data = await response.json()
+    if (!response.ok) throw new Error('Failed to initialize upload')
+    const data = await response.json()
+    return data.uploadId
   }
-  
-  return data.uploadId
 }
 
 /**
  * 合并分片
- * @param {string} uploadId - 上传ID
- * @param {string} filename - 文件名
- * @param {string} eventNo - 事件编号
- * @returns {Promise<{url: string}>}
  */
 export const mergeChunks = async (uploadId, filename, eventNo) => {
   const token = getToken()
-  let data
+  const url = getApiUrl('/upload/merge')
+  const body = JSON.stringify({ uploadId, filename, eventNo })
   
   if (isNativePlatform()) {
-    const response = await CapacitorHttp.request({
-      method: 'POST',
-      url: getApiUrl('/upload/merge'),
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      data: { uploadId, filename, eventNo }
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', url, true)
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+      xhr.setRequestHeader('Content-Type', 'application/json')
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(JSON.parse(xhr.responseText))
+        } else {
+          reject(new Error('Failed to merge chunks'))
+        }
+      }
+      xhr.onerror = () => reject(new Error('Network error'))
+      xhr.send(body)
     })
-    if (response.status < 200 || response.status >= 300) {
-      throw new Error('Failed to merge chunks')
-    }
-    data = response.data
   } else {
-    const response = await fetch(getApiUrl('/upload/merge'), {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ uploadId, filename, eventNo })
+      body
     })
-    if (!response.ok) {
-      throw new Error('Failed to merge chunks')
-    }
-    data = await response.json()
+    if (!response.ok) throw new Error('Failed to merge chunks')
+    return response.json()
   }
-  
-  return data
 }
 
 /**
- * 取消上传（清理临时文件）
- * @param {string} uploadId - 上传ID
+ * 取消上传
  */
 export const cancelUpload = async (uploadId) => {
   const token = getToken()
+  const url = getApiUrl(`/upload/cancel/${uploadId}`)
+  
   try {
     if (isNativePlatform()) {
-      await CapacitorHttp.request({
-        method: 'DELETE',
-        url: getApiUrl(`/upload/cancel/${uploadId}`),
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
+      const xhr = new XMLHttpRequest()
+      xhr.open('DELETE', url, true)
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+      xhr.send()
     } else {
-      await fetch(getApiUrl(`/upload/cancel/${uploadId}`), {
+      await fetch(url, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       })
     }
   } catch (error) {
@@ -257,81 +378,7 @@ export const cancelUpload = async (uploadId) => {
 }
 
 /**
- * 直接上传小文件（原生平台使用 base64，浏览器使用 FormData）
- * @param {File} file - 文件对象
- * @param {string} eventId - 事件ID
- * @param {string} stage - 阶段
- * @returns {Promise<Array>} 上传结果
- */
-const directUpload = async (file, eventId, stage) => {
-  const token = getToken()
-  const url = getApiUrl(`/quality-events/${eventId}/upload?stage=${stage}`)
-  
-  if (isNativePlatform()) {
-    // 原生平台：将文件转为 base64 上传
-    const arrayBuffer = await file.arrayBuffer()
-    const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
-    
-    const response = await CapacitorHttp.request({
-      method: 'POST',
-      url,
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      data: {
-        filename: file.name,
-        type: file.type,
-        size: file.size,
-        data: base64Data,
-        isBase64: true
-      }
-    })
-    
-    if (response.status < 200 || response.status >= 300) {
-      throw new Error('Upload failed')
-    }
-    
-    return response.data.data
-  } else {
-    // 浏览器：使用 FormData
-    const formData = new FormData()
-    
-    // 伪装扩展名：把 .mp4 改成 .pdf，避免被检测/限速
-    const isVideo = file.name.toLowerCase().endsWith('.mp4')
-    if (isVideo) {
-      const fakeName = file.name.replace(/\.mp4$/i, '.pdf') + '|ORIGINAL:' + file.name
-      const fakeFile = new File([file], fakeName, { type: 'application/octet-stream' })
-      formData.append('files', fakeFile)
-    } else {
-      formData.append('files', file)
-    }
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    
-    if (!response.ok) {
-      throw new Error('Upload failed')
-    }
-    
-    const result = await response.json()
-    return result.data
-  }
-}
-
-/**
  * 智能上传（小文件直接上传，大文件分片上传+断点续传）
- * @param {File} file - 文件对象
- * @param {string} eventId - 事件ID
- * @param {string} eventNo - 事件编号
- * @param {string} stage - 阶段
- * @param {Function} onProgress - 进度回调 (percent, uploadedChunks, totalChunks, status)
- * @returns {Promise<Array>} 上传结果
  */
 export const smartUpload = async (file, eventId, eventNo, stage, onProgress) => {
   // 小于 50MB，直接上传
@@ -341,10 +388,10 @@ export const smartUpload = async (file, eventId, eventNo, stage, onProgress) => 
     const result = await directUpload(file, eventId, stage)
     
     onProgress && onProgress(100, 1, 1, '上传完成')
-    return result
+    return Array.isArray(result) ? result : [result]
   }
   
-  // 大于 50MB，分片上传（支持断点续传）
+  // 大于 50MB，分片上传
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE)
   onProgress && onProgress(0, 0, totalChunks, '初始化上传...')
   
@@ -388,7 +435,6 @@ export const smartUpload = async (file, eventId, eventNo, stage, onProgress) => 
         `上传中: ${currentCompleted}/${totalChunks} (${percent}%)`
       )
     } catch (error) {
-      // 上传失败，尝试取消上传
       await cancelUpload(uploadId)
       throw new Error(`分片 ${chunkIndex} 上传失败，已取消上传: ${error.message}`)
     }
@@ -410,12 +456,6 @@ export const smartUpload = async (file, eventId, eventNo, stage, onProgress) => 
 
 /**
  * 批量智能上传
- * @param {FileList|Array} files - 文件列表
- * @param {string} eventId - 事件ID
- * @param {string} eventNo - 事件编号
- * @param {string} stage - 阶段
- * @param {Function} onProgress - 进度回调 (fileIndex, fileProgress, currentFile, totalFiles, detail)
- * @returns {Promise<Array>} 所有上传结果
  */
 export const batchSmartUpload = async (files, eventId, eventNo, stage, onProgress) => {
   const results = []
