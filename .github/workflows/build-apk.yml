@@ -50,6 +50,22 @@ jobs:
 
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
+      with:
+        cmdline-tools-version: '11076708'
+      continue-on-error: true
+      id: setup_android
+
+    - name: Retry Setup Android SDK
+      if: steps.setup_android.outcome == 'failure'
+      run: |
+        echo "First attempt failed, retrying..."
+        sleep 30
+        
+    - name: Setup Android SDK (Retry)
+      if: steps.setup_android.outcome == 'failure'
+      uses: android-actions/setup-android@v3
+      with:
+        cmdline-tools-version: '11076708'
 
     - name: Cache Gradle dependencies
       uses: actions/cache@v4
