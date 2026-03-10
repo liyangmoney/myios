@@ -74,18 +74,16 @@ jobs:
       working-directory: ./frontend/android
       run: ./gradlew assembleDebug --no-daemon
 
-    - name: Prepare output directory
-      run: mkdir -p ./frontend/output
-
     - name: Copy APK
       run: |
-        cp frontend/android/app/build/outputs/apk/debug/app-debug.apk frontend/output/pis-system-debug.apk
+        mkdir -p ./output
+        cp ./android/app/build/outputs/apk/debug/app-debug.apk ./output/pis-system-debug.apk
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: PIS-APK-${{ github.run_number }}
-        path: frontend/output/*.apk
+        path: ./frontend/output/*.apk
         retention-days: 30
 
     - name: Build Release APK
