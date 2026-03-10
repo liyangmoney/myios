@@ -1298,7 +1298,7 @@ const handleCommentFileRemove = async (file) => {
     const eventNo = file.url.split('/')[3] // 从 /uploads/quality-events/QE-xxx/filename 提取事件编号
     const filePath = `${eventNo}/${filename}`
 
-    await fetch('/api/files', {
+    await fetch(`${apiConfig.baseURL}/files`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -1327,7 +1327,7 @@ const removeUploadedCommentFile = async (idx) => {
     const eventNo = file.url.split('/')[3]
     const filePath = `${eventNo}/${filename}`
 
-    await fetch('/api/files', {
+    await fetch(`${apiConfig.baseURL}/files`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -1392,7 +1392,7 @@ const handleStageFileRemove = async (stage, file) => {
     const eventNo = file.url.split('/')[3] // 从 /uploads/quality-events/QE-xxx/filename 提取事件编号
     const filePath = `${eventNo}/${filename}`
 
-    await fetch('/api/files', {
+    await fetch(`${apiConfig.baseURL}/files`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
