@@ -721,9 +721,29 @@ const uploadHeaders = computed(() => {
   }
 })
 
+// 默认服务器地址（用于原生平台）
+const DEFAULT_SERVER_URL = 'http://myjghy.myds.me:9090'
+
+// 获取完整的 API 基础 URL
+const getFullBaseURL = () => {
+  const baseURL = apiConfig.baseURL
+  if (baseURL.startsWith('http')) {
+    return baseURL
+  }
+  // 原生平台必须使用完整服务器地址
+  if (Capacitor.isNativePlatform()) {
+    return `${DEFAULT_SERVER_URL}${baseURL}`
+  }
+  // 浏览器环境
+  if (baseURL.startsWith('/')) {
+    return `${window.location.origin}${baseURL}`
+  }
+  return baseURL
+}
+
 // 上传 action - 使用完整 URL
 const uploadAction = (stage) => {
-  return `${apiConfig.baseURL}/quality-events/${event.value.id}/upload?stage=${stage}`
+  return `${getFullBaseURL()}/quality-events/${event.value.id}/upload?stage=${stage}`
 }
 
 // 编辑对话框
@@ -1298,7 +1318,7 @@ const handleCommentFileRemove = async (file) => {
     const eventNo = file.url.split('/')[3] // 从 /uploads/quality-events/QE-xxx/filename 提取事件编号
     const filePath = `${eventNo}/${filename}`
 
-    await fetch(`${apiConfig.baseURL}/files`, {
+    await fetch(`${getFullBaseURL()}/files`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -1327,7 +1347,7 @@ const removeUploadedCommentFile = async (idx) => {
     const eventNo = file.url.split('/')[3]
     const filePath = `${eventNo}/${filename}`
 
-    await fetch(`${apiConfig.baseURL}/files`, {
+    await fetch(`${getFullBaseURL()}/files`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -1392,7 +1412,7 @@ const handleStageFileRemove = async (stage, file) => {
     const eventNo = file.url.split('/')[3] // 从 /uploads/quality-events/QE-xxx/filename 提取事件编号
     const filePath = `${eventNo}/${filename}`
 
-    await fetch(`${apiConfig.baseURL}/files`, {
+    await fetch(`${getFullBaseURL()}/files`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -1509,7 +1529,8 @@ const getFileUrl = (url) => {
 const handleFileClick = async (fileUrl, fileName) => {
   if (!fileUrl) return
   
-  const fullUrl = fileUrl.startsWith('http') ? fileUrl : apiConfig.baseURL.replace('/api', '') + fileUrl
+  const baseUrl = getFullBaseURL().replace('/api', '')
+  const fullUrl = fileUrl.startsWith('http') ? fileUrl : baseUrl + fileUrl
   
   // 检查是否在APP环境
   if (typeof window !== 'undefined' && window.Capacitor) {

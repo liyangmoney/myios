@@ -65,7 +65,28 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import { CapacitorHttp } from '@capacitor/core'
+import { Capacitor } from '@capacitor/core'
 import apiConfig from '@/api/config'
+
+// 默认服务器地址（用于原生平台）
+const DEFAULT_SERVER_URL = 'http://myjghy.myds.me:9090'
+
+// 获取完整的 API 基础 URL
+const getFullBaseURL = () => {
+  const baseURL = apiConfig.baseURL
+  if (baseURL.startsWith('http')) {
+    return baseURL
+  }
+  // 原生平台必须使用完整服务器地址
+  if (Capacitor.isNativePlatform()) {
+    return `${DEFAULT_SERVER_URL}${baseURL}`
+  }
+  // 浏览器环境
+  if (baseURL.startsWith('/')) {
+    return `${window.location.origin}${baseURL}`
+  }
+  return baseURL
+}
 
 const router = useRouter()
 const formRef = ref(null)
@@ -90,13 +111,13 @@ const handleLogin = async () => {
   loading.value = true
   try {
     console.log('正在登录:', loginForm.username)
-    console.log('服务器地址:', apiConfig.baseURL)
+    console.log('服务器地址:', getFullBaseURL())
     
     // 清除旧的 token
     localStorage.removeItem('token')
     
     // 使用完整的 API 地址
-    const loginUrl = apiConfig.baseURL + '/auth/login'
+    const loginUrl = getFullBaseURL() + '/auth/login'
     console.log('登录URL:', loginUrl)
     
     // 使用 Capacitor HTTP
@@ -129,7 +150,7 @@ const handleLogin = async () => {
     }
   } catch (error) {
     console.error('登录错误:', error)
-    errorMsg.value = '连接失败: ' + (error.message || '网络错误') + '，地址: ' + apiConfig.baseURL
+    errorMsg.value = '连接失败: ' + (error.message || '网络错误') + '，地址: ' + getFullBaseURL()
     ElMessage.error('无法连接到服务器')
   } finally {
     loading.value = false

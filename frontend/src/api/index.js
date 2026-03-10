@@ -1,8 +1,32 @@
 import { CapacitorHttp } from '@capacitor/core'
 import apiConfig from './config'
 
+// 默认服务器地址（用于原生平台）
+const DEFAULT_SERVER_URL = 'http://myjghy.myds.me:9090'
+
+// 获取完整的基础 URL
+const getBaseURL = () => {
+  const baseURL = apiConfig.baseURL
+  
+  // 如果已经是完整 URL，直接返回
+  if (baseURL.startsWith('http')) {
+    return baseURL
+  }
+  
+  // 原生平台：使用默认服务器地址
+  if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform()) {
+    return `${DEFAULT_SERVER_URL}${baseURL}`
+  }
+  
+  // 浏览器环境：使用相对路径或 origin
+  if (baseURL.startsWith('/')) {
+    return `${window.location.origin}${baseURL}`
+  }
+  return baseURL
+}
+
 // 基础 URL
-const baseURL = apiConfig.baseURL
+const baseURL = getBaseURL()
 
 // 获取 token
 const getToken = () => localStorage.getItem('token')

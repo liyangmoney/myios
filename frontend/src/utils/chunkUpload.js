@@ -5,9 +5,24 @@ import { Capacitor } from '@capacitor/core'
 const CHUNK_SIZE = 5 * 1024 * 1024 // 5MB 每块
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB 阈值
 
+// 默认服务器地址（用于原生平台）
+const DEFAULT_SERVER_URL = 'http://myjghy.myds.me:9090'
+
 // 获取完整 API URL
 const getApiUrl = (path) => {
   const baseURL = apiConfig.baseURL
+  
+  // 原生平台：必须使用完整的服务器地址
+  if (Capacitor.isNativePlatform()) {
+    // 如果 baseURL 已经是完整 URL，直接使用
+    if (baseURL.startsWith('http')) {
+      return `${baseURL}${path}`
+    }
+    // 否则使用默认服务器地址
+    return `${DEFAULT_SERVER_URL}${baseURL}${path}`
+  }
+  
+  // 浏览器环境
   if (baseURL.startsWith('http')) {
     return `${baseURL}${path}`
   }
