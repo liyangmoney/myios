@@ -21,9 +21,6 @@ on:
         required: false
         default: ''
 
-env:
-  CACHE_VERSION: 1
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -57,7 +54,7 @@ jobs:
         path: |
           ~/.gradle/caches
           ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        key: ${{ runner.os }}-gradle-${{ hashFiles('frontend/android/**/*.gradle*', 'frontend/android/**/gradle-wrapper.properties') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
 
@@ -74,63 +71,31 @@ jobs:
       run: chmod +x android/gradlew
 
     - name: Build Debug APK
-      run: |
-        cd android
-        ./gradlew assembleDebug --no-daemon
+      working-directory: ./frontend/android
+      run: ./gradlew assembleDebug --no-daemon
 
-    - name: Rename APK with version
+    - name: Prepare output directory
+      run: mkdir -p ./frontend/output
+
+    - name: Copy APK
       run: |
-        VERSION=${{ github.event.inputs.version || github.sha }}
-        VERSION_SHORT=$(echo $VERSION | cut -c1-7)
-        mkdir -p ./output
-        cp ./android/app/build/outputs/apk/debug/app-debug.apk ./output/PIS系统-v${VERSION_SHORT}-debug.apk
+        cp frontend/android/app/build/outputs/apk/debug/app-debug.apk frontend/output/pis-system-debug.apk
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: PIS-APK-${{ github.run_number }}
-        path: ./frontend/output/*.apk
+        path: frontend/output/*.apk
         retention-days: 30
 
     - name: Build Release APK
       if: github.event.inputs.release == 'true'
-      run: |
-        cd android
-        ./gradlew assembleRelease --no-daemon
+      working-directory: ./frontend/android
+      run: ./gradlew assembleRelease --no-daemon
       env:
         KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-
-    - name: Create Release
-      if: github.event.inputs.release == 'true' && github.event.inputs.version != ''
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: v${{ github.event.inputs.version }}
-        name: PIS系统 v${{ github.event.inputs.version }}
-        body: |
-          ## PIS系统 Android APK
-          
-          ### 版本信息
-          - 版本号: ${{ github.event.inputs.version }}
-          - 构建时间: ${{ github.event.created_at }}
-          - 提交: ${{ github.sha }}
-          
-          ### 安装说明
-          1. 下载 APK 文件
-          2. 在 Android 设备上允许"未知来源"安装
-          3. 安装 APK
-          
-          ### 注意
-          - Debug 版本可以直接安装测试
-          - Release 版本需要签名配置
-        files: |
-          ./frontend/output/*.apk
-          ./frontend/android/app/build/outputs/apk/release/*.apk
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   notify:
     needs: build
@@ -140,11 +105,11 @@ jobs:
     - name: Notify success
       if: needs.build.result == 'success'
       run: |
-        echo "✅ APK 构建成功！"
-        echo "📥 请在 Actions 页面下载 APK 文件"
+        echo "APK build successful!"
+        echo "Download from Actions artifacts"
         
     - name: Notify failure
       if: needs.build.result == 'failure'
       run: |
-        echo "❌ APK 构建失败"
-        echo "请检查构建日志"
+        echo "APK build failed"
+        echo "Check the build logs"
