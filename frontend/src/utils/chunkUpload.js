@@ -1,6 +1,13 @@
 // 分片上传工具函数
+import apiConfig from '@/api/config'
+
 const CHUNK_SIZE = 5 * 1024 * 1024 // 5MB 每块
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB 阈值
+
+// 获取完整 API URL
+const getApiUrl = (path) => {
+  return `${apiConfig.baseURL}${path}`
+}
 
 /**
  * 查询已上传的分片（断点续传）
@@ -9,7 +16,7 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB 阈值
  */
 export const getUploadedChunks = async (uploadId) => {
   try {
-    const response = await fetch(`/api/upload/status/${uploadId}`, {
+    const response = await fetch(getApiUrl(`/upload/status/${uploadId}`), {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
@@ -53,7 +60,7 @@ export const uploadChunkWithRetry = async (file, uploadId, index, totalChunks, m
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await fetch('/api/upload/chunk', {
+      const response = await fetch(getApiUrl('/upload/chunk'), {
         method: 'POST',
         body: formData,
         headers: {
@@ -87,7 +94,7 @@ export const uploadChunkWithRetry = async (file, uploadId, index, totalChunks, m
  * @returns {Promise<string>} uploadId
  */
 export const initChunkUpload = async (filename, size) => {
-  const response = await fetch('/api/upload/init', {
+  const response = await fetch(getApiUrl('/upload/init'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -112,7 +119,7 @@ export const initChunkUpload = async (filename, size) => {
  * @returns {Promise<{url: string}>}
  */
 export const mergeChunks = async (uploadId, filename, eventNo) => {
-  const response = await fetch('/api/upload/merge', {
+  const response = await fetch(getApiUrl('/upload/merge'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -134,7 +141,7 @@ export const mergeChunks = async (uploadId, filename, eventNo) => {
  */
 export const cancelUpload = async (uploadId) => {
   try {
-    await fetch(`/api/upload/cancel/${uploadId}`, {
+    await fetch(getApiUrl(`/upload/cancel/${uploadId}`), {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -173,7 +180,7 @@ export const smartUpload = async (file, eventId, eventNo, stage, onProgress) => 
       formData.append('files', file)
     }
     
-    const response = await fetch(`/api/quality-events/${eventId}/upload?stage=${stage}`, {
+    const response = await fetch(getApiUrl(`/quality-events/${eventId}/upload?stage=${stage}`), {
       method: 'POST',
       body: formData,
       headers: {

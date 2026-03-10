@@ -374,7 +374,7 @@
         <div class="comment-upload">
           <el-upload
             ref="commentUploadRef"
-            :action="`/api/quality-events/${event.id}/upload?stage=comment`"
+            :action="uploadAction('comment')"
             :headers="uploadHeaders"
             :multiple="true"
             :limit="5"
@@ -720,6 +720,11 @@ const uploadHeaders = computed(() => {
     Authorization: `Bearer ${token}`
   }
 })
+
+// 上传 action - 使用完整 URL
+const uploadAction = (stage) => {
+  return `${apiConfig.baseURL}/quality-events/${event.value.id}/upload?stage=${stage}`
+}
 
 // 编辑对话框
 const editDialogVisible = ref(false)
