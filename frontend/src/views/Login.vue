@@ -29,9 +29,8 @@
           保存并返回登录
         </el-button>
         
-        <p class="config-tip">
-          当前服务器: {{ currentServer }}
-        </p>
+        <!-- 隐藏服务器地址显示 -->
+        <!-- p class="config-tip">当前服务器: {{ currentServer }}</p -->
       </div>
       
       <div v-else>
@@ -86,9 +85,10 @@
           
           <div class="server-info">
             <el-divider></el-divider>
-            <p>服务器: {{ currentServer }}</p>
+            <!-- 隐藏服务器地址 -->
+            <!-- p>服务器: {{ currentServer }}</p -->
             <el-button link type="primary" @click="showServerConfig = true">
-              修改服务器地址
+              服务器设置
             </el-button>
           </div>
         </div>
