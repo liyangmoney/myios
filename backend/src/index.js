@@ -17,8 +17,13 @@ const __dirname = path.dirname(__filename)
 const app = express()
 const PORT = process.env.PORT || 9090
 
-// 中间件
-app.use(cors())
+// 中间件 - CORS 配置，允许所有来源
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false
+}))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
