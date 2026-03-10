@@ -3,7 +3,7 @@ import apiConfig from '@/api/config'
 import { Capacitor } from '@capacitor/core'
 
 const CHUNK_SIZE = 5 * 1024 * 1024 // 5MB 每块
-const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB 阈值
+const MAX_FILE_SIZE = 500 * 1024 * 1024 // 500MB 阈值
 
 // 默认服务器地址（用于原生平台）
 const DEFAULT_SERVER_URL = 'http://myjghy.myds.me:9090'

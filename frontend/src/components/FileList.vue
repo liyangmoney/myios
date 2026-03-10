@@ -369,8 +369,11 @@ const handleUploadError = (error) => {
 .file-name {
   flex: 1;
   color: #303133;
-  word-break: break-all;
   line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 .file-size {
