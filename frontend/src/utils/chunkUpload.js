@@ -36,6 +36,28 @@ const isNativePlatform = () => Capacitor.isNativePlatform()
 // 获取 Token
 const getToken = () => localStorage.getItem('token')
 
+// 测试服务器连接
+const testServerConnection = async (url) => {
+  console.log('[Test] Testing connection to:', url)
+  try {
+    // 先测试一个简单的 GET 请求
+    const testUrl = url.replace(/\/quality-events\/.*$/, '/auth/info')
+    console.log('[Test] Test URL:', testUrl)
+    
+    const response = await fetch(testUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    })
+    console.log('[Test] Connection test status:', response.status)
+    return response.ok
+  } catch (error) {
+    console.error('[Test] Connection test failed:', error?.message)
+    return false
+  }
+}
+
 // 安全的 base64 编码（处理大文件）
 const arrayBufferToBase64 = (buffer) => {
   const bytes = new Uint8Array(buffer)
@@ -59,6 +81,13 @@ const unifiedUpload = async (url, file, onProgress) => {
   // 原生平台：使用 base64 + fetch
   if (isNativePlatform()) {
     console.log('[unifiedUpload] Native platform, using base64')
+    
+    // 先测试连接
+    const isConnected = await testServerConnection(url)
+    if (!isConnected) {
+      throw new Error('无法连接到服务器，请检查网络或服务器地址')
+    }
+    
     try {
       const arrayBuffer = await file.arrayBuffer()
       console.log('[unifiedUpload] File read, size:', arrayBuffer.byteLength)
@@ -76,14 +105,25 @@ const unifiedUpload = async (url, file, onProgress) => {
       console.log('[unifiedUpload] Request body size:', body.length)
       
       console.log('[unifiedUpload] Sending fetch request...')
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: body
-      })
+      
+      let response
+      try {
+        response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: body
+        })
+      } catch (fetchError) {
+        console.error('[unifiedUpload] Fetch error details:')
+        console.error('  - Type:', fetchError?.name)
+        console.error('  - Message:', fetchError?.message)
+        console.error('  - Stack:', fetchError?.stack)
+        console.error('  - Full error:', JSON.stringify(fetchError, Object.getOwnPropertyNames(fetchError)))
+        throw new Error(`Network error: ${fetchError?.message || 'Failed to connect to server'}`)
+      }
       
       console.log('[unifiedUpload] Response status:', response.status)
       
