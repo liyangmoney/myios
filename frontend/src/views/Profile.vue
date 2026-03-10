@@ -31,32 +31,13 @@
         </div>
       </el-card>
       
-      <el-card class="info-card">
-        <template #header>
-          <div class="card-header">
-            <span>服务器配置</span>
-            <el-button type="primary" link @click="openServerConfigDialog">修改</el-button>
-          </div>
-        </template>
-        <div class="info-item">
-          <span class="label">当前服务器</span>
-          <span class="value" style="font-size: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{{ currentServer }}</span>
-        </div>
-        <div class="info-item">
-          <span class="label">运行环境</span>
-          <el-tag size="small">{{ isCapacitor ? 'APP' : '浏览器' }}</el-tag>
-        </div>
-        
-        <el-button 
-          v-if="storedConfigExists" 
-          type="warning" 
-          size="small" 
-          style="margin-top: 10px;"
-          @click="clearStoredConfig"
-        >
-          清除本地配置
+      <!-- 服务器配置（简洁版） -->
+      <div class="server-config-simple">
+        <el-button type="info" link @click="openServerConfigDialog">
+          <el-icon><Setting /></el-icon>
+          服务器设置
         </el-button>
-      </el-card>
+      </div>
       
       <div class="action-section">
         <el-button type="primary" size="large" class="action-btn" @click="openChangePasswordDialog">
@@ -164,7 +145,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { userApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { UserFilled, Lock, SwitchButton } from '@element-plus/icons-vue'
+import { UserFilled, Lock, SwitchButton, Setting } from '@element-plus/icons-vue'
 import apiConfig, { clearApiConfig } from '@/api/config'
 
 const router = useRouter()
@@ -399,5 +380,15 @@ const handleLogout = async () => {
 
 .action-btn .el-icon {
   margin-right: 8px;
+}
+
+.server-config-simple {
+  text-align: center;
+  padding: 10px 0;
+  margin-bottom: 10px;
+}
+
+.server-config-simple .el-icon {
+  margin-right: 4px;
 }
 </style>
