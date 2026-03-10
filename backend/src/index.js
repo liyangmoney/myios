@@ -31,6 +31,11 @@ app.options('*', cors())
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ extended: true, limit: '50mb' }))
 
+// 健康检查接口（用于测试连通性）
+app.get('/ping', (req, res) => {
+  res.json({ code: 200, message: 'pong', timestamp: new Date().toISOString() })
+})
+
 // 静态文件 - 上传的文件需要公开访问（OnlyOffice 需要）
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
 

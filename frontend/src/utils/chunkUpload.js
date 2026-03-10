@@ -40,15 +40,13 @@ const getToken = () => localStorage.getItem('token')
 const testServerConnection = async (url) => {
   console.log('[Test] Testing connection to:', url)
   try {
-    // 先测试一个简单的 GET 请求
-    const testUrl = url.replace(/\/quality-events\/.*$/, '/auth/info')
+    // 测试 /ping 接口（不需要认证）
+    const baseUrl = url.replace(/\/api\/.*$/, '')
+    const testUrl = baseUrl + '/ping'
     console.log('[Test] Test URL:', testUrl)
     
     const response = await fetch(testUrl, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${getToken()}`
-      }
     })
     console.log('[Test] Connection test status:', response.status)
     return response.ok
