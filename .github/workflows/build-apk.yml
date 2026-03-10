@@ -87,14 +87,18 @@ jobs:
 
     - name: Commit APK to repository
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PAT: ${{ secrets.PAT }}
       run: |
         cd ..
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add backend/app/pis-latest.apk
         git diff --staged --quiet || git commit -m "chore: update APK [skip ci]"
-        git push https://liyangmoney:${GITHUB_TOKEN}@github.com/liyangmoney/MyIOS.git || echo "Push failed"
+        if [ -n "$PAT" ]; then
+          git push https://liyangmoney:${PAT}@github.com/liyangmoney/MyIOS.git
+        else
+          echo "PAT secret not set, skipping push"
+        fi
 
     - name: Copy APK to output
       run: |
