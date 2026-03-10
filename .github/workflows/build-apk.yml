@@ -31,6 +31,9 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -76,7 +79,22 @@ jobs:
       working-directory: ./frontend/android
       run: ./gradlew assembleDebug --no-daemon
 
-    - name: Copy APK
+    - name: Copy APK to backend/app
+      run: |
+        mkdir -p ../backend/app
+        cp ./android/app/build/outputs/apk/debug/app-debug.apk ../backend/app/pis-latest.apk
+        ls -la ../backend/app/
+
+    - name: Commit APK to repository
+      run: |
+        cd ..
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add backend/app/pis-latest.apk
+        git diff --staged --quiet || git commit -m "chore: update APK [skip ci]"
+        git push || echo "Nothing to push"
+
+    - name: Copy APK to output
       run: |
         mkdir -p ./output
         cp ./android/app/build/outputs/apk/debug/app-debug.apk ./output/pis-system-debug.apk
