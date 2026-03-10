@@ -87,15 +87,14 @@ jobs:
 
     - name: Commit APK to repository
       env:
-        PAT: ${{ secrets.PAT }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         cd ..
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git remote set-url origin https://liyangmoney:${PAT}@github.com/liyangmoney/MyIOS.git
         git add backend/app/pis-latest.apk
         git diff --staged --quiet || git commit -m "chore: update APK [skip ci]"
-        git push || echo "Nothing to push"
+        git push https://liyangmoney:${GITHUB_TOKEN}@github.com/liyangmoney/MyIOS.git || echo "Push failed"
 
     - name: Copy APK to output
       run: |
