@@ -289,69 +289,118 @@
     <el-dialog 
       v-model="dialogVisible" 
       :title="isEdit ? '编辑质量事件' : '新建质量事件'" 
-      width="700px"
+      :width="isMobile ? '90%' : '700px'"
       :close-on-click-modal="false"
+      class="quality-event-dialog"
     >
       <el-form 
         ref="formRef"
         :model="formData" 
         :rules="formRules"
-        label-width="100px"
+        :label-width="isMobile ? '80px' : '100px'"
+        :label-position="isMobile ? 'top' : 'right'"
       >
         <el-form-item label="事件标题" prop="title">
           <el-input v-model="formData.title" placeholder="请输入事件标题" />
         </el-form-item>
         
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="事件类型" prop="eventType">
-              <el-select v-model="formData.eventType" placeholder="请选择" style="width: 100%">
-                <el-option label="内部不符合" value="内部不符合" />
-                <el-option label="外部不符合" value="外部不符合" />
-                <el-option label="审核发现" value="审核发现" />
-                <el-option label="过程异常" value="过程异常" />
-                <el-option label="设备异常" value="设备异常" />
-                <el-option label="其他" value="其他" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="严重程度" prop="severity">
-              <el-select v-model="formData.severity" placeholder="请选择" style="width: 100%">
-                <el-option label="轻微" value="轻微" />
-                <el-option label="一般" value="一般" />
-                <el-option label="严重" value="严重" />
-                <el-option label="致命" value="致命" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <!-- PC端两列布局 -->
+        <template v-if="!isMobile">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="事件类型" prop="eventType">
+                <el-select v-model="formData.eventType" placeholder="请选择" style="width: 100%">
+                  <el-option label="内部不符合" value="内部不符合" />
+                  <el-option label="外部不符合" value="外部不符合" />
+                  <el-option label="审核发现" value="审核发现" />
+                  <el-option label="过程异常" value="过程异常" />
+                  <el-option label="设备异常" value="设备异常" />
+                  <el-option label="其他" value="其他" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="严重程度" prop="severity">
+                <el-select v-model="formData.severity" placeholder="请选择" style="width: 100%">
+                  <el-option label="轻微" value="轻微" />
+                  <el-option label="一般" value="一般" />
+                  <el-option label="严重" value="严重" />
+                  <el-option label="致命" value="致命" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="责任人" prop="responsibleId">
+                <el-select-v2
+                  v-model="formData.responsibleId"
+                  :options="userOptions"
+                  placeholder="请选择责任人"
+                  style="width: 100%"
+                  clearable
+                  filterable
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="截止日期" prop="dueDate">
+                <el-date-picker
+                  v-model="formData.dueDate"
+                  type="date"
+                  placeholder="选择日期"
+                  style="width: 100%"
+                  value-format="YYYY-MM-DD"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </template>
         
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="责任人" prop="responsibleId">
-              <el-select-v2
-                v-model="formData.responsibleId"
-                :options="userOptions"
-                placeholder="请选择责任人"
-                style="width: 100%"
-                clearable
-                filterable
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="截止日期" prop="dueDate">
-              <el-date-picker
-                v-model="formData.dueDate"
-                type="date"
-                placeholder="选择日期"
-                style="width: 100%"
-                value-format="YYYY-MM-DD"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <!-- 移动端单列布局 -->
+        <template v-else>
+          <el-form-item label="事件类型" prop="eventType">
+            <el-select v-model="formData.eventType" placeholder="请选择" style="width: 100%">
+              <el-option label="内部不符合" value="内部不符合" />
+              <el-option label="外部不符合" value="外部不符合" />
+              <el-option label="审核发现" value="审核发现" />
+              <el-option label="过程异常" value="过程异常" />
+              <el-option label="设备异常" value="设备异常" />
+              <el-option label="其他" value="其他" />
+            </el-select>
+          </el-form-item>
+          
+          <el-form-item label="严重程度" prop="severity">
+            <el-select v-model="formData.severity" placeholder="请选择" style="width: 100%">
+              <el-option label="轻微" value="轻微" />
+              <el-option label="一般" value="一般" />
+              <el-option label="严重" value="严重" />
+              <el-option label="致命" value="致命" />
+            </el-select>
+          </el-form-item>
+          
+          <el-form-item label="责任人" prop="responsibleId">
+            <el-select-v2
+              v-model="formData.responsibleId"
+              :options="userOptions"
+              placeholder="请选择责任人"
+              style="width: 100%"
+              clearable
+              filterable
+            />
+          </el-form-item>
+          
+          <el-form-item label="截止日期" prop="dueDate">
+            <el-date-picker
+              v-model="formData.dueDate"
+              type="date"
+              placeholder="选择日期"
+              style="width: 100%"
+              value-format="YYYY-MM-DD"
+            />
+          </el-form-item>
+        </template>
         
         <el-form-item label="问题描述" prop="description">
           <el-input 
@@ -393,6 +442,16 @@ import { useUserStore } from '@/store/user'
 const router = useRouter()
 const userStore = useUserStore()
 const currentUserId = computed(() => userStore.userInfo?.id)
+
+// 移动端检测
+const isMobile = ref(false)
+const checkMobile = () => {
+  isMobile.value = window.innerWidth <= 768
+}
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+})
 
 // 统计数据
 const stats = ref({
