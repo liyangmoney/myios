@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PIS系统</string>
+    <string name="title_activity_main">PIS系统</string>
+    <string name="package_name">com.liyangmoney.pis</string>
+    <string name="custom_url_scheme">com.liyangmoney.pis</string>
+</resources>
