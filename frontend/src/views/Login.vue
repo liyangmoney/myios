@@ -102,6 +102,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock, Link } from '@element-plus/icons-vue'
+import { CapacitorHttp } from '@capacitor/core'
 import apiConfig from '@/api/config'
 
 const router = useRouter()
@@ -168,19 +169,20 @@ const handleLogin = async () => {
     const loginUrl = apiConfig.baseURL + '/auth/login'
     console.log('登录URL:', loginUrl)
     
-    const response = await fetch(loginUrl, {
-      method: 'POST',
+    // 使用 Capacitor HTTP
+    const response = await CapacitorHttp.post({
+      url: loginUrl,
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
+      data: {
         username: loginForm.username,
         password: loginForm.password
-      })
+      }
     })
     
-    const res = await response.json()
-    console.log('登录响应:', res)
+    console.log('登录响应:', response)
+    const res = response.data
     
     if (res.code === 200 && res.data?.token) {
       // 保存 token
