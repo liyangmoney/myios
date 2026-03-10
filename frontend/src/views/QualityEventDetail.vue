@@ -374,17 +374,14 @@
         <div class="comment-upload">
           <el-upload
             ref="commentUploadRef"
-            :action="uploadAction('comment')"
-            :headers="uploadHeaders"
+            :http-request="(options) => customUpload(options, 'comment')"
             :multiple="true"
             :limit="5"
-            name="files"
             :auto-upload="true"
             accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4"
             :on-success="(res, file) => handleCommentFileSuccess(res, file)"
             :on-remove="(file) => handleCommentFileRemove(file)"
             :on-error="handleUploadError"
-            :on-progress="handleCommentUploadProgress"
             :before-upload="beforeCommentUpload"
           >
             <el-button type="info" :icon="Paperclip" :loading="commentUploading">添加附件</el-button>
@@ -1442,6 +1439,46 @@ const handleStageFileRemove = async (stage, file) => {
   const index = filesArray.value.findIndex(f => f.name === file.name)
   if (index > -1) {
     filesArray.value.splice(index, 1)
+  }
+}
+
+// 自定义上传（支持安卓端）
+import { smartUpload } from '@/utils/chunkUpload'
+
+const customUpload = async (options, stage) => {
+  const { file, onProgress, onSuccess, onError } = options
+  
+  try {
+    commentUploading.value = true
+    commentUploadingFileName.value = file.name
+    
+    // 使用 smartUpload 统一处理（支持分片和原生平台）
+    const result = await smartUpload(
+      file,
+      event.value.id,
+      event.value.event_no,
+      stage,
+      (percent) => {
+        commentUploadProgress.value = percent
+        onProgress({ percent })
+      }
+    )
+    
+    commentUploading.value = false
+    commentUploadProgress.value = 100
+    
+    setTimeout(() => {
+      commentUploadProgress.value = 0
+      commentUploadingFileName.value = ''
+    }, 1000)
+    
+    onSuccess({ code: 200, data: result })
+  } catch (error) {
+    commentUploading.value = false
+    commentUploadProgress.value = 0
+    commentUploadingFileName.value = ''
+    console.error('上传失败:', error)
+    onError(error)
   }
 }
 
