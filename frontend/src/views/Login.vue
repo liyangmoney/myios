@@ -54,20 +54,65 @@
       
       <div class="login-tips">
         <p v-if="errorMsg" style="color: #f56c6c; margin-top: 10px;">{{ errorMsg }}</p>
+        <p style="color: #909399; margin-top: 10px; font-size: 12px;">
+          当前服务器: {{ serverUrl }}
+          <el-button type="primary" link size="small" @click="showServerConfig = true">修改</el-button>
+        </p>
       </div>
     </div>
+    
+    <!-- 服务器配置对话框 -->
+    <el-dialog
+      v-model="showServerConfig"
+      title="服务器配置"
+      width="90%"
+      :close-on-click-modal="false"
+    >
+      <el-form label-width="100px">
+        <el-form-item label="服务器地址">
+          <el-input
+            v-model="tempServerUrl"
+            placeholder="http://myjghy.myds.me:9090/api"
+          />
+        </el-form-item>
+        
+        <el-alert
+          title="配置说明"
+          type="info"
+          :closable="false"
+          style="margin-bottom: 15px;"
+        >
+          <template #default>
+            <div style="font-size: 12px;">
+              <p>• 请填写完整的后端服务器地址</p>
+              <p>• 例如：http://192.168.1.100:9090/api</p>
+              <p>• 修改后需要重新登录</p>
+            </div>
+          </template>
+        </el-alert>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="showServerConfig = false">取消</el-button>
+        <el-button type="primary" @click="saveServerConfig">保存并重启</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import apiConfig from '@/api/config'
 
 const router = useRouter()
 const formRef = ref(null)
 const loading = ref(false)
 const errorMsg = ref('')
+const serverUrl = ref(apiConfig.baseURL)
+const showServerConfig = ref(false)
+const tempServerUrl = ref(apiConfig.baseURL)
 
 const loginForm = reactive({
   username: '',
@@ -79,6 +124,24 @@ const rules = {
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
+const saveServerConfig = () => {
+  if (!tempServerUrl.value) {
+    ElMessage.error('请输入服务器地址')
+    return
+  }
+  
+  localStorage.setItem('api_config', JSON.stringify({
+    baseURL: tempServerUrl.value
+  }))
+  
+  ElMessage.success('配置已保存，即将重启应用')
+  showServerConfig.value = false
+  
+  setTimeout(() => {
+    window.location.reload()
+  }, 1500)
+}
+
 const handleLogin = async () => {
   errorMsg.value = ''
   const valid = await formRef.value?.validate().catch(() => false)
@@ -87,12 +150,16 @@ const handleLogin = async () => {
   loading.value = true
   try {
     console.log('正在登录:', loginForm.username)
+    console.log('使用服务器:', apiConfig.baseURL)
     
     // 清除旧的 token
     localStorage.removeItem('token')
     
-    // 使用 fetch API 发送登录请求
-    const response = await fetch('/api/auth/login', {
+    // 使用完整 URL 发送登录请求
+    const loginUrl = apiConfig.baseURL + '/auth/login'
+    console.log('请求地址:', loginUrl)
+    
+    const response = await fetch(loginUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -121,12 +188,16 @@ const handleLogin = async () => {
     }
   } catch (error) {
     console.error('登录错误:', error)
-    errorMsg.value = '登录失败，请检查网络连接'
-    ElMessage.error('登录失败')
+    errorMsg.value = '登录失败，请检查网络连接。当前服务器: ' + apiConfig.baseURL
+    ElMessage.error('登录失败，无法连接到服务器')
   } finally {
     loading.value = false
   }
 }
+
+onMounted(() => {
+  console.log('Login page mounted, apiConfig:', apiConfig)
+})
 </script>
 
 <style scoped>
