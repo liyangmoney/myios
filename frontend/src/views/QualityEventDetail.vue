@@ -346,9 +346,8 @@
           <div v-if="comment.attachments && comment.attachments !== '[]'" class="comment-attachments">
             <div v-for="(file, idx) in parseFiles(comment.attachments)" :key="idx" class="comment-file">
               <el-link
-                :href="getFileUrl(file.url)"
-                target="_blank"
                 type="primary"
+                @click="handleFileClick(getFileUrl(file.url), file.name)"
               >
                 <el-icon><Document /></el-icon> {{ file.name }}
               </el-link>
@@ -436,7 +435,7 @@
                   <div>{{ JSON.parse(log.new_value).content }}</div>
                   <div v-if="JSON.parse(log.new_value).attachments?.length > 0" class="log-attachments">
                     <div v-for="(file, idx) in JSON.parse(log.new_value).attachments" :key="idx" class="log-attachment-item">
-                      <el-link :href="getFileUrl(file.url)" target="_blank" type="primary">
+                      <el-link @click="handleFileClick(getFileUrl(file.url), file.name)" type="primary">
                         <el-icon><Document /></el-icon> {{ file.name }}
                       </el-link>
                     </div>
@@ -463,7 +462,7 @@
                     <div>上传了 {{ data.planFiles.length }} 个 Plan 阶段附件:</div>
                     <div class="log-attachments">
                       <div v-for="(file, fidx) in data.planFiles" :key="fidx" class="log-attachment-item">
-                        <el-link :href="getFileUrl(file.url)" target="_blank" type="primary">
+                        <el-link @click="handleFileClick(getFileUrl(file.url), file.name)" type="primary">
                           <el-icon><Document /></el-icon> {{ file.name }}
                         </el-link>
                       </div>
@@ -474,7 +473,7 @@
                     <div>上传了 {{ data.doFiles.length }} 个 Do 阶段附件:</div>
                     <div class="log-attachments">
                       <div v-for="(file, fidx) in data.doFiles" :key="fidx" class="log-attachment-item">
-                        <el-link :href="getFileUrl(file.url)" target="_blank" type="primary">
+                        <el-link @click="handleFileClick(getFileUrl(file.url), file.name)" type="primary">
                           <el-icon><Document /></el-icon> {{ file.name }}
                         </el-link>
                       </div>
@@ -485,7 +484,7 @@
                     <div>上传了 {{ data.checkFiles.length }} 个 Check 阶段附件:</div>
                     <div class="log-attachments">
                       <div v-for="(file, fidx) in data.checkFiles" :key="fidx" class="log-attachment-item">
-                        <el-link :href="getFileUrl(file.url)" target="_blank" type="primary">
+                        <el-link @click="handleFileClick(getFileUrl(file.url), file.name)" type="primary">
                           <el-icon><Document /></el-icon> {{ file.name }}
                         </el-link>
                       </div>
@@ -496,7 +495,7 @@
                     <div>上传了 {{ data.actFiles.length }} 个 Act 阶段附件:</div>
                     <div class="log-attachments">
                       <div v-for="(file, fidx) in data.actFiles" :key="fidx" class="log-attachment-item">
-                        <el-link :href="getFileUrl(file.url)" target="_blank" type="primary">
+                        <el-link @click="handleFileClick(getFileUrl(file.url), file.name)" type="primary">
                           <el-icon><Document /></el-icon> {{ file.name }}
                         </el-link>
                       </div>
@@ -682,6 +681,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Paperclip, Document } from '@element-plus/icons-vue'
 import { qualityEventApi, userApi } from '@/api'
+import apiConfig from '@/api/config'
 import { useUserStore } from '@/store/user'
 import FileList from '@/components/FileList.vue'
 
@@ -1498,6 +1498,28 @@ const getFileUrl = (url) => {
   const eventNo = parts[parts.length - 2] // 倒数第二是事件编号
   const filename = parts[parts.length - 1] // 最后是文件名
   return `/api/download?filename=${encodeURIComponent(`${eventNo}/${filename}`)}`
+}
+
+// 处理文件点击 - 在APP中使用系统浏览器打开
+const handleFileClick = async (fileUrl, fileName) => {
+  if (!fileUrl) return
+  
+  const fullUrl = fileUrl.startsWith('http') ? fileUrl : apiConfig.baseURL.replace('/api', '') + fileUrl
+  
+  // 检查是否在APP环境
+  if (typeof window !== 'undefined' && window.Capacitor) {
+    try {
+      // 使用 Capacitor 的 Browser 插件在系统浏览器中打开
+      const { Browser } = await import('@capacitor/browser')
+      await Browser.open({ url: fullUrl })
+    } catch (error) {
+      console.error('打开文件失败:', error)
+      ElMessage.error('打开文件失败')
+    }
+  } else {
+    // 网页端正常打开
+    window.open(fullUrl, '_blank')
+  }
 }
 
 // 判断字符串是否为JSON

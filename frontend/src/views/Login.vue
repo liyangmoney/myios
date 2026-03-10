@@ -6,102 +6,64 @@
         <p>ISO 22163 体系管理平台</p>
       </div>
       
-      <!-- 服务器配置提示 -->
-      <div v-if="showServerConfig" class="server-config-box">
-        <el-alert
-          title="首次使用请配置服务器"
-          type="warning"
-          :closable="false"
-          style="margin-bottom: 15px;"
-        />
-        <el-input
-          v-model="serverUrl"
-          placeholder="http://myjghy.myds.me:9090/api"
-          size="large"
-          style="margin-bottom: 10px;"
-        >
-          <template #prefix>
-            <el-icon><Link /></el-icon>
-          </template>
-        </el-input>
+      <el-form
+        ref="formRef"
+        :model="loginForm"
+        :rules="rules"
+        class="login-form"
+      >
+        <el-form-item prop="username">
+          <el-input
+            v-model="loginForm.username"
+            placeholder="用户名"
+            size="large"
+          >
+            <template #prefix>
+              <el-icon><User /></el-icon>
+            </template>
+          </el-input>
+        </el-form-item>
         
-        <el-button type="primary" size="large" style="width: 100%;" @click="saveServerUrl">
-          保存并返回登录
-        </el-button>
+        <el-form-item prop="password">
+          <el-input
+            v-model="loginForm.password"
+            type="password"
+            placeholder="密码"
+            size="large"
+            show-password
+            @keyup.enter="handleLogin"
+          >
+            <template #prefix>
+              <el-icon><Lock /></el-icon>
+            </template>
+          </el-input>
+        </el-form-item>
         
-        <!-- 隐藏服务器地址显示 -->
-        <!-- p class="config-tip">当前服务器: {{ currentServer }}</p -->
-      </div>
+        <el-form-item>
+          <el-button
+            type="primary"
+            size="large"
+            class="login-button"
+            :loading="loading"
+            @click="handleLogin"
+          >
+            登 录
+          </el-button>
+        </el-form-item>
+      </el-form>
       
-      <div v-else>
-        <el-form
-          ref="formRef"
-          :model="loginForm"
-          :rules="rules"
-          class="login-form"
-        >
-          <el-form-item prop="username">
-            <el-input
-              v-model="loginForm.username"
-              placeholder="用户名"
-              size="large"
-            >
-              <template #prefix>
-                <el-icon><User /></el-icon>
-              </template>
-            </el-input>
-          </el-form-item>
-          
-          <el-form-item prop="password">
-            <el-input
-              v-model="loginForm.password"
-              type="password"
-              placeholder="密码"
-              size="large"
-              show-password
-              @keyup.enter="handleLogin"
-            >
-              <template #prefix>
-                <el-icon><Lock /></el-icon>
-              </template>
-            </el-input>
-          </el-form-item>
-          
-          <el-form-item>
-            <el-button
-              type="primary"
-              size="large"
-              class="login-button"
-              :loading="loading"
-              @click="handleLogin"
-            >
-              登 录
-            </el-button>
-          </el-form-item>
-        </el-form>
-        
-        <div class="login-tips">
-          <p v-if="errorMsg" style="color: #f56c6c; margin-top: 10px;">{{ errorMsg }}</p>
-          
-          <div class="server-info">
-            <el-divider></el-divider>
-            <!-- 隐藏服务器地址 -->
-            <!-- p>服务器: {{ currentServer }}</p -->
-            <el-button link type="primary" @click="showServerConfig = true">
-              服务器设置
-            </el-button>
-          </div>
-        </div>
+      <div class="login-tips">
+        <p v-if="errorMsg" style="color: #f56c6c; margin-top: 10px;">{{ errorMsg }}</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock, Link } from '@element-plus/icons-vue'
+import { User, Lock } from '@element-plus/icons-vue'
 import { CapacitorHttp } from '@capacitor/core'
 import apiConfig from '@/api/config'
 
@@ -109,18 +71,6 @@ const router = useRouter()
 const formRef = ref(null)
 const loading = ref(false)
 const errorMsg = ref('')
-const showServerConfig = ref(false)
-const serverUrl = ref('')
-const currentServer = ref(apiConfig.baseURL)
-
-// 检查是否需要配置服务器
-onMounted(() => {
-  // 如果当前服务器是 localhost，可能是默认配置，提示用户配置
-  if (apiConfig.baseURL.includes('localhost')) {
-    showServerConfig.value = true
-    serverUrl.value = 'http://myjghy.myds.me:9090/api'
-  }
-})
 
 const loginForm = reactive({
   username: '',
@@ -130,26 +80,6 @@ const loginForm = reactive({
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
-}
-
-const saveServerUrl = () => {
-  if (!serverUrl.value) {
-    ElMessage.error('请输入服务器地址')
-    return
-  }
-  
-  // 保存配置
-  localStorage.setItem('api_config', JSON.stringify({
-    baseURL: serverUrl.value
-  }))
-  
-  ElMessage.success('配置已保存，请重新打开APP')
-  showServerConfig.value = false
-  
-  // 刷新页面使配置生效
-  setTimeout(() => {
-    window.location.reload()
-  }, 1000)
 }
 
 const handleLogin = async () => {
@@ -254,26 +184,6 @@ const handleLogin = async () => {
   text-align: center;
   font-size: 12px;
   color: #909399;
-}
-
-.server-info {
-  margin-top: 20px;
-}
-
-.server-info p {
-  margin: 10px 0;
-  color: #606266;
-}
-
-.server-config-box {
-  margin-top: 20px;
-}
-
-.config-tip {
-  margin-top: 10px;
-  font-size: 12px;
-  color: #909399;
-  word-break: break-all;
 }
 
 @media screen and (max-width: 480px) {
