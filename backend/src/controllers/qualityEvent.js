@@ -772,8 +772,15 @@ export const uploadFiles = async (req, res) => {
     const movedFiles = await Promise.all(req.files.map(async (file) => {
       const tempPath = file.path
       
-      // 检查是否是伪装的文件名（|ORIGINAL:原始文件名）
+      // 处理文件名编码问题
       let displayName = file.originalname
+      // 如果包含乱码特征，尝试解码
+      if (/[\ufffd\u00c0-\u00df]/.test(displayName) || displayName.includes('Ã')) {
+        try {
+          displayName = Buffer.from(file.originalname, 'latin1').toString('utf8')
+        } catch (e) {}
+      }
+      
       let finalFilename = file.filename
       const originalExt = path.extname(file.originalname).toLowerCase()
       
