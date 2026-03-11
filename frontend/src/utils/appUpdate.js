@@ -213,7 +213,23 @@ const installApk = async (fileUri, fileName) => {
   console.log('[Install] 开始安装:', fileUri)
   
   try {
-    // 方法1: 使用 FileOpener 插件（如果可用）
+    // 方法1: 使用 Android Intent 打开 APK（最可靠）
+    try {
+      // 将 file:// 路径转换为 Intent URL
+      const intentUrl = `intent://${fileUri.replace('file://', '')}#Intent;action=android.intent.action.VIEW;type=application/vnd.android.package-archive;end`
+      
+      console.log('[Install] 尝试 Intent URL:', intentUrl)
+      window.location.href = intentUrl
+      
+      // 给系统一点时间来处理 Intent
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      console.log('[Install] Intent URL 已触发')
+      return
+    } catch (e) {
+      console.log('[Install] Intent URL 失败:', e.message)
+    }
+    
+    // 方法2: 使用 FileOpener 插件
     try {
       const { FileOpener } = await import('@capacitor-community/file-opener')
       const cleanPath = fileUri.replace('file://', '')
@@ -225,10 +241,10 @@ const installApk = async (fileUri, fileName) => {
       console.log('[Install] FileOpener 调用成功')
       return
     } catch (e) {
-      console.log('[Install] FileOpener 不可用:', e.message)
+      console.log('[Install] FileOpener 失败:', e.message)
     }
     
-    // 方法2: 使用 Capacitor Browser 打开文件
+    // 方法3: 使用 Capacitor Browser 打开文件
     try {
       const { Browser } = await import('@capacitor/browser')
       await Browser.open({ url: fileUri })
@@ -238,25 +254,17 @@ const installApk = async (fileUri, fileName) => {
       console.log('[Install] Browser 失败:', e.message)
     }
     
-    // 方法3: 提示用户手动安装
+    // 方法4: 提示用户手动安装
     await Dialog.alert({
       title: '请手动安装',
-      message: `由于系统限制，请手动前往文件管理器安装:\n\nDownload/${fileName}\n\n点击确定将打开文件位置。`
+      message: `APK 已下载到:\n\nDownload/${fileName}\n\n请打开文件管理器，找到该文件后点击安装。\n\n注意：首次安装可能需要允许"安装未知应用"权限。`
     })
-    
-    // 尝试打开文件位置
-    try {
-      const { Browser } = await import('@capacitor/browser')
-      await Browser.open({ url: fileUri })
-    } catch (e) {
-      console.log('[Install] 打开文件失败:', e.message)
-    }
     
   } catch (error) {
     console.error('[Install] 失败:', error)
     await Dialog.alert({
       title: '安装失败',
-      message: `无法启动安装器，请使用文件管理器手动安装:\nDownload/${fileName}`
+      message: `无法自动启动安装器。\n\n请手动安装：\nDownload/${fileName}`
     })
   }
 }
