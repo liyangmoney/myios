@@ -63,26 +63,33 @@ export const checkAndUpdateApp = async () => {
  */
 const downloadAndInstallApk = async (apkUrl, version) => {
   try {
-    // 显示下载进度
-    await Dialog.alert({
-      title: '正在下载',
-      message: `新版本 ${version} 下载中，请稍候...\n进度: 0%`
-    })
+    console.log('开始下载新版本:', version)
     
-    // 下载 APK 文件
+    // 显示 Toast 提示（非阻塞）
+    showToast(`新版本 ${version} 开始下载...`, 3000)
+    
+    // 直接开始下载，不等待弹窗
     const fileName = `pis-update-${version}.apk`
     const downloadPath = `${UPDATE_SERVER_URL}/app/pis-latest.apk`
     
-    console.log('开始下载:', downloadPath)
+    console.log('下载地址:', downloadPath)
     
     // 使用 XMLHttpRequest 下载（支持进度）
+    let lastProgress = 0
     const apkData = await downloadFileWithProgress(downloadPath, (progress) => {
-      console.log(`下载进度: ${progress}%`)
+      // 每 10% 更新一次提示
+      if (progress - lastProgress >= 10) {
+        lastProgress = progress
+        showToast(`下载进度: ${progress}%`, 2000)
+        console.log(`下载进度: ${progress}%`)
+      }
     })
     
     console.log('下载完成，文件大小:', apkData.byteLength)
     
     // 保存到应用缓存目录
+    showToast('下载完成，正在保存...', 2000)
+    
     const base64Data = arrayBufferToBase64(apkData)
     const filePath = `updates/${fileName}`
     
@@ -135,6 +142,27 @@ const downloadAndInstallApk = async (apkUrl, version) => {
     })
     // 失败时回退到浏览器下载
     await downloadWithBrowser(apkUrl)
+  }
+}
+
+/**
+ * 显示 Toast 提示（使用原生 Toast 或简单的 console）
+ */
+const showToast = async (message, duration = 2000) => {
+  try {
+    // 尝试使用原生 Toast
+    const { Toast } = await import('@capacitor/toast')
+    await Toast.show({
+      text: message,
+      duration: duration > 2000 ? 'long' : 'short'
+    })
+  } catch (e) {
+    // 如果 Toast 插件不可用，使用 console
+    console.log('[Toast]', message)
+    // 同时通过 screenLog 显示（如果有的话）
+    if (window.screenLog) {
+      window.screenLog(message)
+    }
   }
 }
 

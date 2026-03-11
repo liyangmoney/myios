@@ -17,6 +17,7 @@
     "@capacitor/core": "^8.2.0",
     "@capacitor/dialog": "^8.0.1",
     "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/toast": "^8.0.1",
     "@element-plus/icons-vue": "^2.3.0",
     "axios": "^1.6.0",
     "dayjs": "^1.11.0",
