@@ -172,8 +172,10 @@ jobs:
         git config --local user.name "GitHub Action"
         git add backend/app/pis-latest.apk
         git diff --staged --quiet || git commit -m "chore: update APK [skip ci]"
+        # 先拉取最新代码，避免推送冲突
+        git pull --rebase https://liyangmoney:${PAT}@github.com/liyangmoney/MyIOS.git main || echo "Pull failed, continuing..."
         if [ -n "$PAT" ]; then
-          git push https://liyangmoney:${PAT}@github.com/liyangmoney/MyIOS.git
+          git push https://liyangmoney:${PAT}@github.com/liyangmoney/MyIOS.git main
         else
           echo "PAT secret not set, skipping push"
         fi
