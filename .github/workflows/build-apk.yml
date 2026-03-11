@@ -34,6 +34,18 @@ jobs:
       with:
         token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
         fetch-depth: 0
+        
+    - name: Verify keystore in repo
+      run: |
+        echo "=== 检出后检查签名文件 ==="
+        ls -la frontend/android/*.keystore 2>/dev/null || echo "frontend/android/ 中没有 keystore"
+        echo ""
+        echo "Git 追踪的文件:"
+        git ls-files | grep keystore || echo "没有 keystore 文件被 git 追踪"
+        echo ""
+        echo "Git 状态:"
+        git status --short | head -20
+        echo "=== 检查完成 ==="
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
