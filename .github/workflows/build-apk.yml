@@ -99,35 +99,35 @@ jobs:
     - name: Setup signing config
       run: |
         echo "配置签名..."
-        KEYSTORE_PATH="android/pis-release.keystore"
-        
-        # 检查签名文件是否存在
-        if [ -f "$KEYSTORE_PATH" ]; then
-          echo "✅ 签名文件存在: $KEYSTORE_PATH"
-          
-          # 在 build.gradle 中添加签名配置
-          cat >> android/app/build.gradle << 'EOF'
-
-android {
-    signingConfigs {
-        release {
-            storeFile file('pis-release.keystore')
-            storePassword 'pis123456'
-            keyAlias 'pis'
-            keyPassword 'pis123456'
-        }
-    }
-    buildTypes {
-        release {
-            signingConfig signingConfigs.release
-        }
-    }
-}
-EOF
-          echo "✅ 签名配置已添加到 build.gradle"
-        else
-          echo "❌ 签名文件不存在"
+        if [ -f "android/pis-release.keystore" ]; then
+          echo "签名文件存在"
+          # 在 gradle.properties 中添加签名配置
+          echo "" >> android/gradle.properties
+          echo "RELEASE_STORE_FILE=pis-release.keystore" >> android/gradle.properties
+          echo "RELEASE_STORE_PASSWORD=pis123456" >> android/gradle.properties
+          echo "RELEASE_KEY_ALIAS=pis" >> android/gradle.properties
+          echo "RELEASE_KEY_PASSWORD=pis123456" >> android/gradle.properties
+          echo "签名配置已添加到 gradle.properties"
         fi
+        
+    - name: Add signing config to build.gradle
+      run: |
+        echo "添加签名配置到 build.gradle..."
+        # 在 signingConfigs 部分之前添加配置
+        sed -i '/buildTypes/i\
+    signingConfigs {\
+        release {\
+            storeFile file(RELEASE_STORE_FILE ?: "pis-release.keystore")\
+            storePassword RELEASE_STORE_PASSWORD ?: "pis123456"\
+            keyAlias RELEASE_KEY_ALIAS ?: "pis"\
+            keyPassword RELEASE_KEY_PASSWORD ?: "pis123456"\
+        }\
+    }' android/app/build.gradle
+        
+        # 修改 release buildType 使用签名
+        sed -i 's/signingConfig signingConfigs.release/signingConfig signingConfigs.release/g' android/app/build.gradle || true
+        
+        echo "build.gradle 已更新"
         
     - name: Grant execute permission for gradlew
       run: chmod +x android/gradlew
