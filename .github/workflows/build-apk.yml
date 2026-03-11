@@ -105,14 +105,19 @@ jobs:
         echo ""
         echo "尝试复制 Release APK:"
         mkdir -p ../backend/app
+        
+        # 尝试多个可能的文件名
         if [ -f "./android/app/build/outputs/apk/release/app-release.apk" ]; then
           cp ./android/app/build/outputs/apk/release/app-release.apk ../backend/app/pis-latest.apk
-          echo "✅ Release APK copied successfully"
+          echo "✅ 已复制 app-release.apk"
+        elif [ -f "./android/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
+          cp ./android/app/build/outputs/apk/release/app-release-unsigned.apk ../backend/app/pis-latest.apk
+          echo "✅ 已复制 app-release-unsigned.apk"
         else
-          echo "❌ Release APK not found at expected path"
-          echo "检查可能的路径:"
-          ls -la ./android/app/build/outputs/apk/release/ 2>/dev/null || echo "release 目录不存在"
+          echo "❌ 未找到 Release APK"
+          exit 1
         fi
+        
         ls -la ../backend/app/
 
     - name: Commit APK to repository
