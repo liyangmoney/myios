@@ -1,4 +1,4 @@
-// APP 自动更新服务 - 纯APP内完成版
+// APP 自动更新服务 - 纯APP内完成版（无需HTTP插件）
 import { Capacitor } from '@capacitor/core'
 import { Dialog } from '@capacitor/dialog'
 import { Filesystem, Directory } from '@capacitor/filesystem'
@@ -17,10 +17,7 @@ export const checkAndUpdateApp = async () => {
     console.log('[Update] 检查版本...')
     
     const response = await fetch(`${UPDATE_SERVER_URL}/api/app/version`)
-    if (!response.ok) {
-      console.error('[Update] 获取版本失败:', response.status)
-      return
-    }
+    if (!response.ok) return
     
     const data = await response.json()
     const latestVersion = data.data?.version || data.version
@@ -29,15 +26,11 @@ export const checkAndUpdateApp = async () => {
     
     console.log('[Update] 当前:', CURRENT_VERSION, '最新:', latestVersion)
     
-    if (!latestVersion || latestVersion === CURRENT_VERSION) {
-      console.log('[Update] 已是最新版本')
-      return
-    }
+    if (!latestVersion || latestVersion === CURRENT_VERSION) return
     
-    // 显示更新提示
     const { value } = await Dialog.confirm({
       title: `发现新版本 ${latestVersion}`,
-      message: `当前版本: ${CURRENT_VERSION}\n最新版本: ${latestVersion}\n\n更新内容:\n${updateLog}\n\n是否立即下载更新？`,
+      message: `当前: ${CURRENT_VERSION}\n最新: ${latestVersion}\n\n${updateLog}\n\n是否更新？`,
       okButtonTitle: '立即更新',
       cancelButtonTitle: forceUpdate ? '退出' : '稍后'
     })
@@ -45,270 +38,170 @@ export const checkAndUpdateApp = async () => {
     if (value) {
       await downloadAndInstallApk(latestVersion)
     } else if (forceUpdate) {
-      // 强制更新，用户拒绝则退出 APP
       try {
         const { App } = await import('@capacitor/app')
         await App.exitApp()
-      } catch (e) {
-        console.error('[Update] 退出失败:', e)
-      }
+      } catch (e) {}
     }
   } catch (error) {
-    console.error('[Update] 检查更新失败:', error)
+    console.error('[Update] 检查失败:', error)
   }
 }
 
 /**
- * 下载并安装 APK（纯APP内完成）
+ * 下载并安装 APK（使用 XMLHttpRequest，不依赖插件）
  */
 const downloadAndInstallApk = async (version) => {
   const downloadUrl = `${UPDATE_SERVER_URL}/app/pis-latest.apk`
   const fileName = `pis-update-${version}.apk`
   
-  console.log('[Update] ===== 开始下载流程 =====')
-  console.log('[Update] 版本:', version)
+  console.log('[Update] 开始下载:', version)
   console.log('[Update] URL:', downloadUrl)
-  console.log('[Update] 文件名:', fileName)
   
   try {
-    // 步骤1：使用 Capacitor HTTP 插件下载（原生层，最可靠）
-    console.log('[Update] 步骤1: 开始下载...')
-    
-    let filePath = null
-    
-    try {
-      const { Http } = await import('@capacitor-community/http')
-      
-      console.log('[Update] 使用 Capacitor HTTP 插件...')
-      
-      // 显示下载中
-      showProgress('开始下载...', 0)
-      
-      const response = await Http.downloadFile({
-        url: downloadUrl,
-        filePath: fileName,
-        fileDirectory: Directory.External,
-        progress: true
-      })
-      
-      console.log('[Update] HTTP 下载结果:', response)
-      
-      if (response.path) {
-        filePath = response.path
-        console.log('[Update] 下载成功，路径:', filePath)
-        showProgress('下载完成', 100)
-      } else {
-        throw new Error('下载未返回文件路径')
-      }
-      
-    } catch (httpError) {
-      console.error('[Update] HTTP 下载失败:', httpError)
-      console.log('[Update] 尝试备用方案...')
-      
-      // 备用：使用 fetch + Filesystem
-      filePath = await downloadWithFetch(downloadUrl, fileName)
-    }
-    
-    if (!filePath) {
-      throw new Error('所有下载方式都失败')
-    }
-    
-    // 步骤2：验证文件
-    console.log('[Update] 步骤2: 验证文件...')
-    const statResult = await Filesystem.stat({
-      path: fileName,
-      directory: Directory.External
+    // 显示开始下载提示
+    await Dialog.alert({
+      title: '开始下载',
+      message: `新版本 ${version} 开始下载，请稍候...\n\n下载完成后会自动提示安装。`,
+      okButtonTitle: '我知道了'
     })
     
-    console.log('[Update] 文件信息:', statResult)
+    // 使用 XMLHttpRequest 下载（原生支持，无需插件）
+    console.log('[Update] 使用 XMLHttpRequest 下载...')
+    const apkData = await downloadWithXHR(downloadUrl)
     
-    if (statResult.size < 1024 * 1024) {
-      throw new Error(`文件太小(${statResult.size} bytes)，可能下载不完整`)
+    console.log('[Update] 下载完成，大小:', apkData.byteLength)
+    
+    // 验证文件大小
+    if (apkData.byteLength < 1024 * 1024) {
+      throw new Error('文件太小，下载不完整')
     }
     
-    console.log('[Update] 文件大小验证通过:', (statResult.size / 1024 / 1024).toFixed(2), 'MB')
+    // 转换为 base64
+    console.log('[Update] 转换文件格式...')
+    const base64Data = arrayBufferToBase64(apkData)
+    console.log('[Update] Base64 长度:', base64Data.length)
     
-    // 步骤3：获取文件 URI
-    console.log('[Update] 步骤3: 获取文件 URI...')
+    // 保存到 Downloads 目录
+    console.log('[Update] 保存文件...')
+    const filePath = `Download/${fileName}`
+    
+    await Filesystem.writeFile({
+      path: filePath,
+      directory: Directory.ExternalStorage,
+      data: base64Data
+    })
+    
+    console.log('[Update] 文件保存成功:', filePath)
+    
+    // 获取完整路径
     const uriResult = await Filesystem.getUri({
-      path: fileName,
-      directory: Directory.External
+      path: filePath,
+      directory: Directory.ExternalStorage
     })
     
     console.log('[Update] 文件 URI:', uriResult.uri)
     
-    // 步骤4：提示安装
-    console.log('[Update] 步骤4: 提示用户安装...')
+    // 提示安装
     const { value: shouldInstall } = await Dialog.confirm({
       title: '下载完成',
-      message: `新版本 ${version} 已下载完成\n文件大小: ${(statResult.size / 1024 / 1024).toFixed(2)} MB\n\n是否立即安装？\n\n注意：安装完成后请手动重启 APP`,
+      message: `新版本 ${version} 已下载完成\n文件大小: ${(apkData.byteLength / 1024 / 1024).toFixed(2)} MB\n\n是否立即安装？`,
       okButtonTitle: '立即安装',
-      cancelButtonTitle: '稍后安装'
+      cancelButtonTitle: '稍后'
     })
     
     if (shouldInstall) {
-      console.log('[Update] 用户选择安装')
-      await installApk(uriResult.uri, fileName)
+      await installApk(uriResult.uri)
     } else {
-      console.log('[Update] 用户选择稍后安装')
       await Dialog.alert({
         title: '已保存',
-        message: `APK 已保存到:\nDownload/${fileName}\n\n您可以稍后从文件管理器中安装。`
+        message: `APK 已保存到:\nDownload/${fileName}\n\n您可以稍后从文件管理器安装。`
       })
     }
     
   } catch (error) {
-    console.error('[Update] ===== 下载安装失败 =====')
-    console.error('[Update] 错误:', error)
-    
+    console.error('[Update] 失败:', error)
     await Dialog.alert({
       title: '更新失败',
-      message: `错误: ${error.message}\n\n请检查网络连接或稍后重试。`
+      message: `${error.message}\n\n请检查网络连接。`
     })
   }
 }
 
 /**
- * 备用下载方案：fetch + Filesystem
+ * 使用 XMLHttpRequest 下载文件
  */
-const downloadWithFetch = async (url, fileName) => {
-  console.log('[Download] 使用 fetch 下载...')
-  
-  // 显示进度
-  showProgress('正在下载...', 0)
-  
-  // 下载
-  const response = await fetch(url)
-  console.log('[Download] Response status:', response.status)
-  
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`)
-  }
-  
-  // 获取 blob
-  const blob = await response.blob()
-  console.log('[Download] Blob size:', blob.size)
-  
-  if (blob.size < 1024 * 1024) {
-    throw new Error('文件太小，下载失败')
-  }
-  
-  showProgress('正在保存...', 90)
-  
-  // 转为 base64
-  const base64 = await blobToBase64(blob)
-  console.log('[Download] Base64 length:', base64.length)
-  
-  // 写入文件
-  await Filesystem.writeFile({
-    path: fileName,
-    directory: Directory.External,
-    data: base64
-  })
-  
-  console.log('[Download] 文件已保存:', fileName)
-  showProgress('保存完成', 100)
-  
-  return fileName
-}
-
-/**
- * Blob 转 Base64
- */
-const blobToBase64 = (blob) => {
+const downloadWithXHR = (url) => {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      try {
-        // 去掉 data:application/octet-stream;base64, 前缀
-        const result = reader.result
-        const base64 = result.split(',')[1]
-        resolve(base64)
-      } catch (e) {
-        reject(e)
+    const xhr = new XMLHttpRequest()
+    xhr.open('GET', url, true)
+    xhr.responseType = 'arraybuffer'
+    
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        resolve(xhr.response)
+      } else {
+        reject(new Error(`HTTP ${xhr.status}`))
       }
     }
-    reader.onerror = reject
-    reader.readAsDataURL(blob)
+    
+    xhr.onerror = () => reject(new Error('网络请求失败'))
+    xhr.ontimeout = () => reject(new Error('请求超时'))
+    
+    xhr.send()
   })
 }
 
 /**
- * 显示进度（使用 Dialog 或 Toast）
+ * ArrayBuffer 转 Base64
  */
-const showProgress = async (message, percent) => {
-  console.log(`[Progress] ${message} ${percent}%`)
-  // 这里可以用 Toast，但为了简单先用 console
+const arrayBufferToBase64 = (buffer) => {
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  const chunkSize = 0x8000 // 32KB chunks
+  
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize)
+    binary += String.fromCharCode.apply(null, chunk)
+  }
+  
+  return btoa(binary)
 }
 
 /**
  * 安装 APK
  */
-const installApk = async (fileUri, fileName) => {
-  console.log('[Install] ===== 开始安装 =====')
-  console.log('[Install] URI:', fileUri)
-  console.log('[Install] 文件名:', fileName)
+const installApk = async (fileUri) => {
+  console.log('[Install] 安装:', fileUri)
   
   try {
-    // 方法1: 使用 FileOpener 插件
+    // 方法1: 使用 FileOpener
     try {
-      console.log('[Install] 尝试 FileOpener...')
       const { FileOpener } = await import('@capacitor-community/file-opener')
-      
-      // 去掉 file:// 前缀
-      const cleanPath = fileUri.replace('file://', '')
-      console.log('[Install] FileOpener 路径:', cleanPath)
-      
       await FileOpener.open({
-        filePath: cleanPath,
+        filePath: fileUri.replace('file://', ''),
         mimeType: 'application/vnd.android.package-archive'
       })
-      
       console.log('[Install] FileOpener 成功')
       return
-      
     } catch (e) {
-      console.error('[Install] FileOpener 失败:', e.message)
+      console.log('[Install] FileOpener 失败:', e.message)
     }
     
-    // 方法2: 使用 WebView 打开文件链接
-    try {
-      console.log('[Install] 尝试 WebView 打开...')
-      window.location.href = fileUri
-      console.log('[Install] WebView 已触发')
-      return
-      
-    } catch (e) {
-      console.error('[Install] WebView 打开失败:', e.message)
-    }
-    
-    // 方法3: 使用 a 标签
-    try {
-      console.log('[Install] 尝试 a 标签...')
-      const link = document.createElement('a')
-      link.href = fileUri
-      link.setAttribute('download', fileName)
-      link.style.display = 'none'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      console.log('[Install] a 标签已触发')
-      return
-      
-    } catch (e) {
-      console.error('[Install] a 标签失败:', e.message)
-    }
-    
-    // 所有方法都失败
-    throw new Error('无法启动安装器')
+    // 方法2: 使用 a 标签
+    const link = document.createElement('a')
+    link.href = fileUri
+    link.setAttribute('download', 'update.apk')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    console.log('[Install] a 标签已触发')
     
   } catch (error) {
-    console.error('[Install] ===== 安装失败 =====')
-    console.error('[Install] 错误:', error)
-    
+    console.error('[Install] 失败:', error)
     await Dialog.alert({
       title: '安装失败',
-      message: `无法启动安装器。\n\nAPK 已保存到:\nDownload/${fileName}\n\n请使用文件管理器手动安装。`
+      message: '无法启动安装器，请使用文件管理器手动安装。'
     })
   }
 }
