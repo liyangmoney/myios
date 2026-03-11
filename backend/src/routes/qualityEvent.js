@@ -93,8 +93,32 @@ const handleBase64Upload = async (req, res, next) => {
   if (req.body && req.body.isBase64 && req.body.data) {
     console.log('[handleBase64Upload] 检测到 base64 上传（安卓端）')
     try {
-      const { filename, type, size, data } = req.body
-      console.log('[handleBase64Upload] 文件名:', filename, '大小:', size)
+      let { filename, type, size, data } = req.body
+      console.log('[handleBase64Upload] 原始文件名:', filename)
+      
+      // 处理中文编码：如果前端传输的是 Unicode 转义序列，需要转换
+      // 例如：filename 可能是 "\u4e2d\u6587" 这样的形式
+      if (typeof filename === 'string' && filename.includes('\\u')) {
+        try {
+          filename = JSON.parse('"' + filename + '"')
+          console.log('[handleBase64Upload] Unicode 解码后:', filename)
+        } catch (e) {
+          console.log('[handleBase64Upload] Unicode 解码失败，保持原样')
+        }
+      }
+      
+      // 如果还是乱码，尝试从 latin1 解码
+      if (/[\ufffd\u00c0-\u00df]/.test(filename) || filename.includes('Ã')) {
+        try {
+          const decoded = Buffer.from(filename, 'latin1').toString('utf8')
+          console.log('[handleBase64Upload] latin1 解码后:', decoded)
+          filename = decoded
+        } catch (e) {
+          console.log('[handleBase64Upload] latin1 解码失败')
+        }
+      }
+      
+      console.log('[handleBase64Upload] 最终文件名:', filename, '大小:', size)
       
       // base64 解码
       const buffer = Buffer.from(data, 'base64')
@@ -109,8 +133,7 @@ const handleBase64Upload = async (req, res, next) => {
       // 生成临时文件名
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
       
-      // 安卓端：前端已经正确处理了中文编码，直接使用即可
-      // PC/H5 端：multer 会自动处理编码转换
+      // 安卓端：使用处理后的文件名
       const originalName = filename || 'upload'
       const safeName = originalName.replace(/[^\w\u4e00-\u9fa5.-]/g, '_')
       const tempFilename = `${uniqueSuffix}_${safeName}`
