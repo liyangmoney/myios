@@ -9,7 +9,6 @@ const __dirname = path.dirname(__filename)
 
 // 上传目录
 const uploadDir = path.join(__dirname, '../../uploads/quality-events')
-const tempUploadDir = path.join(__dirname, '../../uploads/temp')
 
 // 生成事件编号
 const generateEventNo = async () => {
@@ -879,18 +878,6 @@ export const checkDueDateReminders = async () => {
         AND status != 'REJECTED'
         AND due_date IS NOT NULL
         AND due_date >= CURDATE()
-export const checkDueDateReminders = async () => {
-  try {
-    console.log('[' + new Date().toISOString() + '] 检查质量事件到期提醒...')
-    
-    // 查找未关闭且即将在72小时内到期的事件
-    const events = await query(`
-      SELECT * FROM quality_event
-      WHERE deleted_at IS NULL
-        AND status != 'CLOSED'
-        AND status != 'REJECTED'
-        AND due_date IS NOT NULL
-        AND due_date >= CURDATE()
         AND due_date <= DATE_ADD(CURDATE(), INTERVAL 3 DAY)
     `)
     
@@ -1062,40 +1049,3 @@ const sendOverdue30DaysEmail = async (event, notifyUserIds, daysOverdue) => {
     console.error('发送超期30天提醒邮件失败:', error)
   }
 }
-
-// 定时清理临时上传目录（删除超过2小时的临时文件）
-const cleanupTempUploads = async () => {
-  try {
-    if (!fs.existsSync(tempUploadDir)) return
-    
-    const files = await fs.promises.readdir(tempUploadDir)
-    const now = Date.now()
-    const maxAge = 2 * 60 * 60 * 1000 // 2小时
-    
-    let cleanedCount = 0
-    
-    for (const file of files) {
-      const filePath = path.join(tempUploadDir, file)
-      try {
-        const stats = await fs.promises.stat(filePath)
-        if (now - stats.mtime.getTime() > maxAge) {
-          await fs.promises.unlink(filePath)
-          cleanedCount++
-        }
-      } catch (err) {
-        // 忽略单个文件的错误
-      }
-    }
-    
-    if (cleanedCount > 0) {
-      console.log(`[${new Date().toISOString()}] 清理临时文件: ${cleanedCount} 个`)
-    }
-  } catch (error) {
-    console.error('清理临时上传目录失败:', error)
-  }
-}
-
-// 每小时清理一次临时文件
-setInterval(cleanupTempUploads, 60 * 60 * 1000)
-// 启动时立即执行一次
-cleanupTempUploads()
