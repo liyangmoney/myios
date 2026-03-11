@@ -112,23 +112,82 @@ jobs:
         
     - name: Add signing config to build.gradle
       run: |
-        echo "添加签名配置到 build.gradle..."
+        echo "修复 build.gradle 签名配置..."
         
-        # 使用简单的方式添加 signingConfigs
-        echo "" >> android/app/build.gradle
-        echo "    signingConfigs {" >> android/app/build.gradle
-        echo "        release {" >> android/app/build.gradle
-        echo "            storeFile file('pis-release.keystore')" >> android/app/build.gradle
-        echo "            storePassword 'pis123456'" >> android/app/build.gradle
-        echo "            keyAlias 'pis'" >> android/app/build.gradle
-        echo "            keyPassword 'pis123456'" >> android/app/build.gradle
-        echo "        }" >> android/app/build.gradle
-        echo "    }" >> android/app/build.gradle
+        # 显示原始文件内容
+        echo "原始 build.gradle:"
+        cat android/app/build.gradle
         
-        # 修改 release buildType 使用签名
-        sed -i 's/minifyEnabled false/minifyEnabled false\n            signingConfig signingConfigs.release/' android/app/build.gradle
+        # 创建新的完整 build.gradle 文件
+        cat > android/app/build.gradle.new << 'GRADLE_EOF'
+apply plugin: 'com.android.application'
+
+android {
+    namespace = "com.liyangmoney.pis"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.liyangmoney.pis"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            storeFile file("pis-release.keystore")
+            storePassword "pis123456"
+            keyAlias "pis"
+            keyPassword "pis123456"
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:\$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:\$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:\$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:\$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:\$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:\$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found")
+}
+GRADLE_EOF
         
-        echo "build.gradle 已更新"
+        # 替换原文件
+        mv android/app/build.gradle.new android/app/build.gradle
+        
+        echo "build.gradle 已更新:"
+        cat android/app/build.gradle
         
     - name: Grant execute permission for gradlew
       run: chmod +x android/gradlew
