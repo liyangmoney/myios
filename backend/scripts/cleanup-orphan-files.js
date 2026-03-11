@@ -43,7 +43,7 @@ async function cleanOrphanFiles() {
     connection = await mysql.createConnection(dbConfig)
     console.log('数据库连接成功')
     
-    // 获取所有事件中的文件引用
+    // 1. 从 quality_event 表获取 PDCA 附件
     const [events] = await connection.execute(`
       SELECT 
         plan_files,
@@ -58,7 +58,6 @@ async function cleanOrphanFiles() {
     const referencedFiles = new Set()
     
     events.forEach(event => {
-      // 解析各阶段文件
       const fileFields = [
         event.plan_files,
         event.implementation_files,
@@ -72,19 +71,90 @@ async function cleanOrphanFiles() {
             const files = JSON.parse(field)
             files.forEach(file => {
               if (file.url) {
-                // 提取文件名（如：1741234567-1234567890_测试文件.jpg）
                 const filename = path.basename(file.url)
                 referencedFiles.add(filename)
               }
             })
-          } catch (e) {
-            // 解析失败，跳过
-          }
+          } catch (e) {}
         }
       })
     })
     
-    console.log(`数据库中引用的文件数量: ${referencedFiles.size}`)
+    console.log(`1. quality_event 表引用的文件: ${referencedFiles.size}`)
+    
+    // 2. 从 quality_event_log 表获取操作日志中的附件（包括多次 D/C 阶段）
+    const [logs] = await connection.execute(`
+      SELECT new_value
+      FROM quality_event_log
+      WHERE new_value IS NOT NULL
+        AND new_value != ''
+    `)
+    
+    logs.forEach(log => {
+      try {
+        const data = JSON.parse(log.new_value)
+        // 检查各种可能的附件字段
+        const possibleFields = [
+          'files',           // 标准附件字段
+          'planFiles',       // Plan 阶段
+          'doFiles',         // Do 阶段（可能多次）
+          'checkFiles',      // Check 阶段（可能多次）
+          'actFiles',        // Act 阶段
+          'attachments'      // 评论附件
+        ]
+        
+        possibleFields.forEach(field => {
+          if (data[field] && Array.isArray(data[field])) {
+            data[field].forEach(file => {
+              if (file.url) {
+                const filename = path.basename(file.url)
+                referencedFiles.add(filename)
+              }
+            })
+          }
+        })
+        
+        // 处理旧格式的附件记录（如 implementation_files 等）
+        const jsonStr = JSON.stringify(data)
+        const urlMatches = jsonStr.match(/"url":\s*"([^"]+)"/g)
+        if (urlMatches) {
+          urlMatches.forEach(match => {
+            const url = match.replace(/"url":\s*"/, '').replace(/"$/, '')
+            if (url.includes('/uploads/')) {
+              const filename = path.basename(url)
+              referencedFiles.add(filename)
+            }
+          })
+        }
+      } catch (e) {}
+    })
+    
+    console.log(`2. 加上 quality_event_log 后总计: ${referencedFiles.size}`)
+    
+    // 3. 从 quality_event_comment 表获取评论附件
+    const [comments] = await connection.execute(`
+      SELECT attachments
+      FROM quality_event_comment
+      WHERE attachments IS NOT NULL
+        AND attachments != '[]'
+        AND attachments != ''
+    `)
+    
+    comments.forEach(comment => {
+      try {
+        const files = JSON.parse(comment.attachments)
+        if (Array.isArray(files)) {
+          files.forEach(file => {
+            if (file.url) {
+              const filename = path.basename(file.url)
+              referencedFiles.add(filename)
+            }
+          })
+        }
+      } catch (e) {}
+    })
+    
+    console.log(`3. 加上 quality_event_comment 后总计: ${referencedFiles.size}`)
     
     // 扫描上传目录
     if (!fs.existsSync(uploadDir)) {
