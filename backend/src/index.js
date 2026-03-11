@@ -132,15 +132,20 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
+import { version, updateLog, forceUpdate, minVersion } from './config/version.js'
+
+// ... existing code ...
+
 // APP 版本检查接口
 app.get('/api/app/version', (req, res) => {
   res.json({
     code: 200,
     data: {
-      version: '1.0.2',
+      version,
       apkUrl: `${process.env.APP_URL || 'http://myjghy.myds.me:9090'}/app/pis-latest.apk`,
-      updateLog: '修复版本显示问题，优化PDCA弹窗布局，支持500MB大文件上传',
-      forceUpdate: false
+      updateLog,
+      forceUpdate,
+      minVersion
     }
   })
 })
