@@ -287,10 +287,16 @@ window.addEventListener('unhandledrejection', (e) => {
 const beforeUpload = async (file) => {
   console.log('准备上传文件:', file.name, '类型:', file.type, '大小:', (file.size / 1024 / 1024).toFixed(2) + 'MB')
   
-  // 检查文件大小
-  const isLt500M = file.size / 1024 / 1024 < 500
-  if (!isLt500M) {
-    ElMessage.error('文件大小不能超过 500MB!')
+  // 检查文件大小（原生平台限制100MB，浏览器限制500MB）
+  const isNative = typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.()
+  const maxSize = isNative ? 100 : 500 // MB
+  const fileSizeMB = file.size / 1024 / 1024
+  
+  if (fileSizeMB > maxSize) {
+    const msg = isNative 
+      ? `文件过大(${Math.round(fileSizeMB)}MB)，安卓端暂不支持超过100MB的文件，请使用PC端上传`
+      : `文件大小不能超过500MB!`
+    ElMessage.error(msg)
     return false
   }
   
@@ -304,8 +310,8 @@ const beforeUpload = async (file) => {
     return false
   }
   
-  // 大文件提示
-  if (file.size > 50 * 1024 * 1024) {
+  // 大文件提示（仅浏览器端）
+  if (!isNative && file.size > 50 * 1024 * 1024) {
     ElMessage.info('文件较大，正在准备上传...')
   }
   

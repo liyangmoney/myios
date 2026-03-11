@@ -1529,11 +1529,19 @@ const handleCommentUploadProgress = (event, file) => {
 
 // 评论附件上传前检查
 const beforeCommentUpload = (file) => {
-  const isLt500M = file.size / 1024 / 1024 < 500
-  if (!isLt500M) {
-    ElMessage.error('文件大小不能超过 500MB!')
+  // 原生平台限制100MB，浏览器限制500MB
+  const isNative = Capacitor.isNativePlatform()
+  const maxSize = isNative ? 100 : 500 // MB
+  const fileSizeMB = file.size / 1024 / 1024
+  
+  if (fileSizeMB > maxSize) {
+    const msg = isNative 
+      ? `文件过大(${Math.round(fileSizeMB)}MB)，安卓端暂不支持超过100MB的文件，请使用PC端上传`
+      : `文件大小不能超过500MB!`
+    ElMessage.error(msg)
     return false
   }
+  
   commentUploading.value = true
   commentUploadProgress.value = 0
   commentUploadingFileName.value = file.name

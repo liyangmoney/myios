@@ -58,14 +58,32 @@ const testServerConnection = async (url) => {
 
 // 安全的 base64 编码（处理大文件）
 const arrayBufferToBase64 = (buffer) => {
-  const bytes = new Uint8Array(buffer)
-  const chunkSize = 0x8000 // 32KB chunks
-  let result = ''
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    const chunk = bytes.subarray(i, i + chunkSize)
-    result += String.fromCharCode.apply(null, chunk)
+  try {
+    const bytes = new Uint8Array(buffer)
+    console.log('[Base64] Encoding', bytes.length, 'bytes')
+    
+    // 对于大文件，分块编码
+    const chunkSize = 0x8000 // 32KB chunks
+    let result = ''
+    
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, i + chunkSize)
+      result += String.fromCharCode.apply(null, chunk)
+      
+      // 每处理 1MB 输出进度
+      if (i % (1024 * 1024) === 0) {
+        console.log('[Base64] Progress:', Math.round((i / bytes.length) * 100) + '%')
+      }
+    }
+    
+    console.log('[Base64] String created, length:', result.length)
+    const base64 = btoa(result)
+    console.log('[Base64] Base64 encoded, length:', base64.length)
+    return base64
+  } catch (error) {
+    console.error('[Base64] Encoding failed:', error)
+    throw new Error('文件编码失败: ' + error.message)
   }
-  return btoa(result)
 }
 
 /**
@@ -192,23 +210,29 @@ const directUpload = async (file, eventId, stage, onProgress) => {
 }
 
 /**
- * 智能上传（小文件直接上传，大文件分片上传）
+ * 智能上传（小文件直接上传，大文件提示用 PC 端）
  */
 export const smartUpload = async (file, eventId, eventNo, stage, onProgress) => {
-  console.log('[smartUpload] file:', file.name, 'size:', file.size)
+  console.log('[smartUpload] file:', file.name, 'size:', file.size, 'platform:', isNativePlatform() ? 'native' : 'browser')
   
-  // 小于 50MB，直接上传
-  if (file.size <= MAX_FILE_SIZE) {
-    onProgress && onProgress(0)
-    
-    const result = await directUpload(file, eventId, stage, onProgress)
-    
-    onProgress && onProgress(100)
-    return Array.isArray(result) ? result : [result]
+  // 原生平台限制 100MB（base64 编码后约 133MB，超出 JS 处理能力）
+  const NATIVE_MAX_SIZE = 100 * 1024 * 1024
+  
+  if (isNativePlatform() && file.size > NATIVE_MAX_SIZE) {
+    throw new Error(`文件过大(${Math.round(file.size/1024/1024)}MB)，安卓端暂不支持超过100MB的文件，请使用PC端上传`)
   }
   
-  // 大文件分片上传（暂时不支持，直接报错）
-  throw new Error('文件超过50MB，请使用PC端上传')
+  // 浏览器端限制 500MB
+  if (!isNativePlatform() && file.size > MAX_FILE_SIZE) {
+    throw new Error(`文件大小不能超过500MB`)
+  }
+  
+  onProgress && onProgress(0)
+  
+  const result = await directUpload(file, eventId, stage, onProgress)
+  
+  onProgress && onProgress(100)
+  return Array.isArray(result) ? result : [result]
 }
 
 /**
