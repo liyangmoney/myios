@@ -364,6 +364,19 @@ const handleUploadError = (error) => {
   background: #f5f7fa;
   border-radius: 4px;
   gap: 8px;
+  overflow: hidden;
+}
+
+@media (max-width: 480px) {
+  .file-item {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  
+  .file-actions .el-button {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
 }
 
 .file-info {
@@ -389,7 +402,19 @@ const handleUploadError = (error) => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 200px;
+  max-width: 150px;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .file-name {
+    max-width: 120px;
+    font-size: 13px;
+  }
+  
+  .file-size {
+    font-size: 11px;
+  }
 }
 
 .file-size {
