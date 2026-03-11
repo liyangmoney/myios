@@ -132,7 +132,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
-import { version, updateLog, forceUpdate, minVersion } from './config/version.js'
+import { version, updateLog, forceUpdate, minVersion } from '../config/version.js'
 
 // ... existing code ...
 
