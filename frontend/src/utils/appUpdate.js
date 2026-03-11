@@ -1,4 +1,4 @@
-// APP 自动更新服务 - 纯APP内完成版（无需HTTP插件）
+// APP 自动更新服务 - 带进度条版
 import { Capacitor } from '@capacitor/core'
 import { Dialog } from '@capacitor/dialog'
 import { Filesystem, Directory } from '@capacitor/filesystem'
@@ -6,6 +6,9 @@ import { Filesystem, Directory } from '@capacitor/filesystem'
 // 当前版本号（每次发版时更新）
 const CURRENT_VERSION = '1.0.3'
 const UPDATE_SERVER_URL = 'http://myjghy.myds.me:9090'
+
+// 显示进度（使用 Dialog 或 Toast）
+let progressDialog = null
 
 /**
  * 检查 APP 版本并自动下载更新
@@ -49,7 +52,31 @@ export const checkAndUpdateApp = async () => {
 }
 
 /**
- * 下载并安装 APK（使用 XMLHttpRequest，不依赖插件）
+ * 显示进度对话框
+ */
+const showProgressDialog = async (message, percent) => {
+  try {
+    // 使用简单的 Alert 作为进度提示
+    // 实际项目中可以使用 Toast 或自定义进度组件
+    if (window.Capacitor) {
+      // 尝试使用 Toast
+      try {
+        const { Toast } = await import('@capacitor/toast')
+        await Toast.show({
+          text: `${message} ${percent > 0 ? percent + '%' : ''}`,
+          duration: 'short'
+        })
+      } catch (e) {
+        console.log('[Update] Toast:', message, percent + '%')
+      }
+    }
+  } catch (e) {
+    console.log('[Update] Progress:', message, percent + '%')
+  }
+}
+
+/**
+ * 下载并安装 APK（带进度条）
  */
 const downloadAndInstallApk = async (version) => {
   const downloadUrl = `${UPDATE_SERVER_URL}/app/pis-latest.apk`
@@ -59,33 +86,32 @@ const downloadAndInstallApk = async (version) => {
   console.log('[Update] URL:', downloadUrl)
   
   try {
-    // 显示开始下载提示
-    await Dialog.alert({
-      title: '开始下载',
-      message: `新版本 ${version} 开始下载，请稍候...\n\n下载完成后会自动提示安装。`,
-      okButtonTitle: '我知道了'
+    // 显示开始下载
+    showProgressDialog('开始下载...', 0)
+    
+    // 使用 XMLHttpRequest 下载（带进度）
+    console.log('[Update] 开始下载...')
+    const apkData = await downloadWithProgress(downloadUrl, (percent) => {
+      showProgressDialog('下载中', percent)
     })
     
-    // 使用 XMLHttpRequest 下载（原生支持，无需插件）
-    console.log('[Update] 使用 XMLHttpRequest 下载...')
-    const apkData = await downloadWithXHR(downloadUrl)
-    
     console.log('[Update] 下载完成，大小:', apkData.byteLength)
+    showProgressDialog('下载完成', 100)
     
     // 验证文件大小
     if (apkData.byteLength < 1024 * 1024) {
       throw new Error('文件太小，下载不完整')
     }
     
+    // 显示保存中
+    showProgressDialog('正在保存...', 0)
+    
     // 转换为 base64
     console.log('[Update] 转换文件格式...')
     const base64Data = arrayBufferToBase64(apkData)
-    console.log('[Update] Base64 长度:', base64Data.length)
     
     // 保存到 Downloads 目录
-    console.log('[Update] 保存文件...')
     const filePath = `Download/${fileName}`
-    
     await Filesystem.writeFile({
       path: filePath,
       directory: Directory.ExternalStorage,
@@ -111,7 +137,7 @@ const downloadAndInstallApk = async (version) => {
     })
     
     if (shouldInstall) {
-      await installApk(uriResult.uri)
+      await installApk(uriResult.uri, fileName)
     } else {
       await Dialog.alert({
         title: '已保存',
@@ -129,13 +155,25 @@ const downloadAndInstallApk = async (version) => {
 }
 
 /**
- * 使用 XMLHttpRequest 下载文件
+ * 使用 XMLHttpRequest 下载文件（带进度）
  */
-const downloadWithXHR = (url) => {
+const downloadWithProgress = (url, onProgress) => {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
     xhr.open('GET', url, true)
     xhr.responseType = 'arraybuffer'
+    
+    let lastPercent = 0
+    
+    xhr.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100)
+        if (percent > lastPercent) {
+          lastPercent = percent
+          onProgress(percent)
+        }
+      }
+    }
     
     xhr.onload = () => {
       if (xhr.status === 200) {
@@ -169,39 +207,56 @@ const arrayBufferToBase64 = (buffer) => {
 }
 
 /**
- * 安装 APK
+ * 安装 APK（使用最可靠的方式）
  */
-const installApk = async (fileUri) => {
-  console.log('[Install] 安装:', fileUri)
+const installApk = async (fileUri, fileName) => {
+  console.log('[Install] 开始安装:', fileUri)
   
   try {
-    // 方法1: 使用 FileOpener
+    // 方法1: 使用 FileOpener 插件（如果可用）
     try {
       const { FileOpener } = await import('@capacitor-community/file-opener')
+      const cleanPath = fileUri.replace('file://', '')
+      
       await FileOpener.open({
-        filePath: fileUri.replace('file://', ''),
+        filePath: cleanPath,
         mimeType: 'application/vnd.android.package-archive'
       })
-      console.log('[Install] FileOpener 成功')
+      console.log('[Install] FileOpener 调用成功')
       return
     } catch (e) {
-      console.log('[Install] FileOpener 失败:', e.message)
+      console.log('[Install] FileOpener 不可用:', e.message)
     }
     
-    // 方法2: 使用 a 标签
-    const link = document.createElement('a')
-    link.href = fileUri
-    link.setAttribute('download', 'update.apk')
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    console.log('[Install] a 标签已触发')
+    // 方法2: 使用 Capacitor Browser 打开文件
+    try {
+      const { Browser } = await import('@capacitor/browser')
+      await Browser.open({ url: fileUri })
+      console.log('[Install] Browser 调用成功')
+      return
+    } catch (e) {
+      console.log('[Install] Browser 失败:', e.message)
+    }
+    
+    // 方法3: 提示用户手动安装
+    await Dialog.alert({
+      title: '请手动安装',
+      message: `由于系统限制，请手动前往文件管理器安装:\n\nDownload/${fileName}\n\n点击确定将打开文件位置。`
+    })
+    
+    // 尝试打开文件位置
+    try {
+      const { Browser } = await import('@capacitor/browser')
+      await Browser.open({ url: fileUri })
+    } catch (e) {
+      console.log('[Install] 打开文件失败:', e.message)
+    }
     
   } catch (error) {
     console.error('[Install] 失败:', error)
     await Dialog.alert({
       title: '安装失败',
-      message: '无法启动安装器，请使用文件管理器手动安装。'
+      message: `无法启动安装器，请使用文件管理器手动安装:\nDownload/${fileName}`
     })
   }
 }
