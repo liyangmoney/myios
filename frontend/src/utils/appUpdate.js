@@ -214,7 +214,7 @@ const arrayBufferToBase64 = (buffer) => {
 }
 
 /**
- * 安装 APK（使用 Capacitor 插件）
+ * 安装 APK（多种方案尝试）
  */
 const installApk = async (fileUri) => {
   console.log('[Install] 开始安装 APK:', fileUri)
@@ -226,7 +226,6 @@ const installApk = async (fileUri) => {
       const { FileOpener } = await import('@capacitor-community/file-opener')
       
       // FileOpener 需要的是路径，不是 file:// URI
-      // 从 URI 中提取路径
       const path = fileUri.replace('file://', '')
       console.log('[Install] FileOpener 路径:', path)
       
@@ -242,16 +241,23 @@ const installApk = async (fileUri) => {
       console.error('[Install] FileOpener 失败:', e)
     }
     
-    // 方法2：使用 Capacitor AppLauncher
+    // 方法2：使用 a 标签点击（触发系统下载安装）
     try {
-      console.log('[Install] 尝试使用 AppLauncher...')
-      const { AppLauncher } = await import('@capacitor/app-launcher')
+      console.log('[Install] 尝试使用 a 标签...')
       
-      await AppLauncher.openUrl({ url: fileUri })
-      console.log('[Install] AppLauncher 调用成功')
+      const link = document.createElement('a')
+      link.href = fileUri
+      link.setAttribute('download', 'pis-update.apk')
+      link.setAttribute('type', 'application/vnd.android.package-archive')
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      console.log('[Install] a 标签点击成功')
+      showToast('请查看通知栏，点击下载完成通知进行安装', 5000)
       return
     } catch (e) {
-      console.error('[Install] AppLauncher 失败:', e)
+      console.error('[Install] a 标签失败:', e)
     }
     
     // 方法3：使用浏览器打开（最后手段）
@@ -265,7 +271,7 @@ const installApk = async (fileUri) => {
     
     await Dialog.alert({
       title: '安装失败',
-      message: `无法打开安装器: ${error.message}\n\n请手动前往下载目录安装 APK。`
+      message: `无法打开安装器: ${error.message}\n\n请手动前往设置-应用-安装未知应用，允许本应用后重试。`
     })
     
     throw error
