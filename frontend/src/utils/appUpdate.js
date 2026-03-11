@@ -5,7 +5,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem'
 import ApkInstaller from '@/plugins/ApkInstaller'
 
 // 当前版本号（每次发版时更新）
-const CURRENT_VERSION = '1.4.0'
+const CURRENT_VERSION = '1.5.0'
 const UPDATE_SERVER_URL = 'http://myjghy.myds.me:9090'
 
 // 显示进度（使用 Dialog 或 Toast）
