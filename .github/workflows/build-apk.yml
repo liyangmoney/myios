@@ -86,8 +86,49 @@ jobs:
       run: npm run build
 
     - name: Sync Capacitor
-      run: npx cap sync android
+      run: |
+        npx cap sync android
+        echo "检查签名配置:"
+        cat android/app/build.gradle | grep -A 10 "signingConfigs" || echo "未找到 signingConfigs"
+        
+    - name: Check keystore file
+      run: |
+        echo "检查签名文件:"
+        ls -la android/pis-release.keystore 2>/dev/null || echo "签名文件不存在"
+        
+    - name: Setup signing config
+      run: |
+        echo "配置签名..."
+        KEYSTORE_PATH="android/pis-release.keystore"
+        
+        # 检查签名文件是否存在
+        if [ -f "$KEYSTORE_PATH" ]; then
+          echo "✅ 签名文件存在: $KEYSTORE_PATH"
+          
+          # 在 build.gradle 中添加签名配置
+          cat >> android/app/build.gradle << 'EOF'
 
+android {
+    signingConfigs {
+        release {
+            storeFile file('pis-release.keystore')
+            storePassword 'pis123456'
+            keyAlias 'pis'
+            keyPassword 'pis123456'
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
+}
+EOF
+          echo "✅ 签名配置已添加到 build.gradle"
+        else
+          echo "❌ 签名文件不存在"
+        fi
+        
     - name: Grant execute permission for gradlew
       run: chmod +x android/gradlew
 
