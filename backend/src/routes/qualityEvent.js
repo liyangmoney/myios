@@ -46,10 +46,10 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-    // 处理中文文件名，保留原始名称用于显示
+    // 处理中文文件名 - 直接使用 originalname，不再重复解码
+    // multer 已经从请求中正确解析了 utf8 文件名
     const ext = path.extname(file.originalname)
-    // 使用 Buffer 正确处理中文编码
-    const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
+    const originalName = file.originalname
     // 存储文件名：时间戳_唯一ID_原始名称.扩展名
     const safeName = originalName.replace(/[^\w\u4e00-\u9fa5.-]/g, '_')
     cb(null, `${uniqueSuffix}_${safeName}`)
