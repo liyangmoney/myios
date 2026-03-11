@@ -763,8 +763,20 @@ export const uploadFiles = async (req, res) => {
     
     // 准备文件信息 - 包含事件编号文件夹路径
     const newFiles = req.files.map(file => {
-      // 正确处理中文文件名
-      const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
+      // 处理中文文件名
+      let originalName = file.originalname
+      
+      // 如果是安卓端上传（base64），file.originalname 已经是 UTF-8
+      // 如果是 PC/H5 端上传（multer），file.originalname 可能是 latin1
+      // 检查是否需要转换：如果包含乱码特征，则进行转换
+      if (/[\ufffd\u00c0-\u00df]/.test(originalName) || originalName.includes('Ã')) {
+        try {
+          originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
+        } catch (e) {
+          // 转换失败，保持原样
+        }
+      }
+      
       return {
         name: originalName,
         url: `/uploads/quality-events/${event.event_no}/${file.filename}`,
