@@ -91,7 +91,7 @@ const handleBase64Upload = async (req, res, next) => {
   
   // 检查是否为 base64 上传（原生平台）
   if (req.body && req.body.isBase64 && req.body.data) {
-    console.log('[handleBase64Upload] 检测到 base64 上传')
+    console.log('[handleBase64Upload] 检测到 base64 上传（安卓端）')
     try {
       const { filename, type, size, data } = req.body
       console.log('[handleBase64Upload] 文件名:', filename, '大小:', size)
@@ -108,7 +108,11 @@ const handleBase64Upload = async (req, res, next) => {
       
       // 生成临时文件名
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-      const safeName = (filename || 'upload').replace(/[^\w\u4e00-\u9fa5.-]/g, '_')
+      
+      // 安卓端：前端已经正确处理了中文编码，直接使用即可
+      // PC/H5 端：multer 会自动处理编码转换
+      const originalName = filename || 'upload'
+      const safeName = originalName.replace(/[^\w\u4e00-\u9fa5.-]/g, '_')
       const tempFilename = `${uniqueSuffix}_${safeName}`
       const tempPath = path.join(tempUploadDir, tempFilename)
       
@@ -121,7 +125,7 @@ const handleBase64Upload = async (req, res, next) => {
       // 模拟 multer req.files 格式
       req.files = [{
         fieldname: 'files',
-        originalname: filename || 'upload',
+        originalname: originalName,  // 保持原始中文文件名
         encoding: '7bit',
         mimetype: type || 'application/octet-stream',
         destination: tempUploadDir,
@@ -139,8 +143,8 @@ const handleBase64Upload = async (req, res, next) => {
     }
   }
   
-  // 不是 base64 上传，继续 multer 处理
-  console.log('[handleBase64Upload] 不是 base64 上传，跳过')
+  // 不是 base64 上传（PC/H5 端），继续 multer 处理
+  console.log('[handleBase64Upload] 不是 base64 上传（PC/H5 端），跳过')
   next()
 }
 
