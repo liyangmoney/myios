@@ -95,10 +95,15 @@ jobs:
       working-directory: ./frontend/android
       run: ./gradlew assembleDebug --no-daemon
 
+    - name: Build Release APK
+      working-directory: ./frontend/android
+      run: ./gradlew assembleRelease --no-daemon
+
     - name: Copy APK to backend/app
       run: |
         mkdir -p ../backend/app
-        cp ./android/app/build/outputs/apk/debug/app-debug.apk ../backend/app/pis-latest.apk
+        cp ./android/app/build/outputs/apk/debug/app-debug.apk ../backend/app/pis-debug.apk
+        cp ./android/app/build/outputs/apk/release/app-release.apk ../backend/app/pis-latest.apk
         ls -la ../backend/app/
 
     - name: Commit APK to repository
@@ -120,6 +125,7 @@ jobs:
       run: |
         mkdir -p ./output
         cp ./android/app/build/outputs/apk/debug/app-debug.apk ./output/pis-system-debug.apk
+        cp ./android/app/build/outputs/apk/release/app-release.apk ./output/pis-system-release.apk
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
@@ -127,15 +133,6 @@ jobs:
         name: PIS-APK-${{ github.run_number }}
         path: ./frontend/output/*.apk
         retention-days: 30
-
-    - name: Build Release APK
-      if: github.event.inputs.release == 'true'
-      working-directory: ./frontend/android
-      run: ./gradlew assembleRelease --no-daemon
-      env:
-        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
   notify:
     needs: build

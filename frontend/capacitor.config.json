@@ -8,10 +8,10 @@
   },
   "android": {
     "buildOptions": {
-      "keystorePath": "",
-      "keystoreAlias": "",
-      "keystorePassword": "",
-      "keystoreAliasPassword": ""
+      "keystorePath": "android/pis-release.keystore",
+      "keystoreAlias": "pis",
+      "keystorePassword": "pis123456",
+      "keystoreAliasPassword": "pis123456"
     }
   },
   "plugins": {
