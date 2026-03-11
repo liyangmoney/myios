@@ -91,33 +91,23 @@ jobs:
         echo "检查签名配置:"
         cat android/app/build.gradle | grep -A 10 "signingConfigs" || echo "未找到 signingConfigs"
         
-    - name: Check keystore file
-      run: |
-        echo "检查签名文件:"
-        ls -la android/pis-release.keystore 2>/dev/null || echo "签名文件不存在"
-        
     - name: Setup signing config
       run: |
         echo "配置签名..."
         if [ -f "android/pis-release.keystore" ]; then
-          echo "签名文件存在"
-          # 在 gradle.properties 中添加签名配置
-          echo "" >> android/gradle.properties
-          echo "RELEASE_STORE_FILE=pis-release.keystore" >> android/gradle.properties
-          echo "RELEASE_STORE_PASSWORD=pis123456" >> android/gradle.properties
-          echo "RELEASE_KEY_ALIAS=pis" >> android/gradle.properties
-          echo "RELEASE_KEY_PASSWORD=pis123456" >> android/gradle.properties
-          echo "签名配置已添加到 gradle.properties"
+          echo "✅ 签名文件存在"
+          ls -la android/pis-release.keystore
+        else
+          echo "❌ 签名文件不存在!"
+          exit 1
         fi
         
     - name: Add signing config to build.gradle
       run: |
         echo "使用带签名的 build.gradle..."
-        # 备份原文件
         cp android/app/build.gradle android/app/build.gradle.bak
-        # 使用带签名的模板
         cp android/app/build.gradle.signed android/app/build.gradle
-        echo "build.gradle 已更新为签名版本"
+        echo "✅ build.gradle 已更新为签名版本"
         
     - name: Grant execute permission for gradlew
       run: chmod +x android/gradlew
