@@ -31,6 +31,12 @@ app.options('*', cors())
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ extended: true, limit: '50mb' }))
 
+// 设置响应编码为 UTF-8
+app.use((req, res, next) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8')
+  next()
+})
+
 // 健康检查接口（用于测试连通性）
 app.get('/ping', (req, res) => {
   res.json({ code: 200, message: 'pong', timestamp: new Date().toISOString() })
