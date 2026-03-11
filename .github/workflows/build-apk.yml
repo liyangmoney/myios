@@ -112,24 +112,12 @@ jobs:
         
     - name: Add signing config to build.gradle
       run: |
-        echo "修复 build.gradle 签名配置..."
-        
-        # 下载完整的 build.gradle 模板
-        curl -s https://raw.githubusercontent.com/liyangmoney/MyIOS/main/frontend/android/app/build.gradle.template -o android/app/build.gradle.new 2>/dev/null || true
-        
-        # 如果下载失败，使用内联模板
-        if [ ! -f "android/app/build.gradle.new" ]; then
-          echo "使用内联模板..."
-          # 直接修改原文件 - 在 release buildType 中添加签名
-          sed -i '/minifyEnabled false/a\            signingConfig signingConfigs.release' android/app/build.gradle
-          
-          # 在 buildTypes 之前添加 signingConfigs
-          sed -i '/buildTypes {/i\    signingConfigs {\n        release {\n            storeFile file("pis-release.keystore")\n            storePassword "pis123456"\n            keyAlias "pis"\n            keyPassword "pis123456"\n        }\n    }\n' android/app/build.gradle
-        else
-          mv android/app/build.gradle.new android/app/build.gradle
-        fi
-        
-        echo "build.gradle 已更新"
+        echo "使用带签名的 build.gradle..."
+        # 备份原文件
+        cp android/app/build.gradle android/app/build.gradle.bak
+        # 使用带签名的模板
+        cp android/app/build.gradle.signed android/app/build.gradle
+        echo "build.gradle 已更新为签名版本"
         
     - name: Grant execute permission for gradlew
       run: chmod +x android/gradlew
