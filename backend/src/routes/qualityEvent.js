@@ -100,7 +100,7 @@ const handleMulterError = (err, req, res, next) => {
   next(err)
 }
 
-router.post('/:id/upload', upload.array('files', 5), handleMulterError, uploadFiles)
+router.post('/:id/upload', handleBase64Upload, upload.array('files', 5), handleMulterError, uploadFiles)
 
 // 管理员接口：手动触发超期30天事件检查
 router.post('/admin/check-overdue-30days', async (req, res) => {
