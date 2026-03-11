@@ -809,7 +809,18 @@ export const uploadFiles = async (req, res) => {
     // 准备文件信息
     const newFiles = movedFiles.map(file => {
       // 使用处理后的显示名称
-      const displayName = file.displayName || Buffer.from(file.originalname, 'latin1').toString('utf8')
+      // 注意：multer 默认使用 latin1 编码，需要转换为 utf8
+      let displayName = file.displayName
+      if (!displayName) {
+        try {
+          // 尝试从 latin1 转换为 utf8
+          displayName = Buffer.from(file.originalname, 'latin1').toString('utf8')
+        } catch (e) {
+          // 如果失败，直接使用原始名称
+          displayName = file.originalname
+        }
+      }
+      
       // 清理显示名称（去掉伪装标记）
       const cleanName = displayName.includes('|ORIGINAL:') 
         ? displayName.split('|ORIGINAL:')[1] 
