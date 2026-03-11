@@ -113,29 +113,22 @@ jobs:
     - name: Add signing config to build.gradle
       run: |
         echo "添加签名配置到 build.gradle..."
-        # 备份原文件
-        cp android/app/build.gradle android/app/build.gradle.bak
         
-        # 创建签名配置部分
-        cat > /tmp/signing_config.txt << 'SIGNING_EOF'
-    signingConfigs {
-        release {
-            storeFile file(RELEASE_STORE_FILE ?: "pis-release.keystore")
-            storePassword RELEASE_STORE_PASSWORD ?: "pis123456"
-            keyAlias RELEASE_KEY_ALIAS ?: "pis"
-            keyPassword RELEASE_KEY_PASSWORD ?: "pis123456"
-        }
-    }
-SIGNING_EOF
+        # 使用简单的方式添加 signingConfigs
+        echo "" >> android/app/build.gradle
+        echo "    signingConfigs {" >> android/app/build.gradle
+        echo "        release {" >> android/app/build.gradle
+        echo "            storeFile file('pis-release.keystore')" >> android/app/build.gradle
+        echo "            storePassword 'pis123456'" >> android/app/build.gradle
+        echo "            keyAlias 'pis'" >> android/app/build.gradle
+        echo "            keyPassword 'pis123456'" >> android/app/build.gradle
+        echo "        }" >> android/app/build.gradle
+        echo "    }" >> android/app/build.gradle
         
-        # 在 buildTypes 之前插入 signingConfigs
-        sed -i '/buildTypes {/r /tmp/signing_config.txt' android/app/build.gradle
-        
-        # 修改 release buildType 使用签名配置
+        # 修改 release buildType 使用签名
         sed -i 's/minifyEnabled false/minifyEnabled false\n            signingConfig signingConfigs.release/' android/app/build.gradle
         
         echo "build.gradle 已更新"
-        cat android/app/build.gradle | grep -A 5 "signingConfigs" || echo "未找到 signingConfigs"
         
     - name: Grant execute permission for gradlew
       run: chmod +x android/gradlew
