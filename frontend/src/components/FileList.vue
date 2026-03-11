@@ -142,8 +142,11 @@ const previewFile = (file) => {
   if (isImage(file.type)) {
     previewUrl.value = getFileUrl(file.url)
     previewVisible.value = true
+  } else if (file.type?.includes('pdf') || file.name?.toLowerCase().endsWith('.pdf')) {
+    // PDF 在新窗口打开预览
+    window.open(getFileUrl(file.url), '_blank')
   } else {
-    // 非图片文件直接下载
+    // 非图片/PDF 文件直接下载
     downloadFile(file)
   }
 }

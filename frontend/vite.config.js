@@ -12,11 +12,11 @@ export default defineConfig({
   },
   server: {
     port: 13000,
-    host: true,  // 允许局域网访问
-    allowedHosts: ['myjghy.myds.me'],  // 允许访问的域名
+    host: true,
+    allowedHosts: ['myjghy.myds.me'],
     proxy: {
       '/api': {
-        target: 'http://localhost:9090',
+        target: 'http://myjghy.myds.me:9090',
         changeOrigin: true
       }
     }
