@@ -4,7 +4,7 @@ import { Dialog } from '@capacitor/dialog'
 import { Filesystem, Directory } from '@capacitor/filesystem'
 
 // 当前版本号（每次发版时更新）
-const CURRENT_VERSION = '1.0.0'
+const CURRENT_VERSION = '1.0.3'
 const UPDATE_SERVER_URL = 'http://myjghy.myds.me:9090'
 
 /**
