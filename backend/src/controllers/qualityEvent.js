@@ -746,7 +746,7 @@ export const getStatistics = async (req, res) => {
 export const uploadFiles = async (req, res) => {
   try {
     const { id } = req.params
-    const { stage } = req.query
+    const { stage } = req.query // 从查询参数获取 stage
     const userId = req.userId
     const userName = req.userName
     
@@ -754,7 +754,7 @@ export const uploadFiles = async (req, res) => {
       return res.status(400).json({ code: 400, message: '没有上传文件' })
     }
     
-    // 获取事件信息
+    // 获取当前文件列表
     const events = await query('SELECT * FROM quality_event WHERE id = ?', [id])
     if (events.length === 0) {
       return res.status(404).json({ code: 404, message: '事件不存在' })
@@ -762,62 +762,10 @@ export const uploadFiles = async (req, res) => {
     
     const event = events[0]
     
-    // 创建事件目录（如果不存在）
-    const eventDir = path.join(uploadDir, event.event_no)
-    if (!fs.existsSync(eventDir)) {
-      fs.mkdirSync(eventDir, { recursive: true })
-    }
-    
-    // 将文件从临时目录移动到事件目录
-    const movedFiles = await Promise.all(req.files.map(async (file) => {
-      const tempPath = file.path
-      
-      // 处理文件名编码问题
-      let displayName = file.originalname
-      // 如果包含乱码特征，尝试解码
-      if (/[\ufffd\u00c0-\u00df]/.test(displayName) || displayName.includes('Ã')) {
-        try {
-          displayName = Buffer.from(file.originalname, 'latin1').toString('utf8')
-        } catch (e) {}
-      }
-      
-      let finalFilename = file.filename
-      const originalExt = path.extname(file.originalname).toLowerCase()
-      
-      // 如果是伪装的 .pdf 文件（实际是MP4），提取原始文件名并恢复扩展名
-      if (originalExt === '.pdf' && file.originalname.includes('|ORIGINAL:')) {
-        const parts = file.originalname.split('|ORIGINAL:')
-        if (parts.length === 2 && parts[1].toLowerCase().endsWith('.mp4')) {
-          displayName = parts[1] // 提取原始文件名用于显示
-          // 恢复文件扩展名（把 .pdf 改回 .mp4）
-          finalFilename = file.filename.replace(/\.pdf$/i, '.mp4')
-        }
-      }
-      
-      const finalPath = path.join(eventDir, finalFilename)
-      
-      // 移动文件（使用重命名，速度最快）
-      try {
-        await fs.promises.rename(tempPath, finalPath)
-      } catch (moveError) {
-        // 如果跨文件系统，使用复制+删除
-        await fs.promises.copyFile(tempPath, finalPath)
-        await fs.promises.unlink(tempPath)
-      }
-      
-      // 返回处理后的文件信息
-      return {
-        ...file,
-        filename: finalFilename,
-        displayName: displayName
-      }
-    }))
-    
-    // 准备文件信息 - 简单处理，双重解码确保中文正常
-    const newFiles = movedFiles.map(file => {
-      // 使用 Buffer 正确处理中文编码（双重解码确保 PC/H5 正常）
+    // 准备文件信息 - 包含事件编号文件夹路径
+    const newFiles = req.files.map(file => {
+      // 正确处理中文文件名
       const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
-      
       return {
         name: originalName,
         url: `/uploads/quality-events/${event.event_no}/${file.filename}`,
@@ -827,7 +775,12 @@ export const uploadFiles = async (req, res) => {
       }
     })
     
-    // PDCA阶段附件直接返回，不更新事件表
+    // 根据阶段更新对应的文件字段
+    let fieldName
+    let existingFiles = []
+    
+    // 如果是评论附件或PDCA阶段附件，直接返回文件信息，不更新事件表
+    // 由前端在提交时统一处理
     if (stage === 'comment' || stage === 'plan' || stage === 'do' || stage === 'check' || stage === 'act') {
       res.json({
         code: 200,
@@ -914,6 +867,18 @@ export const uploadFiles = async (req, res) => {
 }
 
 // 定时任务：检查即将到期的质量事件并发送提醒
+export const checkDueDateReminders = async () => {
+  try {
+    console.log('[' + new Date().toISOString() + '] 检查质量事件到期提醒...')
+    
+    // 查找未关闭且即将在72小时内到期的事件
+    const events = await query(`
+      SELECT * FROM quality_event
+      WHERE deleted_at IS NULL
+        AND status != 'CLOSED'
+        AND status != 'REJECTED'
+        AND due_date IS NOT NULL
+        AND due_date >= CURDATE()
 export const checkDueDateReminders = async () => {
   try {
     console.log('[' + new Date().toISOString() + '] 检查质量事件到期提醒...')
