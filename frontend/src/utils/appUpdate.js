@@ -27,8 +27,9 @@ export const checkAndUpdateApp = async () => {
     }
     
     const data = await response.json()
-    const latestVersion = data.version
-    const apkUrl = data.apkUrl
+    const latestVersion = data.data?.version || data.version
+    const apkUrl = data.data?.apkUrl || data.apkUrl
+    const updateLog = data.data?.updateLog || '有新版本可用'
     
     console.log('当前版本:', CURRENT_VERSION, '最新版本:', latestVersion)
     
@@ -38,8 +39,8 @@ export const checkAndUpdateApp = async () => {
     
     // 弹出更新提示
     const { value } = await Dialog.confirm({
-      title: '发现新版本',
-      message: `当前版本: ${CURRENT_VERSION}\n最新版本: ${latestVersion}\n\n是否立即下载更新？`,
+      title: `发现新版本 ${latestVersion}`,
+      message: `当前版本: ${CURRENT_VERSION}\n最新版本: ${latestVersion}\n\n更新内容:\n${updateLog}\n\n是否立即下载更新？`,
       okButtonTitle: '立即更新',
       cancelButtonTitle: '稍后'
     })

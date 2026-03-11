@@ -137,9 +137,9 @@ app.get('/api/app/version', (req, res) => {
   res.json({
     code: 200,
     data: {
-      version: '1.0.1',
+      version: '1.0.2',
       apkUrl: `${process.env.APP_URL || 'http://myjghy.myds.me:9090'}/app/pis-latest.apk`,
-      updateLog: '修复附件上传问题，优化移动端体验',
+      updateLog: '修复版本显示问题，优化PDCA弹窗布局，支持500MB大文件上传',
       forceUpdate: false
     }
   })
