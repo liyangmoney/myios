@@ -47,19 +47,8 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
     const ext = path.extname(file.originalname)
-    
-    // 处理中文文件名 - 尝试多种解码方式
-    let originalName = file.originalname
-    
-    // 如果包含乱码特征，尝试从 latin1 解码
-    if (/[\ufffd\u00c0-\u00df]/.test(originalName) || originalName.includes('Ã')) {
-      try {
-        originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
-      } catch (e) {
-        // 解码失败，保持原样
-      }
-    }
-    
+    // 使用 Buffer 正确处理中文编码
+    const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
     // 存储文件名：时间戳_唯一ID_原始名称.扩展名
     const safeName = originalName.replace(/[^\w\u4e00-\u9fa5.-]/g, '_')
     cb(null, `${uniqueSuffix}_${safeName}`)
@@ -97,8 +86,6 @@ router.get('/statistics', getStatistics)
 router.get('/:id', getQualityEventDetail)
 router.post('/', operationLogMiddleware('质量事件', 'CREATE', '创建质量事件'), createQualityEvent)
 router.put('/:id', operationLogMiddleware('质量事件', 'UPDATE', '更新质量事件'), updateQualityEvent)
-router.delete('/:id', operationLogMiddleware('质量事件', 'DELETE', '删除质量事件'), deleteQualityEvent)
-router.post('/:id/comments', operationLogMiddleware('质量事件', 'COMMENT', '添加评论'), addComment)
 
 // 错误处理中间件 - 处理 multer 文件类型错误
 const handleMulterError = (err, req, res, next) => {
@@ -113,18 +100,13 @@ const handleMulterError = (err, req, res, next) => {
 
 // 处理原生平台 base64 文件上传中间件
 const handleBase64Upload = async (req, res, next) => {
-  console.log('[Upload] handleBase64Upload called')
-  console.log('[Upload] req.body:', req.body ? 'has body' : 'no body')
-  
   // 检查是否为 base64 上传（原生平台）
   if (req.body && req.body.isBase64 && req.body.data) {
-    console.log('[Upload] Detected base64 upload, filename:', req.body.filename)
     try {
       const { filename, type, size, data } = req.body
       
       // base64 解码
       const buffer = Buffer.from(data, 'base64')
-      console.log('[Upload] Decoded buffer size:', buffer.length)
       
       // 生成临时文件名
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
@@ -139,7 +121,6 @@ const handleBase64Upload = async (req, res, next) => {
       
       // 写入临时文件
       fs.writeFileSync(tempPath, buffer)
-      console.log('[Upload] File written to:', tempPath)
       
       // 模拟 multer req.files 格式
       req.files = [{
@@ -155,33 +136,37 @@ const handleBase64Upload = async (req, res, next) => {
       
       return next()
     } catch (error) {
-      console.error('[Upload] Base64 文件处理失败:', error)
+      console.error('Base64 文件处理失败:', error)
       return res.status(400).json({ code: 400, message: '文件处理失败: ' + error.message })
     }
   }
   
-  console.log('[Upload] Not base64 upload, passing to multer')
   // 不是 base64 上传，继续 multer 处理
   next()
 }
 
 router.post('/:id/upload', handleBase64Upload, upload.array('files', 5), handleMulterError, uploadFiles)
 
-// 管理员接口：手动触发超期30天事件检查
-router.post('/admin/check-overdue-30days', async (req, res) => {
+router.post('/:id/comments', operationLogMiddleware('质量事件', 'COMMENT', '添加评论'), addComment)
+
+router.delete('/:id', operationLogMiddleware('质量事件', 'DELETE', '删除质量事件'), deleteQualityEvent)
+
+// 临时路由：手动触发逾期提醒检查
+router.get('/check/reminders', async (req, res) => {
   try {
-    // 检查是否为管理员
-    const userId = req.userId
-    const users = await query('SELECT role FROM sys_user WHERE id = ? AND deleted_at IS NULL', [userId])
-    if (users.length === 0 || users[0].role !== 'admin') {
-      return res.status(403).json({ code: 403, message: '只有管理员可以执行此操作' })
-    }
-    
-    await checkOverdue30DaysEvents()
-    res.json({ code: 200, message: '超期30天事件检查完成' })
+    const reminderCount = await checkDueDateReminders()
+    const overdueCount = await checkOverdue30DaysEvents()
+    res.json({ 
+      code: 200, 
+      message: '检查完成', 
+      data: { 
+        reminderCount, 
+        overdueCount 
+      } 
+    })
   } catch (error) {
-    console.error('手动触发超期30天检查失败:', error)
-    res.status(500).json({ code: 500, message: '检查失败：' + error.message })
+    console.error('手动检查逾期提醒失败:', error)
+    res.status(500).json({ code: 500, message: '检查失败: ' + error.message })
   }
 })
 

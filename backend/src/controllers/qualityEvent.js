@@ -813,19 +813,13 @@ export const uploadFiles = async (req, res) => {
       }
     }))
     
-    // 准备文件信息
+    // 准备文件信息 - 简单处理，双重解码确保中文正常
     const newFiles = movedFiles.map(file => {
-      // 使用处理后的显示名称
-      // 注意：multer 已经在存储时正确处理了编码，这里直接使用即可
-      let displayName = file.displayName || file.originalname
-      
-      // 清理显示名称（去掉伪装标记）
-      const cleanName = displayName.includes('|ORIGINAL:') 
-        ? displayName.split('|ORIGINAL:')[1] 
-        : displayName
+      // 使用 Buffer 正确处理中文编码（双重解码确保 PC/H5 正常）
+      const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
       
       return {
-        name: cleanName,
+        name: originalName,
         url: `/uploads/quality-events/${event.event_no}/${file.filename}`,
         type: file.mimetype,
         size: file.size,
