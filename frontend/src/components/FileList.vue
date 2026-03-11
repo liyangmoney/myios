@@ -73,6 +73,7 @@ import { Document, Picture, Folder, Upload } from '@element-plus/icons-vue'
 import { qualityEventApi } from '@/api'
 import apiConfig from '@/api/config'
 import { smartUpload } from '@/utils/chunkUpload'
+import { Capacitor } from '@capacitor/core'
 
 const props = defineProps({
   files: {
@@ -173,12 +174,21 @@ const downloadFile = (file) => {
 const getFileUrl = (url) => {
   if (!url) return ''
   if (url.startsWith('http')) return url
+  
   // 提取事件编号/文件名路径，使用下载接口
   // URL格式: /uploads/quality-events/QE-xxx/filename.ext
   const parts = url.split('/')
   const eventNo = parts[parts.length - 2] // 倒数第二是事件编号
   const filename = parts[parts.length - 1] // 最后是文件名
-  return `/api/download?filename=${encodeURIComponent(`${eventNo}/${filename}`)}`
+  const downloadPath = `/api/download?filename=${encodeURIComponent(`${eventNo}/${filename}`)}`
+  
+  // 安卓端需要完整 URL
+  if (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.()) {
+    // 使用后端默认地址
+    return `http://myjghy.myds.me:9090${downloadPath}`
+  }
+  
+  return downloadPath
 }
 
 const deleteFile = async (index) => {
