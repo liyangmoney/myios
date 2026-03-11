@@ -105,14 +105,24 @@ jobs:
         
     - name: Setup signing config
       run: |
-        echo "配置签名..."
+        echo "=== 配置签名 ==="
+        echo "查找 keystore 文件:"
+        find . -name "*.keystore" -type f 2>/dev/null
+        echo ""
         if [ -f "android/pis-release.keystore" ]; then
-          echo "✅ 签名文件存在"
-          ls -la android/pis-release.keystore
+          echo "✅ 找到签名文件在 android/"
+          # 复制到 app 目录
+          cp android/pis-release.keystore android/app/pis-release.keystore
+          echo "✅ 已复制到 android/app/"
+          ls -la android/app/pis-release.keystore
+        elif [ -f "android/app/pis-release.keystore" ]; then
+          echo "✅ 签名文件已在 app/ 目录"
+          ls -la android/app/pis-release.keystore
         else
           echo "❌ 签名文件不存在!"
           exit 1
         fi
+        echo "=== 签名配置完成 ==="
         
     - name: Add signing config to build.gradle
       run: |
