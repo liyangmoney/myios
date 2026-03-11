@@ -99,10 +99,20 @@ jobs:
       working-directory: ./frontend/android
       run: ./gradlew assembleRelease --no-daemon
 
+    - name: Check Release APK exists
+      run: |
+        ls -la ./android/app/build/outputs/apk/release/
+
     - name: Copy APK to backend/app
       run: |
         mkdir -p ../backend/app
-        cp ./android/app/build/outputs/apk/release/app-release.apk ../backend/app/pis-latest.apk
+        if [ -f "./android/app/build/outputs/apk/release/app-release.apk" ]; then
+          cp ./android/app/build/outputs/apk/release/app-release.apk ../backend/app/pis-latest.apk
+          echo "Release APK copied successfully"
+        else
+          echo "Release APK not found, copying Debug APK instead"
+          cp ./android/app/build/outputs/apk/debug/app-debug.apk ../backend/app/pis-latest.apk
+        fi
         ls -la ../backend/app/
 
     - name: Commit APK to repository
