@@ -122,6 +122,7 @@ const downloadAndInstallApk = async (apkUrl, version) => {
     console.log('APK 文件 URI:', fileUri.uri)
     
     // 提示用户安装
+    console.log('[Update] 显示安装确认弹窗')
     const { value: installConfirmed } = await Dialog.confirm({
       title: '下载完成',
       message: '新版本已下载完成，是否立即安装？\n\n注意：安装完成后需要手动重启 APP',
@@ -129,7 +130,10 @@ const downloadAndInstallApk = async (apkUrl, version) => {
       cancelButtonTitle: '稍后'
     })
     
+    console.log('[Update] 用户选择:', installConfirmed ? '立即安装' : '稍后')
+    
     if (installConfirmed) {
+      showToast('正在准备安装...', 2000)
       // 安装 APK
       await installApk(fileUri.uri)
     }
@@ -213,27 +217,57 @@ const arrayBufferToBase64 = (buffer) => {
  * 安装 APK（使用 Capacitor 插件）
  */
 const installApk = async (fileUri) => {
+  console.log('[Install] 开始安装 APK:', fileUri)
+  
   try {
     // 方法1：尝试使用 FileOpener 插件
     try {
+      console.log('[Install] 尝试使用 FileOpener...')
       const { FileOpener } = await import('@capacitor-community/file-opener')
+      
+      // FileOpener 需要的是路径，不是 file:// URI
+      // 从 URI 中提取路径
+      const path = fileUri.replace('file://', '')
+      console.log('[Install] FileOpener 路径:', path)
+      
       await FileOpener.open({
-        filePath: fileUri,
+        filePath: path,
         mimeType: 'application/vnd.android.package-archive'
       })
-      console.log('已调用 FileOpener 打开 APK')
+      console.log('[Install] FileOpener 调用成功')
+      
+      showToast('正在打开安装器...', 3000)
       return
     } catch (e) {
-      console.log('FileOpener 不可用，尝试其他方法:', e)
+      console.error('[Install] FileOpener 失败:', e)
     }
     
-    // 方法2：使用系统浏览器打开（备用方案）
+    // 方法2：使用 Capacitor AppLauncher
+    try {
+      console.log('[Install] 尝试使用 AppLauncher...')
+      const { AppLauncher } = await import('@capacitor/app-launcher')
+      
+      await AppLauncher.openUrl({ url: fileUri })
+      console.log('[Install] AppLauncher 调用成功')
+      return
+    } catch (e) {
+      console.error('[Install] AppLauncher 失败:', e)
+    }
+    
+    // 方法3：使用浏览器打开（最后手段）
+    console.log('[Install] 尝试使用浏览器...')
     const { Browser } = await import('@capacitor/browser')
     await Browser.open({ url: fileUri })
-    console.log('已使用浏览器打开 APK')
+    console.log('[Install] 浏览器调用成功')
     
   } catch (error) {
-    console.error('安装 APK 失败:', error)
+    console.error('[Install] 所有安装方法都失败:', error)
+    
+    await Dialog.alert({
+      title: '安装失败',
+      message: `无法打开安装器: ${error.message}\n\n请手动前往下载目录安装 APK。`
+    })
+    
     throw error
   }
 }
