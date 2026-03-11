@@ -32,9 +32,29 @@ const addLog = (message, type = 'info') => {
   const now = new Date()
   const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0')}`
   
+  // 安全地转换消息为字符串
+  let msgStr
+  if (typeof message === 'object' && message !== null) {
+    try {
+      // 尝试使用安全的方式序列化
+      msgStr = JSON.stringify(message, (key, value) => {
+        // 跳过循环引用和函数
+        if (typeof value === 'function') return '[Function]'
+        if (value instanceof Error) return value.message
+        if (key === 'vnode' || key === 'component' || key === 'el' || key === 'refs') return '[VueInternal]'
+        return value
+      })
+    } catch (e) {
+      // 如果序列化失败，使用简单字符串表示
+      msgStr = '[Object: ' + Object.prototype.toString.call(message).slice(8, -1) + ']'
+    }
+  } else {
+    msgStr = String(message)
+  }
+  
   logs.value.push({
     time,
-    message: typeof message === 'object' ? JSON.stringify(message) : String(message),
+    message: msgStr,
     type
   })
   
