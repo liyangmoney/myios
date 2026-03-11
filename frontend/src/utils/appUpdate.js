@@ -1,15 +1,11 @@
-// APP 自动更新服务 - 带进度条版
+// APP 自动更新服务
 import { Capacitor } from '@capacitor/core'
 import { Dialog } from '@capacitor/dialog'
 import { Filesystem, Directory } from '@capacitor/filesystem'
-import ApkInstaller from '@/plugins/ApkInstaller'
 
 // 当前版本号（每次发版时更新）
 const CURRENT_VERSION = '1.5.0'
 const UPDATE_SERVER_URL = 'http://myjghy.myds.me:9090'
-
-// 显示进度（使用 Dialog 或 Toast）
-let progressDialog = null
 
 /**
  * 检查 APP 版本并自动下载更新
@@ -53,62 +49,30 @@ export const checkAndUpdateApp = async () => {
 }
 
 /**
- * 显示进度对话框
- */
-const showProgressDialog = async (message, percent) => {
-  try {
-    // 使用简单的 Alert 作为进度提示
-    // 实际项目中可以使用 Toast 或自定义进度组件
-    if (window.Capacitor) {
-      // 尝试使用 Toast
-      try {
-        const { Toast } = await import('@capacitor/toast')
-        await Toast.show({
-          text: `${message} ${percent > 0 ? percent + '%' : ''}`,
-          duration: 'short'
-        })
-      } catch (e) {
-        console.log('[Update] Toast:', message, percent + '%')
-      }
-    }
-  } catch (e) {
-    console.log('[Update] Progress:', message, percent + '%')
-  }
-}
-
-/**
- * 下载并安装 APK（带进度条）
+ * 下载并安装 APK
  */
 const downloadAndInstallApk = async (version) => {
   const downloadUrl = `${UPDATE_SERVER_URL}/app/pis-latest.apk`
   const fileName = `pis-update-${version}.apk`
   
-  console.log('[Update] 开始下载:', version)
-  console.log('[Update] URL:', downloadUrl)
-  
   try {
-    // 显示开始下载
-    showProgressDialog('开始下载...', 0)
-    
-    // 使用 XMLHttpRequest 下载（带进度）
-    console.log('[Update] 开始下载...')
-    const apkData = await downloadWithProgress(downloadUrl, (percent) => {
-      showProgressDialog('下载中', percent)
+    // 显示下载提示
+    await Dialog.alert({
+      title: '开始下载',
+      message: `新版本 ${version} 下载中，请稍候...`,
+      okButtonTitle: '后台下载'
     })
     
-    console.log('[Update] 下载完成，大小:', apkData.byteLength)
-    showProgressDialog('下载完成', 100)
+    // 使用 XMLHttpRequest 下载
+    const apkData = await downloadFile(downloadUrl)
     
-    // 验证文件大小
+    console.log('[Update] 下载完成，大小:', apkData.byteLength)
+    
     if (apkData.byteLength < 1024 * 1024) {
       throw new Error('文件太小，下载不完整')
     }
     
-    // 显示保存中
-    showProgressDialog('正在保存...', 0)
-    
     // 转换为 base64
-    console.log('[Update] 转换文件格式...')
     const base64Data = arrayBufferToBase64(apkData)
     
     // 保存到 Downloads 目录
@@ -119,62 +83,46 @@ const downloadAndInstallApk = async (version) => {
       data: base64Data
     })
     
-    console.log('[Update] 文件保存成功:', filePath)
-    
     // 获取完整路径
     const uriResult = await Filesystem.getUri({
       path: filePath,
       directory: Directory.ExternalStorage
     })
     
-    console.log('[Update] 文件 URI:', uriResult.uri)
+    console.log('[Update] 文件保存到:', uriResult.uri)
     
-    // 提示安装
+    // 提示用户安装 - 使用浏览器打开（系统会自动处理安装）
     const { value: shouldInstall } = await Dialog.confirm({
       title: '下载完成',
-      message: `新版本 ${version} 已下载完成\n文件大小: ${(apkData.byteLength / 1024 / 1024).toFixed(2)} MB\n\n是否立即安装？`,
+      message: `新版本 ${version} 已下载完成\n\n点击"立即安装"将打开系统安装器`,
       okButtonTitle: '立即安装',
       cancelButtonTitle: '稍后'
     })
     
     if (shouldInstall) {
-      await installApk(uriResult.uri, fileName)
-    } else {
-      await Dialog.alert({
-        title: '已保存',
-        message: `APK 已保存到:\nDownload/${fileName}\n\n您可以稍后从文件管理器安装。`
-      })
+      // 使用 Browser 打开 APK，系统会自动启动安装器
+      const { Browser } = await import('@capacitor/browser')
+      await Browser.open({ url: uriResult.uri })
+      console.log('[Update] 已调用浏览器打开 APK')
     }
     
   } catch (error) {
     console.error('[Update] 失败:', error)
     await Dialog.alert({
       title: '更新失败',
-      message: `${error.message}\n\n请检查网络连接。`
+      message: `${error.message}\n\n请稍后重试或手动下载更新。`
     })
   }
 }
 
 /**
- * 使用 XMLHttpRequest 下载文件（带进度）
+ * 下载文件
  */
-const downloadWithProgress = (url, onProgress) => {
+const downloadFile = (url) => {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
     xhr.open('GET', url, true)
     xhr.responseType = 'arraybuffer'
-    
-    let lastPercent = 0
-    
-    xhr.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percent = Math.round((event.loaded / event.total) * 100)
-        if (percent > lastPercent) {
-          lastPercent = percent
-          onProgress(percent)
-        }
-      }
-    }
     
     xhr.onload = () => {
       if (xhr.status === 200) {
@@ -197,7 +145,7 @@ const downloadWithProgress = (url, onProgress) => {
 const arrayBufferToBase64 = (buffer) => {
   const bytes = new Uint8Array(buffer)
   let binary = ''
-  const chunkSize = 0x8000 // 32KB chunks
+  const chunkSize = 0x8000
   
   for (let i = 0; i < bytes.length; i += chunkSize) {
     const chunk = bytes.subarray(i, i + chunkSize)
@@ -205,53 +153,6 @@ const arrayBufferToBase64 = (buffer) => {
   }
   
   return btoa(binary)
-}
-
-/**
- * 安装 APK（使用自定义原生插件）
- */
-const installApk = async (fileUri, fileName) => {
-  console.log('[Install] 开始安装:', fileUri)
-  
-  try {
-    // 方法1: 使用自定义原生插件（最可靠）
-    try {
-      // 将 file:// URI 转换为实际路径
-      const filePath = fileUri.replace('file://', '')
-      console.log('[Install] 调用原生插件，路径:', filePath)
-      
-      const result = await ApkInstaller.install({ filePath })
-      console.log('[Install] 原生插件调用成功:', result)
-      return
-    } catch (e) {
-      console.log('[Install] 原生插件失败:', e.message)
-    }
-    
-    // 方法2: 使用 Intent URL（备选）
-    try {
-      const intentUrl = `intent://${fileUri.replace('file://', '')}#Intent;action=android.intent.action.VIEW;type=application/vnd.android.package-archive;end`
-      console.log('[Install] 尝试 Intent URL:', intentUrl)
-      window.location.href = intentUrl
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      console.log('[Install] Intent URL 已触发')
-      return
-    } catch (e) {
-      console.log('[Install] Intent URL 失败:', e.message)
-    }
-    
-    // 方法3: 提示用户手动安装
-    await Dialog.alert({
-      title: '请手动安装',
-      message: `APK 已下载到:\n\nDownload/${fileName}\n\n请打开文件管理器，找到该文件后点击安装。\n\n注意：首次安装可能需要允许"安装未知应用"权限。`
-    })
-    
-  } catch (error) {
-    console.error('[Install] 失败:', error)
-    await Dialog.alert({
-      title: '安装失败',
-      message: `无法自动启动安装器。\n\n请手动安装：\nDownload/${fileName}`
-    })
-  }
 }
 
 /**
