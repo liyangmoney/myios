@@ -28,6 +28,12 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true })
 }
 
+// 临时上传目录
+const tempUploadDir = path.join(__dirname, '../../uploads/temp')
+if (!fs.existsSync(tempUploadDir)) {
+  fs.mkdirSync(tempUploadDir, { recursive: true })
+}
+
 // 配置 multer 存储 - 按事件编号创建文件夹
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
