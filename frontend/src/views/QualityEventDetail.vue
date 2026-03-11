@@ -669,6 +669,17 @@
         <el-button type="primary" @click="savePDCA" :loading="saving">保存</el-button>
       </template>
     </el-dialog>
+
+    <!-- 图片预览对话框 -->
+    <el-dialog
+      v-model="previewImageVisible"
+      title="图片预览"
+      width="80%"
+      center
+      destroy-on-close
+    >
+      <img :src="previewImageUrl" style="width: 100%; max-height: 70vh; object-fit: contain;" />
+    </el-dialog>
   </div>
 </template>
 
@@ -747,6 +758,10 @@ const uploadAction = (stage) => {
 const editDialogVisible = ref(false)
 const editType = ref('')
 const editFormRef = ref(null)
+
+// 图片预览
+const previewImageVisible = ref(false)
+const previewImageUrl = ref('')
 const editDialogTitle = computed(() => {
   const titles = {
     PLAN: '编辑 Plan（计划）',
@@ -1578,26 +1593,36 @@ const getFileUrl = (url) => {
   return downloadPath
 }
 
-// 处理文件点击 - 在APP中使用系统浏览器打开
+// 处理文件点击 - 图片/PDF预览，其他下载
 const handleFileClick = async (fileUrl, fileName) => {
   if (!fileUrl) return
   
-  const baseUrl = getFullBaseURL().replace('/api', '')
-  const fullUrl = fileUrl.startsWith('http') ? fileUrl : baseUrl + fileUrl
+  const fullUrl = fileUrl.startsWith('http') ? fileUrl : getFullBaseURL().replace('/api', '') + fileUrl
   
-  // 检查是否在APP环境
-  if (typeof window !== 'undefined' && window.Capacitor) {
-    try {
-      // 使用 Capacitor 的 Browser 插件在系统浏览器中打开
-      const { Browser } = await import('@capacitor/browser')
-      await Browser.open({ url: fullUrl })
-    } catch (error) {
-      console.error('打开文件失败:', error)
-      ElMessage.error('打开文件失败')
-    }
-  } else {
-    // 网页端正常打开
+  // 判断文件类型
+  const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName)
+  const isPDF = /\.pdf$/i.test(fileName)
+  
+  if (isImage) {
+    // 图片预览
+    previewImageUrl.value = fullUrl
+    previewImageVisible.value = true
+  } else if (isPDF) {
+    // PDF在新窗口打开预览
     window.open(fullUrl, '_blank')
+  } else {
+    // 其他文件下载或浏览器打开
+    if (typeof window !== 'undefined' && window.Capacitor) {
+      try {
+        const { Browser } = await import('@capacitor/browser')
+        await Browser.open({ url: fullUrl })
+      } catch (error) {
+        console.error('打开文件失败:', error)
+        ElMessage.error('打开文件失败')
+      }
+    } else {
+      window.open(fullUrl, '_blank')
+    }
   }
 }
 
