@@ -49,6 +49,12 @@
           退出登录
         </el-button>
       </div>
+      
+      <!-- 版本号 -->
+      <div class="version-info">
+        <span class="version-label">版本</span>
+        <span class="version-number">{{ appVersion }}</span>
+      </div>
     </div>
     
     <!-- 修改密码对话框 -->
@@ -147,9 +153,13 @@ import { userApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { UserFilled, Lock, SwitchButton, Setting } from '@element-plus/icons-vue'
 import apiConfig, { clearApiConfig } from '@/api/config'
+import { getCurrentVersion } from '@/utils/appUpdate'
 
 const router = useRouter()
 const userStore = useUserStore()
+
+// 当前版本号
+const appVersion = getCurrentVersion()
 
 // 检测是否在 Capacitor 环境中
 const isCapacitor = ref(false)
@@ -390,5 +400,22 @@ const handleLogout = async () => {
 
 .server-config-simple .el-icon {
   margin-right: 4px;
+}
+
+.version-info {
+  text-align: center;
+  padding: 20px 0;
+  margin-top: 10px;
+  color: #909399;
+  font-size: 12px;
+}
+
+.version-label {
+  margin-right: 5px;
+}
+
+.version-number {
+  font-family: monospace;
+  color: #606266;
 }
 </style>
