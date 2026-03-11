@@ -766,16 +766,18 @@ export const uploadFiles = async (req, res) => {
       // 处理中文文件名
       let originalName = file.originalname
       
-      // 如果是安卓端上传（base64），file.originalname 已经是 UTF-8
-      // 如果是 PC/H5 端上传（multer），file.originalname 可能是 latin1
-      // 检查是否需要转换：如果包含乱码特征，则进行转换
-      if (/[\ufffd\u00c0-\u00df]/.test(originalName) || originalName.includes('Ã')) {
+      // 通过 isBase64 区分来源：
+      // - 安卓端：isBase64=true，直接使用（已是 UTF-8）
+      // - PC/H5 端：isBase64 不存在，需要 latin1 转 utf8
+      if (!req.body.isBase64) {
+        // PC/H5 端需要转换
         try {
           originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
         } catch (e) {
           // 转换失败，保持原样
         }
       }
+      // 安卓端直接使用 file.originalname（已是 UTF-8）
       
       return {
         name: originalName,
