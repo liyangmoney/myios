@@ -84,90 +84,67 @@ const upload = multer({
 })
 
 // 处理原生平台 base64 文件上传中间件
+// 处理原生平台 base64 文件上传中间件
 const handleBase64Upload = async (req, res, next) => {
-  console.log('[handleBase64Upload] 检查请求...')
-  console.log('[handleBase64Upload] req.body:', req.body ? '有 body' : '无 body')
-  console.log('[handleBase64Upload] isBase64:', req.body?.isBase64)
-  
   // 检查是否为 base64 上传（原生平台）
   if (req.body && req.body.isBase64 && req.body.data) {
-    console.log('[handleBase64Upload] 检测到 base64 上传（安卓端）')
+    console.log('[handleBase64Upload] 安卓端 base64 上传')
     try {
       let { filename, type, size, data } = req.body
-      console.log('[handleBase64Upload] 原始文件名:', filename)
       
-      // 处理中文编码：如果前端传输的是 Unicode 转义序列，需要转换
-      // 例如：filename 可能是 "\u4e2d\u6587" 这样的形式
+      // 处理中文编码
       if (typeof filename === 'string' && filename.includes('\\u')) {
-        try {
-          filename = JSON.parse('"' + filename + '"')
-          console.log('[handleBase64Upload] Unicode 解码后:', filename)
-        } catch (e) {
-          console.log('[handleBase64Upload] Unicode 解码失败，保持原样')
-        }
+        try { filename = JSON.parse('"' + filename + '"') } catch (e) {}
       }
-      
-      // 如果还是乱码，尝试从 latin1 解码
       if (/[\ufffd\u00c0-\u00df]/.test(filename) || filename.includes('Ã')) {
-        try {
-          const decoded = Buffer.from(filename, 'latin1').toString('utf8')
-          console.log('[handleBase64Upload] latin1 解码后:', decoded)
-          filename = decoded
-        } catch (e) {
-          console.log('[handleBase64Upload] latin1 解码失败')
-        }
+        try { filename = Buffer.from(filename, 'latin1').toString('utf8') } catch (e) {}
       }
-      
-      console.log('[handleBase64Upload] 最终文件名:', filename, '大小:', size)
       
       // base64 解码
       const buffer = Buffer.from(data, 'base64')
-      console.log('[handleBase64Upload] base64 解码成功，buffer 长度:', buffer.length)
       
-      // 确保临时目录存在
-      if (!fs.existsSync(tempUploadDir)) {
-        fs.mkdirSync(tempUploadDir, { recursive: true })
-        console.log('[handleBase64Upload] 创建临时目录:', tempUploadDir)
+      // 获取事件编号，直接保存到正确的目录（和PC端一致）
+      const eventId = req.params.id
+      const events = await query('SELECT event_no FROM quality_event WHERE id = ?', [eventId])
+      const eventNo = events.length > 0 ? events[0].event_no : 'unknown'
+      
+      // 创建事件目录（如果不存在）
+      const eventDir = path.join(uploadDir, eventNo)
+      if (!fs.existsSync(eventDir)) {
+        fs.mkdirSync(eventDir, { recursive: true })
       }
       
-      // 生成临时文件名
+      // 生成文件名（和PC端multer一致）
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-      
-      // 安卓端：使用处理后的文件名
       const originalName = filename || 'upload'
       const safeName = originalName.replace(/[^\w\u4e00-\u9fa5.-]/g, '_')
-      const tempFilename = `${uniqueSuffix}_${safeName}`
-      const tempPath = path.join(tempUploadDir, tempFilename)
+      const finalFilename = `${uniqueSuffix}_${safeName}`
+      const finalPath = path.join(eventDir, finalFilename)
       
-      console.log('[handleBase64Upload] 临时文件路径:', tempPath)
-      
-      // 写入临时文件
-      fs.writeFileSync(tempPath, buffer)
-      console.log('[handleBase64Upload] 文件写入成功')
+      // 直接写入文件（不经过temp目录，和PC端一致）
+      fs.writeFileSync(finalPath, buffer)
+      console.log('[handleBase64Upload] 已保存到:', finalPath)
       
       // 模拟 multer req.files 格式
       req.files = [{
         fieldname: 'files',
-        originalname: originalName,  // 保持原始中文文件名
+        originalname: originalName,
         encoding: '7bit',
         mimetype: type || 'application/octet-stream',
-        destination: tempUploadDir,
-        filename: tempFilename,
-        path: tempPath,
+        destination: eventDir,
+        filename: finalFilename,
+        path: finalPath,
         size: buffer.length
       }]
       
-      console.log('[handleBase64Upload] 设置 req.files 成功，继续下一步')
       return next()
     } catch (error) {
-      console.error('[handleBase64Upload] Base64 文件处理失败:', error)
-      console.error('[handleBase64Upload] 错误堆栈:', error.stack)
+      console.error('[handleBase64Upload] 失败:', error)
       return res.status(400).json({ code: 400, message: '文件处理失败: ' + error.message })
     }
   }
   
-  // 不是 base64 上传（PC/H5 端），继续 multer 处理
-  console.log('[handleBase64Upload] 不是 base64 上传（PC/H5 端），跳过')
+  // 不是 base64 上传，继续 multer 处理
   next()
 }
 
