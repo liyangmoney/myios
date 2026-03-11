@@ -79,13 +79,26 @@ const upload = multer({
 
 // 处理原生平台 base64 文件上传中间件
 const handleBase64Upload = async (req, res, next) => {
+  console.log('[handleBase64Upload] 检查请求...')
+  console.log('[handleBase64Upload] req.body:', req.body ? '有 body' : '无 body')
+  console.log('[handleBase64Upload] isBase64:', req.body?.isBase64)
+  
   // 检查是否为 base64 上传（原生平台）
   if (req.body && req.body.isBase64 && req.body.data) {
+    console.log('[handleBase64Upload] 检测到 base64 上传')
     try {
       const { filename, type, size, data } = req.body
+      console.log('[handleBase64Upload] 文件名:', filename, '大小:', size)
       
       // base64 解码
       const buffer = Buffer.from(data, 'base64')
+      console.log('[handleBase64Upload] base64 解码成功，buffer 长度:', buffer.length)
+      
+      // 确保临时目录存在
+      if (!fs.existsSync(tempUploadDir)) {
+        fs.mkdirSync(tempUploadDir, { recursive: true })
+        console.log('[handleBase64Upload] 创建临时目录:', tempUploadDir)
+      }
       
       // 生成临时文件名
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
@@ -93,8 +106,11 @@ const handleBase64Upload = async (req, res, next) => {
       const tempFilename = `${uniqueSuffix}_${safeName}`
       const tempPath = path.join(tempUploadDir, tempFilename)
       
+      console.log('[handleBase64Upload] 临时文件路径:', tempPath)
+      
       // 写入临时文件
       fs.writeFileSync(tempPath, buffer)
+      console.log('[handleBase64Upload] 文件写入成功')
       
       // 模拟 multer req.files 格式
       req.files = [{
@@ -108,14 +124,17 @@ const handleBase64Upload = async (req, res, next) => {
         size: buffer.length
       }]
       
+      console.log('[handleBase64Upload] 设置 req.files 成功，继续下一步')
       return next()
     } catch (error) {
-      console.error('Base64 文件处理失败:', error)
-      return res.status(400).json({ code: 400, message: '文件处理失败' })
+      console.error('[handleBase64Upload] Base64 文件处理失败:', error)
+      console.error('[handleBase64Upload] 错误堆栈:', error.stack)
+      return res.status(400).json({ code: 400, message: '文件处理失败: ' + error.message })
     }
   }
   
   // 不是 base64 上传，继续 multer 处理
+  console.log('[handleBase64Upload] 不是 base64 上传，跳过')
   next()
 }
 
