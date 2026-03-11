@@ -46,10 +46,20 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-    // 处理中文文件名 - 直接使用 originalname，不再重复解码
-    // multer 已经从请求中正确解析了 utf8 文件名
     const ext = path.extname(file.originalname)
-    const originalName = file.originalname
+    
+    // 处理中文文件名 - 尝试多种解码方式
+    let originalName = file.originalname
+    
+    // 如果包含乱码特征，尝试从 latin1 解码
+    if (/[\ufffd\u00c0-\u00df]/.test(originalName) || originalName.includes('Ã')) {
+      try {
+        originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
+      } catch (e) {
+        // 解码失败，保持原样
+      }
+    }
+    
     // 存储文件名：时间戳_唯一ID_原始名称.扩展名
     const safeName = originalName.replace(/[^\w\u4e00-\u9fa5.-]/g, '_')
     cb(null, `${uniqueSuffix}_${safeName}`)
