@@ -24,7 +24,7 @@ const getEnvConfig = () => {
   return {}
 }
 
-// 默认配置
+// 默认配置 - 使用相对路径，自动跟随当前域名
 const defaultConfig = {
   baseURL: '/api'
 }

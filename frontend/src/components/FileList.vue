@@ -150,12 +150,10 @@ const previewFile = (file) => {
 
 const downloadFile = (file) => {
   // 使用完整 URL
-  const apiUrl = apiConfig?.baseURL || ''
-  const baseUrl = apiUrl.replace('/api', '')
-  const fullUrl = file.url.startsWith('http') ? file.url : baseUrl + file.url
+  const fullUrl = getFileUrl(file.url)
   
   // 在APP中使用系统浏览器打开
-  if (typeof window !== 'undefined' && window.Capacitor) {
+  if (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.()) {
     import('@capacitor/browser').then(({ Browser }) => {
       Browser.open({ url: fullUrl })
     })
