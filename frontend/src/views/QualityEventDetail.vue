@@ -1741,17 +1741,14 @@ onMounted(() => {
 }
 
 .pdca-content :deep(.el-descriptions__label) {
-  width: 140px;
-  min-width: 140px;
-  max-width: 140px;
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
   white-space: nowrap;
-  font-weight: 500;
 }
 
 .pdca-content :deep(.el-descriptions__content) {
   width: auto;
-  word-break: break-all;
-  line-height: 1.6;
 }
 
 .overdue {
