@@ -1,6 +1,7 @@
 // APP 自动更新服务
 import { Capacitor } from '@capacitor/core'
 import { Dialog } from '@capacitor/dialog'
+import { Toast } from '@capacitor/toast'
 import { Filesystem, Directory } from '@capacitor/filesystem'
 
 // 当前版本号（每次发版时更新）
@@ -56,15 +57,23 @@ const downloadAndInstallApk = async (version) => {
   const fileName = `pis-update-${version}.apk`
   
   try {
-    // 显示下载提示
-    await Dialog.alert({
-      title: '开始下载',
-      message: `新版本 ${version} 下载中，请稍候...`,
-      okButtonTitle: '后台下载'
+    // 使用 Toast 提示开始下载（非阻塞）
+    await Toast.show({
+      text: `新版本 ${version} 开始下载...`,
+      duration: 'long'
     })
     
-    // 使用 XMLHttpRequest 下载
-    const apkData = await downloadFile(downloadUrl)
+    // 使用 XMLHttpRequest 下载（带进度）
+    let lastProgress = 0
+    const apkData = await downloadFileWithProgress(downloadUrl, (percent) => {
+      if (percent - lastProgress >= 20) {
+        lastProgress = percent
+        Toast.show({
+          text: `下载进度: ${percent}%`,
+          duration: 'short'
+        })
+      }
+    })
     
     console.log('[Update] 下载完成，大小:', apkData.byteLength)
     
@@ -91,19 +100,32 @@ const downloadAndInstallApk = async (version) => {
     
     console.log('[Update] 文件保存到:', uriResult.uri)
     
-    // 提示用户安装 - 使用浏览器打开（系统会自动处理安装）
+    // 提示用户安装
     const { value: shouldInstall } = await Dialog.confirm({
       title: '下载完成',
-      message: `新版本 ${version} 已下载完成\n\n点击"立即安装"将打开系统安装器`,
+      message: `新版本 ${version} 已下载完成\n文件大小: ${(apkData.byteLength / 1024 / 1024).toFixed(2)} MB\n\n是否立即安装？\n\n注意：安装完成后请手动重启 APP`,
       okButtonTitle: '立即安装',
       cancelButtonTitle: '稍后'
     })
     
     if (shouldInstall) {
-      // 使用 Browser 打开 APK，系统会自动启动安装器
-      const { Browser } = await import('@capacitor/browser')
-      await Browser.open({ url: uriResult.uri })
-      console.log('[Update] 已调用浏览器打开 APK')
+      // 使用 FileOpener 打开 APK（如果可用）
+      try {
+        const { FileOpener } = await import('@capacitor-community/file-opener')
+        const cleanPath = uriResult.uri.replace('file://', '')
+        await FileOpener.open({
+          filePath: cleanPath,
+          mimeType: 'application/vnd.android.package-archive'
+        })
+        console.log('[Update] FileOpener 调用成功')
+      } catch (e) {
+        // FileOpener 失败，提示用户手动安装
+        console.log('[Update] FileOpener 失败:', e.message)
+        await Dialog.alert({
+          title: '请手动安装',
+          message: `APK 已保存到:\nDownload/${fileName}\n\n请打开文件管理器，找到该文件后点击安装。\n\n注意：首次安装可能需要允许"安装未知应用"权限。`
+        })
+      }
     }
     
   } catch (error) {
@@ -116,13 +138,25 @@ const downloadAndInstallApk = async (version) => {
 }
 
 /**
- * 下载文件
+ * 下载文件（带进度）
  */
-const downloadFile = (url) => {
+const downloadFileWithProgress = (url, onProgress) => {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
     xhr.open('GET', url, true)
     xhr.responseType = 'arraybuffer'
+    
+    let lastPercent = 0
+    
+    xhr.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100)
+        if (percent > lastPercent) {
+          lastPercent = percent
+          onProgress(percent)
+        }
+      }
+    }
     
     xhr.onload = () => {
       if (xhr.status === 200) {
