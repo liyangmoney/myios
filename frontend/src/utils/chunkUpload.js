@@ -120,36 +120,42 @@ const unifiedUpload = async (url, file, onProgress) => {
       })
       console.log('[unifiedUpload] Request body size:', body.length)
       
-      console.log('[unifiedUpload] Sending fetch request...')
+      console.log('[unifiedUpload] Sending request with progress...')
       
-      let response
-      try {
-        response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: body
-        })
-      } catch (fetchError) {
-        console.error('[unifiedUpload] Fetch error details:')
-        console.error('  - Type:', fetchError?.name)
-        console.error('  - Message:', fetchError?.message)
-        console.error('  - Stack:', fetchError?.stack)
-        console.error('  - Full error:', JSON.stringify(fetchError, Object.getOwnPropertyNames(fetchError)))
-        throw new Error(`Network error: ${fetchError?.message || 'Failed to connect to server'}`)
-      }
+      // 使用 XMLHttpRequest 以支持上传进度
+      const result = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        
+        // 上传进度监听
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable && onProgress) {
+            const percent = Math.round((event.loaded / event.total) * 100)
+            console.log(`[Upload] Progress: ${percent}%`)
+            onProgress(percent)
+          }
+        }
+        
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              resolve(JSON.parse(xhr.responseText))
+            } catch (e) {
+              reject(new Error('Invalid response'))
+            }
+          } else {
+            reject(new Error(`Upload failed: ${xhr.status}`))
+          }
+        }
+        
+        xhr.onerror = () => reject(new Error('Network error'))
+        xhr.ontimeout = () => reject(new Error('Request timeout'))
+        
+        xhr.open('POST', url, true)
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+        xhr.setRequestHeader('Content-Type', 'application/json')
+        xhr.send(body)
+      })
       
-      console.log('[unifiedUpload] Response status:', response.status)
-      
-      if (!response.ok) {
-        const text = await response.text()
-        console.error('[unifiedUpload] Response error:', text)
-        throw new Error(`Upload failed: ${response.status} - ${text}`)
-      }
-      
-      const result = await response.json()
       console.log('[unifiedUpload] Success:', result)
       return result
     } catch (error) {
