@@ -50,6 +50,14 @@
         </el-button>
       </div>
       
+      <!-- 调试日志按钮（仅安卓端） -->
+      <div v-if="isCapacitor" class="debug-section">
+        <el-button type="warning" size="large" class="action-btn" plain @click="toggleDebugLog">
+          <el-icon><View /></el-icon>
+          {{ debugLogVisible ? '隐藏调试日志' : '显示调试日志' }}
+        </el-button>
+      </div>
+      
       <!-- 版本号 -->
       <div class="version-info">
         <span class="version-label">版本</span>
@@ -151,7 +159,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { userApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { UserFilled, Lock, SwitchButton, Setting } from '@element-plus/icons-vue'
+import { UserFilled, Lock, SwitchButton, Setting, View } from '@element-plus/icons-vue'
 import apiConfig, { clearApiConfig } from '@/api/config'
 import { getCurrentVersion } from '@/utils/appUpdate'
 
@@ -161,9 +169,20 @@ const userStore = useUserStore()
 // 当前版本号
 const appVersion = getCurrentVersion()
 
+// 调试日志显示状态
+const debugLogVisible = ref(false)
+
 // 检测是否在 Capacitor 环境中
 const isCapacitor = ref(false)
 const currentServer = ref(apiConfig.baseURL)
+
+// 切换调试日志显示/隐藏
+const toggleDebugLog = () => {
+  debugLogVisible.value = !debugLogVisible.value
+  if (typeof window !== 'undefined' && window.toggleScreenLogger) {
+    window.toggleScreenLogger()
+  }
+}
 
 // 加载用户信息
 onMounted(() => {
@@ -390,6 +409,10 @@ const handleLogout = async () => {
 
 .action-btn .el-icon {
   margin-right: 8px;
+}
+
+.debug-section {
+  margin-top: 15px;
 }
 
 .server-config-simple {

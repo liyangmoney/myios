@@ -14,18 +14,19 @@
       </div>
     </div>
   </div>
-  <div v-else class="logger-toggle" @click="visible = true">
-    <el-icon><View /></el-icon>
-  </div>
 </template>
 
 <script setup>
 import { ref, nextTick } from 'vue'
-import { View } from '@element-plus/icons-vue'
 
 const visible = ref(false)
 const logs = ref([])
 const logContent = ref(null)
+
+// 切换显示/隐藏
+const toggle = () => {
+  visible.value = !visible.value
+}
 
 // 添加日志
 const addLog = (message, type = 'info') => {
@@ -78,6 +79,7 @@ const clearLogs = () => {
 
 // 暴露给全局使用
 window.screenLog = addLog
+window.toggleScreenLogger = toggle
 
 // 捕获 console 输出
 const originalLog = console.log
@@ -161,27 +163,5 @@ console.warn = (...args) => {
 
 .log-item.warn .log-message {
   color: #ffd93d;
-}
-
-.logger-toggle {
-  position: fixed;
-  right: 20px;
-  bottom: 100px;
-  width: 50px;
-  height: 50px;
-  background: rgba(102, 126, 234, 0.9);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 24px;
-  z-index: 9998;
-  cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-}
-
-.logger-toggle:active {
-  transform: scale(0.95);
 }
 </style>
