@@ -2039,9 +2039,9 @@ onMounted(() => {
   }
 
   .pdca-content :deep(.el-descriptions__label) {
-    width: 140px !important;
-    min-width: 140px !important;
-    max-width: 140px !important;
+    width: 100px !important;
+    min-width: 100px !important;
+    max-width: 100px !important;
     font-size: 12px;
     padding: 10px 8px !important;
   }
