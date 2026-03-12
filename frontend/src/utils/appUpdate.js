@@ -70,10 +70,18 @@ const downloadAndInstallApk = async (version) => {
       const milestone = Math.floor(percent / 10) * 10
       if (milestone > lastProgress) {
         lastProgress = milestone
-        console.log(`[Update] 下载进度: ${percent}%`)
+        const msg = `下载进度: ${percent}%`
+        console.log(`[Update] ${msg}`)
+        
+        // 同时显示到 screenLog
+        if (typeof window !== 'undefined' && window.screenLog) {
+          window.screenLog(msg)
+        }
+        
+        // 使用长时长 Toast
         Toast.show({
-          text: `下载进度: ${percent}%`,
-          duration: 'short'
+          text: msg,
+          duration: 'long'
         })
       }
     })
