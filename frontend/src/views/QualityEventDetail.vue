@@ -513,7 +513,7 @@
     </el-card>
 
     <!-- PDCA 编辑对话框 -->
-    <el-dialog v-model="editDialogVisible" :title="editDialogTitle" width="600px">
+    <el-dialog v-model="editDialogVisible" :title="editDialogTitle" width="600px" :close-on-click-modal="false">
       <el-form ref="editFormRef" :model="editForm" :rules="editFormRules" label-position="top">
         <template v-if="editType === 'PLAN'">
           <el-form-item label="根本原因" prop="rootCause">
