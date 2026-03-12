@@ -64,10 +64,13 @@ const downloadAndInstallApk = async (version) => {
     })
     
     // 使用 XMLHttpRequest 下载（带进度）
-    let lastProgress = 0
+    let lastProgress = -1
     const apkData = await downloadFileWithProgress(downloadUrl, (percent) => {
-      if (percent - lastProgress >= 20) {
-        lastProgress = percent
+      // 每 10% 显示一次，确保 0% 和 100% 都显示
+      const milestone = Math.floor(percent / 10) * 10
+      if (milestone > lastProgress) {
+        lastProgress = milestone
+        console.log(`[Update] 下载进度: ${percent}%`)
         Toast.show({
           text: `下载进度: ${percent}%`,
           duration: 'short'
