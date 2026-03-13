@@ -221,6 +221,12 @@ const deleteFile = async (index) => {
   localFiles.value.splice(index, 1)
   // 通知父组件更新
   emit('update:files', [...localFiles.value])
+  
+  // 清空 el-upload 的内部文件列表，重置 limit 计数
+  if (uploadRef.value) {
+    uploadRef.value.clearFiles()
+  }
+  
   ElMessage.success('文件已删除')
 }
 
