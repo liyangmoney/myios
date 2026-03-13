@@ -147,10 +147,6 @@
             </el-tag>
           </div>
         </div>
-        <div class="mobile-info-item">
-          <span class="mobile-info-label">问题描述</span>
-          <span class="mobile-info-value">{{ event.description || '暂无描述' }}</span>
-        </div>
       </div>
 
       <div class="description-section">

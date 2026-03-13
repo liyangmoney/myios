@@ -32,7 +32,7 @@
       :headers="uploadHeaders"
       name="files"
       :multiple="true"
-      :limit="5"
+      :limit="5 - localFiles.length"
       :show-file-list="false"
       accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4"
       :before-upload="beforeUpload"
