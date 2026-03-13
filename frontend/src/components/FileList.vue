@@ -39,11 +39,12 @@
       :on-success="handleUploadSuccess"
       :on-error="handleUploadError"
       :on-progress="handleUploadProgress"
+      :on-exceed="handleExceed"
     >
       <el-button type="primary" :icon="Upload" :loading="uploading">上传文件</el-button>
       <template #tip>
         <div class="upload-tip">
-          支持图片、PDF、Word、Excel、MP4，单个文件不超过500MB
+          支持图片、PDF、Word、Excel、MP4，单个文件不超过500MB，最多5个文件
         </div>
       </template>
     </el-upload>
@@ -342,6 +343,16 @@ const handleUploadSuccess = (response, file) => {
 
 const handleUploadError = (error) => {
   // 已经在 customUpload 中处理
+}
+
+// 超过文件数量限制
+const handleExceed = () => {
+  const remaining = 5 - localFiles.value.length
+  if (remaining <= 0) {
+    ElMessage.warning('已达到最大文件数量限制（5个），请先删除部分文件后再上传')
+  } else {
+    ElMessage.warning(`最多还能上传 ${remaining} 个文件`)
+  }
 }
 </script>
 
