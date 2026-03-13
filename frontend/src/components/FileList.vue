@@ -32,7 +32,7 @@
       :headers="uploadHeaders"
       name="files"
       :multiple="true"
-      :limit="5 - localFiles.length"
+      :limit="5"
       :show-file-list="false"
       accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4"
       :before-upload="beforeUpload"
@@ -299,6 +299,12 @@ window.addEventListener('unhandledrejection', (e) => {
 const beforeUpload = async (file) => {
   console.log('准备上传文件:', file.name, '类型:', file.type, '大小:', (file.size / 1024 / 1024).toFixed(2) + 'MB')
   
+  // 检查文件数量限制
+  if (localFiles.value.length >= 5) {
+    ElMessage.warning('已达到最大文件数量限制（5个），请先删除部分文件后再上传')
+    return false
+  }
+  
   // 检查文件大小（原生平台限制200MB，浏览器限制500MB）
   const isNative = typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.()
   const maxSize = isNative ? 200 : 500 // MB
@@ -347,12 +353,7 @@ const handleUploadError = (error) => {
 
 // 超过文件数量限制
 const handleExceed = () => {
-  const remaining = 5 - localFiles.value.length
-  if (remaining <= 0) {
-    ElMessage.warning('已达到最大文件数量限制（5个），请先删除部分文件后再上传')
-  } else {
-    ElMessage.warning(`最多还能上传 ${remaining} 个文件`)
-  }
+  ElMessage.warning('已达到最大文件数量限制（5个），请先删除部分文件后再上传')
 }
 </script>
 
