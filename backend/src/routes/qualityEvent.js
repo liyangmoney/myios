@@ -189,6 +189,31 @@ const handleMulterError = (err, req, res, next) => {
 
 router.post('/:id/upload', handleBase64Upload, upload.array('files', 5), handleMulterError, uploadFiles)
 
+// 删除临时文件
+router.delete('/temp/file/:filename', authMiddleware, async (req, res) => {
+  try {
+    const { filename } = req.params
+    const filePath = path.join(uploadDir, 'temp', filename)
+    
+    // 安全检查：确保文件路径在 temp 目录内
+    const resolvedPath = path.resolve(filePath)
+    const resolvedTempDir = path.resolve(path.join(uploadDir, 'temp'))
+    if (!resolvedPath.startsWith(resolvedTempDir)) {
+      return res.status(400).json({ code: 400, message: '非法文件路径' })
+    }
+    
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath)
+      res.json({ code: 200, message: '文件删除成功' })
+    } else {
+      res.json({ code: 200, message: '文件不存在或已删除' })
+    }
+  } catch (error) {
+    console.error('删除临时文件失败:', error)
+    res.status(500).json({ code: 500, message: '删除失败：' + error.message })
+  }
+})
+
 // 管理员接口：手动触发超期30天事件检查
 router.post('/admin/check-overdue-30days', async (req, res) => {
   try {

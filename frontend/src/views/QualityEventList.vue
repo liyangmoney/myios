@@ -514,9 +514,9 @@
             :http-request="(options) => handleDescFileUpload(options)"
             :multiple="true"
             :auto-upload="true"
+            :show-file-list="false"
             accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4"
             :on-success="(res, file) => handleDescFileSuccess(res, file)"
-            :on-remove="(file) => handleDescFileRemove(file)"
           >
             <el-button type="info" :icon="Paperclip">添加附件</el-button>
             <template #tip>
@@ -527,7 +527,7 @@
           <div v-if="formData.descriptionFiles.length > 0" class="uploaded-files">
             <div v-for="(file, idx) in formData.descriptionFiles" :key="idx" class="uploaded-file-item">
               <el-icon><Document /></el-icon>
-              <span class="file-name">{{ file.name }}</span>
+              <span class="file-name" @click="previewFile(file)" style="cursor: pointer; color: #409EFF;">{{ file.name }}</span>
               <el-button link type="danger" size="small" @click="removeDescFile(idx)">删除</el-button>
             </div>
           </div>
@@ -1030,8 +1030,34 @@ const handleDescFileRemove = (file) => {
   }
 }
 
-const removeDescFile = (idx) => {
+const removeDescFile = async (idx) => {
+  const file = formData.descriptionFiles[idx]
+  if (file && file.url && file.url.includes('/temp/')) {
+    // 删除 temp 文件夹中的文件
+    try {
+      const filename = file.url.split('/').pop()
+      await request.delete(`/quality-events/temp/file/${filename}`)
+    } catch (error) {
+      console.error('删除临时文件失败:', error)
+    }
+  }
   formData.descriptionFiles.splice(idx, 1)
+}
+
+// 预览文件
+const previewFile = (file) => {
+  if (file.url) {
+    // 如果是图片，直接预览
+    if (file.type?.startsWith('image/')) {
+      window.open(file.url, '_blank')
+    } else {
+      // 其他文件下载
+      const link = document.createElement('a')
+      link.href = file.url
+      link.download = file.name
+      link.click()
+    }
+  }
 }
 
 onMounted(() => {
