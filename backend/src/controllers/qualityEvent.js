@@ -1165,47 +1165,6 @@ export const checkOverdueEvents = async () => {
     console.error('检查过期提醒失败:', error)
   }
 }
-      
-      // 检查是否已经发送过提醒（每月只发一次）
-      const lastReminder = event.last_reminder_at ? new Date(event.last_reminder_at) : null
-      const now = new Date()
-      const shouldSend = !lastReminder || (now - lastReminder) >= (30 * 24 * 60 * 60 * 1000)
-      
-      if (!shouldSend) {
-        console.log(`事件 ${event.event_no} 本月已发送过提醒，跳过`)
-        continue
-      }
-      
-      // 获取通知人列表
-      let notifyUserIds = []
-      if (event.notify_users) {
-        try {
-          notifyUserIds = JSON.parse(event.notify_users)
-        } catch {}
-      }
-      
-      if (notifyUserIds.length === 0) {
-        console.log(`事件 ${event.event_no} 没有设置通知人，跳过`)
-        continue
-      }
-      
-      // 发送超期提醒邮件
-      await sendOverdue30DaysEmail(event, notifyUserIds, daysOverdue)
-      
-      // 更新最后提醒时间
-      await query(
-        'UPDATE quality_event SET last_reminder_at = NOW() WHERE id = ?',
-        [event.id]
-      )
-      
-      console.log(`已发送超期30天提醒: ${event.event_no}, 超期: ${daysOverdue}天`)
-    }
-    
-    console.log('超期30天事件检查完成')
-  } catch (error) {
-    console.error('检查超期30天事件失败:', error)
-  }
-}
 
 // 发送超期30天提醒邮件
 const sendOverdue30DaysEmail = async (event, notifyUserIds, daysOverdue) => {
