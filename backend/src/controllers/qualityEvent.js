@@ -334,10 +334,17 @@ export const createQualityEvent = async (req, res) => {
     const {
       title,
       description,
-      eventType,
+      productStage,
+      productType,
+      projectNo,
+      customer,
+      keywords,
+      problemType,
       severity,
-      responsibleId,
-      department,
+      relatedParts,
+      discoveryForm,
+      responsibleIds,
+      supervisorId,
       dueDate,
       notifyUsers
     } = req.body
@@ -346,7 +353,7 @@ export const createQualityEvent = async (req, res) => {
       return res.status(400).json({ code: 400, message: '标题和描述不能为空' })
     }
     
-    if (!responsibleId) {
+    if (!responsibleIds || responsibleIds.length === 0) {
       return res.status(400).json({ code: 400, message: '责任人不能为空' })
     }
     
@@ -358,8 +365,9 @@ export const createQualityEvent = async (req, res) => {
     const reporterId = req.userId
     const reporterName = req.userName
     
-    // 获取责任人姓名
+    // 获取责任人姓名列表
     let responsibleName = null
+    const responsibleId = Array.isArray(responsibleIds) ? responsibleIds[0] : responsibleIds
     if (responsibleId) {
       const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [responsibleId])
       if (users.length > 0) {
@@ -367,15 +375,31 @@ export const createQualityEvent = async (req, res) => {
       }
     }
     
+    // 获取监督人姓名
+    let supervisorName = null
+    if (supervisorId) {
+      const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [supervisorId])
+      if (users.length > 0) {
+        supervisorName = users[0].user_name
+      }
+    }
+    
     const result = await query(`
       INSERT INTO quality_event 
-      (event_no, title, description, event_type, severity, reporter_id, reporter_name,
-       responsible_id, responsible_name, current_handler_id, current_handler_name, department, due_date, notify_users, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'NEW')
+      (event_no, title, description, 
+       product_stage, product_type, project_no, customer, keywords, problem_type,
+       severity, related_parts, discovery_form,
+       reporter_id, reporter_name,
+       responsible_ids, responsible_name, supervisor_id, supervisor_name,
+       current_handler_id, current_handler_name, due_date, notify_users, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'NEW')
     `, [
-      eventNo, title, description, eventType, severity,
-      reporterId, reporterName, responsibleId, responsibleName, responsibleId, responsibleName,
-      department, dueDate, JSON.stringify(notifyUsers || [])
+      eventNo, title, description,
+      productStage, productType, projectNo, customer, keywords, problemType,
+      severity, relatedParts, discoveryForm,
+      reporterId, reporterName,
+      JSON.stringify(responsibleIds || []), responsibleName, supervisorId, supervisorName,
+      responsibleId, responsibleName, dueDate, JSON.stringify(notifyUsers || [])
     ])
     
     const eventId = result.insertId
