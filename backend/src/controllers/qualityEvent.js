@@ -299,6 +299,19 @@ export const getQualityEventDetail = async (req, res) => {
     
     const event = events[0]
     
+    // 处理当前处理人名称（可能是JSON数组，用于D阶段的多责任人）
+    if (event.current_handler_name) {
+      try {
+        // 尝试解析为JSON数组
+        const parsed = JSON.parse(event.current_handler_name)
+        if (Array.isArray(parsed)) {
+          event.current_handler_name = parsed.join(', ')
+        }
+      } catch {
+        // 不是JSON，保持原样（单个处理人的情况）
+      }
+    }
+    
     // 解析责任人IDs并查询姓名
     let responsibleIds = []
     if (event.responsible_ids) {
