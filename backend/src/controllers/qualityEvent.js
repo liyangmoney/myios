@@ -280,8 +280,7 @@ export const getQualityEventDetail = async (req, res) => {
              v.user_name as verified_by_name,
              c.user_name as closed_by_name,
              pf.user_name as plan_filled_by_name,
-             df.user_name as do_filled_by_name,
-             ch.user_name as current_handler_name
+             df.user_name as do_filled_by_name
       FROM quality_event e
       LEFT JOIN sys_user r ON e.reporter_id = r.id
       LEFT JOIN sys_user u ON e.responsible_id = u.id
@@ -289,7 +288,6 @@ export const getQualityEventDetail = async (req, res) => {
       LEFT JOIN sys_user c ON e.closed_by = c.id
       LEFT JOIN sys_user pf ON e.plan_filled_by = pf.id
       LEFT JOIN sys_user df ON e.do_filled_by = df.id
-      LEFT JOIN sys_user ch ON e.current_handler_id = ch.id
       WHERE e.id = ? AND e.deleted_at IS NULL
     `, [id])
     
@@ -748,6 +746,17 @@ export const updateQualityEvent = async (req, res) => {
       try {
         responsibleIds = JSON.parse(event.responsible_ids)
       } catch {}
+    }
+    
+    // 查询责任人姓名
+    let responsibleNames = []
+    if (responsibleIds.length > 0) {
+      const placeholders = responsibleIds.map(() => '?').join(',')
+      const users = await query(
+        `SELECT user_name FROM sys_user WHERE id IN (${placeholders})`,
+        responsibleIds
+      )
+      responsibleNames = users.map(u => u.user_name)
     }
     
     // 解析通知人列表
