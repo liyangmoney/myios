@@ -139,7 +139,7 @@
         
         <el-table-column prop="title" label="标题" min-width="150" show-overflow-tooltip />
         
-        <el-table-column prop="severity" label="严重程度" width="220">
+        <el-table-column prop="severity" label="严重程度" width="300">
           <template #default="{ row }">
             <div v-if="parseMultiSelect(row.severity).length > 0">
               <el-tag 
