@@ -829,7 +829,7 @@
       class="change-event-dialog"
       @close="handleChangeDialogClose"
     >
-      <el-form ref="changeFormRef" :model="changeForm" :rules="changeFormRules" label-width="140px">
+      <el-form ref="changeFormRef" :model="changeForm" :rules="changeFormRules" label-width="170px">
         <el-form-item label="事件标题" prop="title">
           <el-input v-model="changeForm.title" placeholder="请输入事件标题" />
         </el-form-item>
