@@ -128,6 +128,7 @@ export const qualityEventApi = {
   addComment: (id, data) => post(`/quality-events/${id}/comments`, data),
   getStatistics: () => get('/quality-events/statistics'),
   uploadFiles: (id, formData) => post(`/quality-events/${id}/upload`, formData, { 'Content-Type': 'multipart/form-data' }),
+  deleteTempFile: (filename) => del(`/quality-events/temp/file/${filename}`),
   // 分片上传相关
   initChunkUpload: (data) => post('/upload/init', data),
   uploadChunk: (formData) => post('/upload/chunk', formData, { 'Content-Type': 'multipart/form-data' }),

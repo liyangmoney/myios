@@ -551,6 +551,17 @@
         <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 图片预览对话框 -->
+    <el-dialog
+      v-model="previewImageVisible"
+      title="图片预览"
+      width="80%"
+      center
+      destroy-on-close
+    >
+      <img :src="previewImageUrl" style="width: 100%; max-height: 70vh; object-fit: contain;" />
+    </el-dialog>
   </div>
 </template>
 
@@ -628,6 +639,10 @@ const formData = reactive({
   descriptionFiles: [],    // 问题描述附件
   notifyUsers: []
 })
+
+// 图片预览
+const previewImageVisible = ref(false)
+const previewImageUrl = ref('')
 
 const formRules = {
   title: [
@@ -1043,7 +1058,7 @@ const removeDescFile = async (idx) => {
     // 删除 temp 文件夹中的文件
     try {
       const filename = file.url.split('/').pop()
-      await request.delete(`/quality-events/temp/file/${filename}`)
+      await qualityEventApi.deleteTempFile(filename)
     } catch (error) {
       console.error('删除临时文件失败:', error)
     }
@@ -1053,17 +1068,18 @@ const removeDescFile = async (idx) => {
 
 // 预览文件
 const previewFile = (file) => {
-  if (file.url) {
-    // 如果是图片，直接预览
-    if (file.type?.startsWith('image/')) {
-      window.open(file.url, '_blank')
-    } else {
-      // 其他文件下载
-      const link = document.createElement('a')
-      link.href = file.url
-      link.download = file.name
-      link.click()
-    }
+  if (!file.url) return
+  
+  // 判断文件类型
+  const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name)
+  
+  if (isImage) {
+    // 图片预览 - 使用对话框
+    previewImageUrl.value = file.url
+    previewImageVisible.value = true
+  } else {
+    // 其他文件下载或打开
+    window.open(file.url, '_blank')
   }
 }
 
