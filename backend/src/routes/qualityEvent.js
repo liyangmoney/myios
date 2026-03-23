@@ -41,12 +41,20 @@ const storage = multer.diskStorage({
       // 从 URL 参数获取事件ID
       const eventId = req.params.id
       
-      // 查询事件编号
-      const events = await query('SELECT event_no FROM quality_event WHERE id = ?', [eventId])
-      const eventNo = events.length > 0 ? events[0].event_no : 'unknown'
+      let eventDir
       
-      // 创建事件编号对应的文件夹
-      const eventDir = path.join(uploadDir, eventNo)
+      // 如果是临时上传（创建事件前），使用 temp 文件夹
+      if (eventId === 'temp') {
+        eventDir = path.join(uploadDir, 'temp')
+      } else {
+        // 查询事件编号
+        const events = await query('SELECT event_no FROM quality_event WHERE id = ?', [eventId])
+        const eventNo = events.length > 0 ? events[0].event_no : 'unknown'
+        
+        // 创建事件编号对应的文件夹
+        eventDir = path.join(uploadDir, eventNo)
+      }
+      
       if (!fs.existsSync(eventDir)) {
         fs.mkdirSync(eventDir, { recursive: true })
       }
@@ -103,13 +111,21 @@ const handleBase64Upload = async (req, res, next) => {
       // base64 解码
       const buffer = Buffer.from(data, 'base64')
       
-      // 获取事件编号，直接保存到正确的目录（和PC端一致）
+      // 获取事件编号
       const eventId = req.params.id
-      const events = await query('SELECT event_no FROM quality_event WHERE id = ?', [eventId])
-      const eventNo = events.length > 0 ? events[0].event_no : 'unknown'
+      
+      let eventDir
+      if (eventId === 'temp') {
+        // 临时上传，使用 temp 文件夹
+        eventDir = path.join(uploadDir, 'temp')
+      } else {
+        // 查询事件编号
+        const events = await query('SELECT event_no FROM quality_event WHERE id = ?', [eventId])
+        const eventNo = events.length > 0 ? events[0].event_no : 'unknown'
+        eventDir = path.join(uploadDir, eventNo)
+      }
       
       // 创建事件目录（如果不存在）
-      const eventDir = path.join(uploadDir, eventNo)
       if (!fs.existsSync(eventDir)) {
         fs.mkdirSync(eventDir, { recursive: true })
       }

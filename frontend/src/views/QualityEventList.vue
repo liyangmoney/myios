@@ -993,7 +993,7 @@ const handleDescFileUpload = async (options) => {
     // 使用 smartUpload 统一处理（支持分片和原生平台）
     const result = await smartUpload(
       file,
-      null, // 新建事件还没有ID
+      'temp', // 使用 temp 作为临时ID，文件会保存到 temp 文件夹
       'temp', // 临时事件编号
       'description',
       (percent) => {

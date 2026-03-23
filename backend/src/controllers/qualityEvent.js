@@ -438,6 +438,55 @@ export const createQualityEvent = async (req, res) => {
     
     const eventId = result.insertId
     
+    // 如果有临时文件，移动到正式文件夹
+    if (descriptionFiles && descriptionFiles.length > 0) {
+      const tempDir = path.join(uploadDir, 'temp')
+      const eventDir = path.join(uploadDir, eventNo)
+      
+      // 创建正式文件夹
+      if (!fs.existsSync(eventDir)) {
+        fs.mkdirSync(eventDir, { recursive: true })
+      }
+      
+      const movedFiles = []
+      for (const file of descriptionFiles) {
+        if (file.url && file.url.includes('/temp/')) {
+          // 从URL中提取临时文件路径
+          const tempFileName = file.url.split('/').pop()
+          const tempFilePath = path.join(tempDir, tempFileName)
+          
+          if (fs.existsSync(tempFilePath)) {
+            // 生成新文件名
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+            const safeName = file.name.replace(/[^\w\u4e00-\u9fa5.-]/g, '_')
+            const newFileName = `${uniqueSuffix}_${safeName}`
+            const newFilePath = path.join(eventDir, newFileName)
+            
+            // 移动文件
+            fs.renameSync(tempFilePath, newFilePath)
+            
+            // 更新文件URL
+            movedFiles.push({
+              ...file,
+              url: `/uploads/quality-events/${eventNo}/${newFileName}`
+            })
+          } else {
+            // 文件不存在，保留原URL
+            movedFiles.push(file)
+          }
+        } else {
+          // 不是临时文件，保留原样
+          movedFiles.push(file)
+        }
+      }
+      
+      // 更新数据库中的文件路径
+      await query(
+        'UPDATE quality_event SET description_files = ? WHERE id = ?',
+        [JSON.stringify(movedFiles), eventId]
+      )
+    }
+    
     // 获取完整事件信息用于通知
     const event = {
       id: eventId,
