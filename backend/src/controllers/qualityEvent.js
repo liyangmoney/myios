@@ -440,12 +440,14 @@ export const createQualityEvent = async (req, res) => {
       parsedResponsibleIds = responsibleIds.map(id => typeof id === 'string' ? parseInt(id) : id).filter(id => !isNaN(id))
     }
     
+    // 查询所有责任人姓名
+    let responsibleNamesList = []
     if (parsedResponsibleIds.length > 0) {
-      responsibleId = parsedResponsibleIds[0] // 取第一个作为当前处理人
-      const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [responsibleId])
-      if (users.length > 0) {
-        responsibleName = users[0].user_name
-      }
+      responsibleId = parsedResponsibleIds[0] // 取第一个作为主责任人（兼容旧字段）
+      const placeholders = parsedResponsibleIds.map(() => '?').join(',')
+      const users = await query(`SELECT user_name FROM sys_user WHERE id IN (${placeholders})`, parsedResponsibleIds)
+      responsibleNamesList = users.map(u => u.user_name)
+      responsibleName = responsibleNamesList.join(', ') // 所有责任人姓名，用逗号分隔
     }
     
     // 获取监督人姓名
