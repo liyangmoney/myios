@@ -878,13 +878,6 @@
             </el-form-item>
           </el-col>
         </el-row>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="关键字" prop="keywords">
-              <el-input v-model="changeForm.keywords" placeholder="请输入关键字（选填）" />
-            </el-form-item>
-          </el-col>
-        </el-row>
 
         <el-form-item label="故障严重程度" prop="severity">
           <el-select v-model="changeForm.severity" multiple placeholder="请选择（可多选）" style="width: 100%">
