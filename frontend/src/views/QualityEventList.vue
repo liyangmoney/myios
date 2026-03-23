@@ -286,10 +286,11 @@
     </div>
 
     <!-- 新建/编辑事件对话框 -->
-    <el-dialog 
-      v-model="dialogVisible" 
-      :title="isEdit ? '编辑质量事件' : '新建质量事件'" 
+    <el-dialog
+      v-model="dialogVisible"
+      :title="isEdit ? '编辑质量事件' : '新建质量事件'"
       :width="isMobile ? '90%' : '900px'"
+      top="5vh"
       :close-on-click-modal="false"
       class="quality-event-dialog"
     >
@@ -1314,6 +1315,8 @@ onMounted(() => {
 
 /* 对话框样式 */
 .quality-event-dialog :deep(.el-dialog__body) {
+  max-height: 75vh;
+  overflow-y: auto;
   padding: 20px 30px 10px;
 }
 
