@@ -1087,12 +1087,32 @@ const removeDescFile = async (idx) => {
   formData.descriptionFiles.splice(idx, 1)
 }
 
+// 获取完整文件URL（与QualityEventDetail.vue一致）
+const getFileUrl = (url) => {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  
+  // 提取路径部分，使用下载接口
+  // URL格式: /uploads/quality-events/temp/filename.ext 或 /uploads/quality-events/QE-xxx/filename.ext
+  const parts = url.split('/')
+  const eventNo = parts[parts.length - 2] // 倒数第二是事件编号或temp
+  const filename = parts[parts.length - 1] // 最后是文件名
+  const downloadPath = `/api/download?filename=${encodeURIComponent(`${eventNo}/${filename}`)}`
+  
+  // 原生平台需要使用完整URL
+  if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform()) {
+    return `http://myjghy.myds.me:9090${downloadPath}`
+  }
+  
+  return downloadPath
+}
+
 // 预览文件
 const previewFile = (file) => {
   if (!file.url) return
   
-  // 构建完整 URL
-  const fullUrl = file.url.startsWith('http') ? file.url : getFullBaseURL().replace('/api', '') + file.url
+  // 使用getFileUrl获取完整URL
+  const fullUrl = getFileUrl(file.url)
   
   // 判断文件类型
   const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name)
