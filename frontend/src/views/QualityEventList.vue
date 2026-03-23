@@ -75,22 +75,7 @@
             <el-option label="已关闭" value="CLOSED" />
           </el-select>
         </el-form-item>
-        <el-form-item label="严重程度">
-          <el-select v-model="searchForm.severity" placeholder="全部" clearable style="width: 120px">
-            <el-option label="轻微" value="轻微">
-              <el-tag type="info" size="small">轻微</el-tag>
-            </el-option>
-            <el-option label="一般" value="一般">
-              <el-tag type="warning" size="small">一般</el-tag>
-            </el-option>
-            <el-option label="严重" value="严重">
-              <el-tag type="danger" size="small">严重</el-tag>
-            </el-option>
-            <el-option label="致命" value="致命">
-              <el-tag type="danger" size="small" effect="dark">致命</el-tag>
-            </el-option>
-          </el-select>
-        </el-form-item>
+
         <el-form-item label="我的事件">
           <el-checkbox v-model="searchForm.myEvents">仅显示我创建/负责的</el-checkbox>
         </el-form-item>
@@ -154,9 +139,21 @@
         
         <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
         
-        <el-table-column prop="severity" label="严重程度" width="100">
+        <el-table-column prop="severity" label="严重程度" width="180">
           <template #default="{ row }">
-            <el-tag :type="getSeverityType(row.severity)" size="small">{{ row.severity }}</el-tag>
+            <div v-if="parseMultiSelect(row.severity).length > 0">
+              <el-tag 
+                v-for="(sev, idx) in parseMultiSelect(row.severity)" 
+                :key="idx" 
+                :type="getSeverityType(sev)" 
+                size="small"
+                class="mr-2"
+                style="margin-bottom: 4px;"
+              >
+                {{ sev }}
+              </el-tag>
+            </div>
+            <span v-else class="text-gray">-</span>
           </template>
         </el-table-column>
         
@@ -951,6 +948,22 @@ const getStatusType = (status) => {
     REJECTED: 'info'
   }
   return types[status] || ''
+}
+
+// 解析多选字段（逗号分隔字符串或数组）
+const parseMultiSelect = (value) => {
+  if (!value) return []
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string') {
+    // 尝试解析JSON数组
+    try {
+      const parsed = JSON.parse(value)
+      if (Array.isArray(parsed)) return parsed
+    } catch {}
+    // 逗号分隔
+    return value.split(',').map(v => v.trim()).filter(v => v)
+  }
+  return []
 }
 
 // 判断是否逾期
