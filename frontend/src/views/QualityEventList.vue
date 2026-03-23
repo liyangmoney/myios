@@ -1008,14 +1008,19 @@ const handleDescFileUpload = async (options) => {
 }
 
 const handleDescFileSuccess = (response, file) => {
-  if (response.code === 200 && response.data && response.data.length > 0) {
-    formData.descriptionFiles.push({
-      name: file.name,
-      url: response.data[0].url,
-      type: file.raw?.type || '',
-      size: file.size
-    })
-    descUploadRef.value?.clearFiles()
+  console.log('文件上传成功:', response, file)
+  if (response.code === 200 && response.data) {
+    const files = Array.isArray(response.data) ? response.data : [response.data]
+    if (files.length > 0) {
+      formData.descriptionFiles.push({
+        name: file.name,
+        url: files[0].url || files[0],
+        type: file.raw?.type || '',
+        size: file.size
+      })
+      // 不清空el-upload的文件列表，让用户能看到上传状态
+      // descUploadRef.value?.clearFiles()
+    }
   }
 }
 
