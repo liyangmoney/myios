@@ -462,6 +462,9 @@ export const createQualityEvent = async (req, res) => {
       }
     }
     
+    // 调试日志
+    console.log(`[DEBUG] 创建事件: reporterId=${reporterId}, reporterName=${reporterName}, current_handler_id=${reporterId}, current_handler_name=${reporterName}`)
+    
     const result = await query(`
       INSERT INTO quality_event 
       (event_no, title, description, 
