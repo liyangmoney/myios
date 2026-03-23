@@ -109,18 +109,6 @@
               </el-tag>
             </div>
           </el-descriptions-item>
-            <div class="due-date-display">
-              <span :class="getDueDateClass(event.due_date, event.status)" class="due-date-text">
-                {{ formatDueDate(event.due_date) }}
-              </span>
-              <el-tag v-if="event.due_date && event.status !== 'CLOSED'"
-                      :type="getDueDateTagType(event.due_date)"
-                      size="small"
-                      class="due-date-tag">
-                {{ getDueDateText(event.due_date) }}
-              </el-tag>
-            </div>
-          </el-descriptions-item>
           <el-descriptions-item label="创建时间">
             {{ formatDateTime(event.created_at) }}
           </el-descriptions-item>
