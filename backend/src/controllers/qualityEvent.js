@@ -274,6 +274,29 @@ export const getQualityEventDetail = async (req, res) => {
     
     const event = events[0]
     
+    // 解析责任人IDs并查询姓名
+    let responsibleIds = []
+    if (event.responsible_ids) {
+      try {
+        responsibleIds = JSON.parse(event.responsible_ids)
+      } catch {
+        responsibleIds = []
+      }
+    }
+    
+    // 查询所有责任人姓名
+    let responsibleNames = []
+    if (responsibleIds.length > 0) {
+      const placeholders = responsibleIds.map(() => '?').join(',')
+      const users = await query(
+        `SELECT id, user_name FROM sys_user WHERE id IN (${placeholders})`,
+        responsibleIds
+      )
+      responsibleNames = users.map(u => u.user_name)
+      event.responsible_ids_list = users  // 返回完整的责任人信息
+    }
+    event.responsible_name = responsibleNames.join(', ')  // 用逗号连接所有姓名
+    
     // 解析通知人列表
     let notifyUserIds = []
     if (event.notify_users) {

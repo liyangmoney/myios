@@ -2086,7 +2086,7 @@ const parseResponsibleNames = (ids, namesStr) => {
   const idsArr = parseJsonArray(ids)
   if (idsArr.length === 0) return []
   
-  // 如果 namesStr 是逗号分隔的字符串
+  // 如果 namesStr 是逗号分隔的字符串（后端已处理好）
   if (namesStr && typeof namesStr === 'string') {
     return namesStr.split(',').map(n => n.trim()).filter(n => n)
   }
