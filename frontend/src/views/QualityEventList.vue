@@ -513,7 +513,6 @@
             ref="descUploadRef"
             :http-request="(options) => handleDescFileUpload(options)"
             :multiple="true"
-            :limit="5"
             :auto-upload="true"
             accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4"
             :on-success="(res, file) => handleDescFileSuccess(res, file)"
@@ -521,7 +520,7 @@
           >
             <el-button type="info" :icon="Paperclip">添加附件</el-button>
             <template #tip>
-              <div class="el-upload__tip">支持图片、文档、视频等格式，最多5个文件</div>
+              <div class="el-upload__tip">支持图片、文档、视频等格式</div>
             </template>
           </el-upload>
           <!-- 已上传附件列表 -->
