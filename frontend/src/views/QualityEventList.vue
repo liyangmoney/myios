@@ -573,10 +573,31 @@ import { qualityEventApi, userApi } from '@/api'
 import { useUserStore } from '@/store/user'
 import { Paperclip, Document } from '@element-plus/icons-vue'
 import { smartUpload } from '@/utils/chunkUpload'
+import apiConfig from '@/api/config'
 
 const router = useRouter()
 const userStore = useUserStore()
 const currentUserId = computed(() => userStore.userInfo?.id)
+
+// 默认服务器地址（用于原生平台）
+const DEFAULT_SERVER_URL = 'http://myjghy.myds.me:9090'
+
+// 获取完整的 API 基础 URL
+const getFullBaseURL = () => {
+  const baseURL = apiConfig.baseURL
+  if (baseURL.startsWith('http')) {
+    return baseURL
+  }
+  // 原生平台必须使用完整服务器地址
+  if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform()) {
+    return `${DEFAULT_SERVER_URL}${baseURL}`
+  }
+  // 浏览器环境
+  if (baseURL.startsWith('/')) {
+    return `${window.location.origin}${baseURL}`
+  }
+  return baseURL
+}
 
 // 移动端检测
 const isMobile = ref(false)
@@ -1070,16 +1091,19 @@ const removeDescFile = async (idx) => {
 const previewFile = (file) => {
   if (!file.url) return
   
+  // 构建完整 URL
+  const fullUrl = file.url.startsWith('http') ? file.url : getFullBaseURL().replace('/api', '') + file.url
+  
   // 判断文件类型
   const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name)
   
   if (isImage) {
     // 图片预览 - 使用对话框
-    previewImageUrl.value = file.url
+    previewImageUrl.value = fullUrl
     previewImageVisible.value = true
   } else {
     // 其他文件下载或打开
-    window.open(file.url, '_blank')
+    window.open(fullUrl, '_blank')
   }
 }
 
