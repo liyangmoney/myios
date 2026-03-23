@@ -824,7 +824,9 @@
       v-model="changeDialogVisible"
       title="创建变更事件"
       width="700px"
+      top="5vh"
       :close-on-click-modal="false"
+      class="change-event-dialog"
       @close="handleChangeDialogClose"
     >
       <el-form ref="changeFormRef" :model="changeForm" :rules="changeFormRules" label-width="140px">
@@ -2571,5 +2573,20 @@ onMounted(() => {
   .comment-actions > .el-button {
     width: 100%;
   }
+}
+
+/* 变更事件对话框样式 */
+.change-event-dialog :deep(.el-dialog__body) {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 20px 30px;
+}
+
+.change-event-dialog :deep(.el-form-item) {
+  margin-bottom: 16px;
+}
+
+.change-event-dialog :deep(.el-form-item__label) {
+  line-height: 32px;
 }
 </style>
