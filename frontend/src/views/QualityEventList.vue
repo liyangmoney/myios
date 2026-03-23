@@ -509,6 +509,32 @@
           />
         </el-form-item>
         
+        <el-form-item label="问题描述附件">
+          <el-upload
+            ref="descUploadRef"
+            :http-request="(options) => handleDescFileUpload(options)"
+            :multiple="true"
+            :limit="5"
+            :auto-upload="true"
+            accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4"
+            :on-success="(res, file) => handleDescFileSuccess(res, file)"
+            :on-remove="(file) => handleDescFileRemove(file)"
+          >
+            <el-button type="info" :icon="Paperclip">添加附件</el-button>
+            <template #tip>
+              <div class="el-upload__tip">支持图片、文档、视频等格式，最多5个文件</div>
+            </template>
+          </el-upload>
+          <!-- 已上传附件列表 -->
+          <div v-if="formData.descriptionFiles.length > 0" class="uploaded-files">
+            <div v-for="(file, idx) in formData.descriptionFiles" :key="idx" class="uploaded-file-item">
+              <el-icon><Document /></el-icon>
+              <span class="file-name">{{ file.name }}</span>
+              <el-button link type="danger" size="small" @click="removeDescFile(idx)">删除</el-button>
+            </div>
+          </div>
+        </el-form-item>
+        
         <el-form-item label="通知人">
           <el-select-v2
             v-model="formData.notifyUsers"
@@ -536,6 +562,8 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { qualityEventApi, userApi } from '@/api'
 import { useUserStore } from '@/store/user'
+import { Paperclip, Document } from '@element-plus/icons-vue'
+import { smartUpload } from '@/utils/chunkUpload'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -599,6 +627,7 @@ const formData = reactive({
   supervisorId: null,      // 监督/确认人
   dueDate: '',
   description: '',
+  descriptionFiles: [],    // 问题描述附件
   notifyUsers: []
 })
 
@@ -801,6 +830,7 @@ const showCreateDialog = () => {
   formData.supervisorId = null
   formData.dueDate = ''
   formData.description = ''
+  formData.descriptionFiles = []
   formData.notifyUsers = []
   dialogVisible.value = true
 }
@@ -829,6 +859,7 @@ const handleSubmit = async () => {
       supervisorId: formData.supervisorId,
       dueDate: formData.dueDate,
       description: formData.description,
+      descriptionFiles: formData.descriptionFiles,
       notifyUsers: formData.notifyUsers
     }
     
@@ -936,6 +967,52 @@ const formatDateTime = (date) => {
   const hour = String(d.getHours()).padStart(2, '0')
   const minute = String(d.getMinutes()).padStart(2, '0')
   return `${year}/${month}/${day} ${hour}:${minute}`
+}
+
+// 问题描述附件上传
+const descUploadRef = ref(null)
+
+const handleDescFileUpload = async (options) => {
+  const { file, onProgress, onSuccess, onError } = options
+  try {
+    // 使用 smartUpload 统一处理（支持分片和原生平台）
+    const result = await smartUpload(
+      file,
+      null, // 新建事件还没有ID
+      'temp', // 临时事件编号
+      'description',
+      (percent) => {
+        onProgress({ percent })
+      }
+    )
+    onSuccess({ code: 200, data: result })
+  } catch (error) {
+    console.error('上传失败:', error)
+    onError(error)
+  }
+}
+
+const handleDescFileSuccess = (response, file) => {
+  if (response.code === 200 && response.data && response.data.length > 0) {
+    formData.descriptionFiles.push({
+      name: file.name,
+      url: response.data[0].url,
+      type: file.raw?.type || '',
+      size: file.size
+    })
+    descUploadRef.value?.clearFiles()
+  }
+}
+
+const handleDescFileRemove = (file) => {
+  const index = formData.descriptionFiles.findIndex(f => f.name === file.name)
+  if (index > -1) {
+    formData.descriptionFiles.splice(index, 1)
+  }
+}
+
+const removeDescFile = (idx) => {
+  formData.descriptionFiles.splice(idx, 1)
 }
 
 onMounted(() => {

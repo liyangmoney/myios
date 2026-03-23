@@ -346,7 +346,11 @@ export const createQualityEvent = async (req, res) => {
       responsibleIds,
       supervisorId,
       dueDate,
-      notifyUsers
+      notifyUsers,
+      descriptionFiles,
+      isChanged,
+      changeSourceId,
+      changeSourceNo
     } = req.body
     
     if (!title || !description) {
@@ -391,15 +395,17 @@ export const createQualityEvent = async (req, res) => {
        severity, related_parts, discovery_form,
        reporter_id, reporter_name,
        responsible_ids, responsible_name, supervisor_id, supervisor_name,
-       current_handler_id, current_handler_name, due_date, notify_users, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'NEW')
+       current_handler_id, current_handler_name, due_date, notify_users, status,
+       description_files, is_changed, change_source_id, change_source_no)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'NEW', ?, ?, ?, ?)
     `, [
       eventNo, title, description,
       productStage, productType, projectNo, customer, keywords, problemType,
       severity, relatedParts, discoveryForm,
       reporterId, reporterName,
       JSON.stringify(responsibleIds || []), responsibleName, supervisorId, supervisorName,
-      responsibleId, responsibleName, dueDate, JSON.stringify(notifyUsers || [])
+      responsibleId, responsibleName, dueDate, JSON.stringify(notifyUsers || []),
+      JSON.stringify(descriptionFiles || []), isChanged || 0, changeSourceId || null, changeSourceNo || null
     ])
     
     const eventId = result.insertId
@@ -554,6 +560,10 @@ export const updateQualityEvent = async (req, res) => {
     if (updateData.actFiles !== undefined) {
       fields.push('act_files = ?')
       values.push(JSON.stringify(updateData.actFiles))
+    }
+    if (updateData.causeType !== undefined) {
+      fields.push('cause_type = ?')
+      values.push(JSON.stringify(updateData.causeType))
     }
     if (updateData.status !== undefined) {
       fields.push('status = ?')

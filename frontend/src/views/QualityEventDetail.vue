@@ -267,6 +267,16 @@
       <div class="description-section">
         <h4>问题描述</h4>
         <p>{{ event.description || '暂无描述' }}</p>
+        <div v-if="parseFiles(event.description_files).length > 0" class="description-files">
+          <h5>附件</h5>
+          <FileList
+            :files="parseFiles(event.description_files)"
+            :event-id="event.id"
+            :event-no="event.event_no"
+            stage="description"
+            :can-upload="false"
+          />
+        </div>
       </div>
     </el-card>
 
@@ -312,6 +322,15 @@
                 stage="plan"
                 :can-upload="false"
               />
+            </el-descriptions-item>
+            <el-descriptions-item label="变更">
+              <el-checkbox 
+                v-model="isChangeChecked" 
+                :disabled="!canEditPlan"
+                @change="handleChangeCheck"
+              >
+                此事件需要变更
+              </el-checkbox>
             </el-descriptions-item>
           </el-descriptions>
         </div>
@@ -416,6 +435,14 @@
 
         <div class="pdca-content">
           <el-descriptions :column="1" border>
+            <el-descriptions-item label="原因类型">
+              <div v-if="parseJsonArray(event.cause_type).length > 0">
+                <el-tag v-for="(type, idx) in parseJsonArray(event.cause_type)" :key="idx" size="small" class="mr-2" type="warning">
+                  {{ type }}
+                </el-tag>
+              </div>
+              <span v-else class="text-gray">待填写</span>
+            </el-descriptions-item>
             <el-descriptions-item label="标准化措施">
               {{ event.standardization || '待填写' }}
             </el-descriptions-item>
@@ -791,6 +818,192 @@
     >
       <img :src="previewImageUrl" style="width: 100%; max-height: 70vh; object-fit: contain;" />
     </el-dialog>
+
+    <!-- 变更事件对话框 -->
+    <el-dialog
+      v-model="changeDialogVisible"
+      title="创建变更事件"
+      width="700px"
+      :close-on-click-modal="false"
+      @close="handleChangeDialogClose"
+    >
+      <el-form ref="changeFormRef" :model="changeForm" :rules="changeFormRules" label-width="140px">
+        <el-form-item label="事件标题" prop="title">
+          <el-input v-model="changeForm.title" placeholder="请输入事件标题" />
+        </el-form-item>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="产品阶段" prop="productStage">
+              <el-select v-model="changeForm.productStage" placeholder="请选择" style="width: 100%">
+                <el-option label="设计阶段" value="设计阶段" />
+                <el-option label="研发制造阶段" value="研发制造阶段" />
+                <el-option label="生产阶段" value="生产阶段" />
+                <el-option label="试用阶段" value="试用阶段" />
+                <el-option label="交付后正式使用阶段" value="交付后正式使用阶段" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="产品类型" prop="productType">
+              <el-select v-model="changeForm.productType" placeholder="请选择" style="width: 100%">
+                <el-option label="地铁机器人" value="地铁机器人" />
+                <el-option label="国铁巡检仪" value="国铁巡检仪" />
+                <el-option label="国铁功能模块-扣件" value="国铁功能模块-扣件" />
+                <el-option label="国铁功能模块-位移" value="国铁功能模块-位移" />
+                <el-option label="国铁功能模块-廓形" value="国铁功能模块-廓形" />
+                <el-option label="车载系统" value="车载系统" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="项目号/生产任务单号" prop="projectNo">
+              <el-input v-model="changeForm.projectNo" placeholder="请输入" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="用户" prop="customer">
+              <el-input v-model="changeForm.customer" placeholder="请输入用户" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="问题类型" prop="problemType">
+              <el-select v-model="changeForm.problemType" placeholder="请选择" style="width: 100%">
+                <el-option label="软件算法" value="软件算法" />
+                <el-option label="嵌入式硬件" value="嵌入式硬件" />
+                <el-option label="机械电器" value="机械电器" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="关键字" prop="keywords">
+              <el-input v-model="changeForm.keywords" placeholder="请输入关键字（选填）" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-form-item label="故障严重程度" prop="severity">
+          <el-select v-model="changeForm.severity" multiple placeholder="请选择（可多选）" style="width: 100%">
+            <el-option label="a.无法行车" value="a.无法行车" />
+            <el-option label="b.可行车但有安全隐患" value="b.可行车但有安全隐患" />
+            <el-option label="c.无法采集图像" value="c.无法采集图像" />
+            <el-option label="d.图像质量不佳" value="d.图像质量不佳" />
+            <el-option label="e.引起设备部件故障或不合格但不影响采集效果" value="e.引起设备部件故障或不合格但不影响采集效果" />
+            <el-option label="f.影响设备整体寿命" value="f.影响设备整体寿命" />
+            <el-option label="g.影响用户感受" value="g.影响用户感受" />
+            <el-option label="h.影响生产效率" value="h.影响生产效率" />
+            <el-option label="i.优化" value="i.优化" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="涉及相关部件" prop="relatedParts">
+          <el-select v-model="changeForm.relatedParts" multiple placeholder="请选择（可多选）" style="width: 100%">
+            <el-option label="触摸屏" value="触摸屏" />
+            <el-option label="串口屏" value="串口屏" />
+            <el-option label="工控机" value="工控机" />
+            <el-option label="TIVR采集器" value="TIVR采集器" />
+            <el-option label="控制器/分频器" value="控制器/分频器" />
+            <el-option label="电机" value="电机" />
+            <el-option label="电池" value="电池" />
+            <el-option label="线束" value="线束" />
+            <el-option label="相机" value="相机" />
+            <el-option label="镜头" value="镜头" />
+            <el-option label="激光器" value="激光器" />
+            <el-option label="光源" value="光源" />
+            <el-option label="车轮" value="车轮" />
+            <el-option label="车轴" value="车轴" />
+            <el-option label="车架" value="车架" />
+            <el-option label="航插及线束" value="航插及线束" />
+            <el-option label="工作站" value="工作站" />
+            <el-option label="采集软件" value="采集软件" />
+            <el-option label="分析软件" value="分析软件" />
+            <el-option label="工装" value="工装" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="问题发现/提出形式" prop="discoveryForm">
+          <el-select v-model="changeForm.discoveryForm" multiple placeholder="请选择（可多选）" style="width: 100%">
+            <el-option label="质量小组会" value="质量小组会" />
+            <el-option label="DFMEA分析" value="DFMEA分析" />
+            <el-option label="主动检查发现" value="主动检查发现" />
+            <el-option label="用户提出" value="用户提出" />
+            <el-option label="售后检查" value="售后检查" />
+            <el-option label="月保养" value="月保养" />
+            <el-option label="使用中暴露" value="使用中暴露" />
+          </el-select>
+        </el-form-item>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="责任人" prop="responsibleIds">
+              <el-select-v2
+                v-model="changeForm.responsibleIds"
+                :options="userOptions"
+                placeholder="请选择责任人（可多选）"
+                style="width: 100%"
+                multiple
+                clearable
+                filterable
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="监督/确认人" prop="supervisorId">
+              <el-select-v2
+                v-model="changeForm.supervisorId"
+                :options="userOptions"
+                placeholder="请选择监督/确认人"
+                style="width: 100%"
+                clearable
+                filterable
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-form-item label="截止日期" prop="dueDate">
+          <el-date-picker
+            v-model="changeForm.dueDate"
+            type="date"
+            placeholder="选择日期"
+            style="width: 100%"
+            value-format="YYYY-MM-DD"
+          />
+        </el-form-item>
+
+        <el-form-item label="问题描述" prop="description">
+          <el-input
+            v-model="changeForm.description"
+            type="textarea"
+            :rows="4"
+            placeholder="请详细描述问题情况..."
+          />
+        </el-form-item>
+
+        <el-form-item label="通知人">
+          <el-select-v2
+            v-model="changeForm.notifyUsers"
+            :options="userOptions"
+            placeholder="选择通知人（可多选）"
+            style="width: 100%"
+            multiple
+            clearable
+            filterable
+          />
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="handleChangeCancel">取消</el-button>
+        <el-button type="primary" @click="submitChangeEvent" :loading="submittingChange">确认创建</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -814,6 +1027,28 @@ const comments = ref([])
 const logs = ref([])
 const newComment = ref('')
 const userOptions = ref([])
+
+// 变更相关
+const isChangeChecked = ref(false)
+const changeDialogVisible = ref(false)
+const changeForm = ref({
+  title: '',
+  productStage: '',
+  productType: '',
+  projectNo: '',
+  customer: '',
+  keywords: '',
+  problemType: '',
+  severity: [],
+  relatedParts: [],
+  discoveryForm: [],
+  responsibleIds: [],
+  supervisorId: null,
+  dueDate: '',
+  description: '',
+  notifyUsers: []
+})
+const submittingChange = ref(false)
 
 // 评论附件存储
 const uploadedCommentFiles = ref([])
@@ -906,6 +1141,117 @@ const editForm = ref({
 })
 
 const saving = ref(false)
+
+// 变更表单验证规则
+const changeFormRules = {
+  title: [{ required: true, message: '请输入事件标题', trigger: 'blur' }],
+  productStage: [{ required: true, message: '请选择产品阶段', trigger: 'change' }],
+  productType: [{ required: true, message: '请选择产品类型', trigger: 'change' }],
+  projectNo: [{ required: true, message: '请输入项目号/生产任务单号', trigger: 'blur' }],
+  customer: [{ required: true, message: '请输入用户', trigger: 'blur' }],
+  problemType: [{ required: true, message: '请选择问题类型', trigger: 'change' }],
+  severity: [{ required: true, message: '请选择故障严重程度', trigger: 'change' }],
+  relatedParts: [{ required: true, message: '请选择涉及相关部件', trigger: 'change' }],
+  discoveryForm: [{ required: true, message: '请选择问题发现形式', trigger: 'change' }],
+  responsibleIds: [{ required: true, message: '请选择责任人', trigger: 'change' }],
+  supervisorId: [{ required: true, message: '请选择监督/确认人', trigger: 'change' }],
+  dueDate: [{ required: true, message: '请选择截止日期', trigger: 'change' }],
+  description: [{ required: true, message: '请输入问题描述', trigger: 'blur' }]
+}
+
+// 变更表单ref
+const changeFormRef = ref(null)
+
+// 处理变更勾选
+const handleChangeCheck = (val) => {
+  if (val) {
+    // 勾选时打开弹窗并预填充数据
+    openChangeDialog()
+  }
+}
+
+// 打开变更弹窗并预填充当前事件数据
+const openChangeDialog = () => {
+  if (!event.value) return
+  
+  changeForm.value = {
+    title: event.value.title || '',
+    productStage: event.value.product_stage || '',
+    productType: event.value.product_type || '',
+    projectNo: event.value.project_no || '',
+    customer: event.value.customer || '',
+    keywords: event.value.keywords || '',
+    problemType: event.value.problem_type || '',
+    severity: parseMultiSelect(event.value.severity),
+    relatedParts: parseJsonArray(event.value.related_parts),
+    discoveryForm: parseJsonArray(event.value.discovery_form),
+    responsibleIds: parseJsonArray(event.value.responsible_ids),
+    supervisorId: event.value.supervisor_id || null,
+    dueDate: event.value.due_date || '',
+    description: `此事件由${event.value.event_no}事件变更而来\n\n${event.value.description || ''}`,
+    notifyUsers: event.value.notify_users || []
+  }
+  
+  changeDialogVisible.value = true
+}
+
+// 处理变更弹窗关闭
+const handleChangeDialogClose = () => {
+  // 如果取消或关闭弹窗，取消勾选状态
+  isChangeChecked.value = false
+  changeDialogVisible.value = false
+}
+
+// 处理变更取消
+const handleChangeCancel = () => {
+  isChangeChecked.value = false
+  changeDialogVisible.value = false
+}
+
+// 提交变更事件
+const submitChangeEvent = async () => {
+  const valid = await changeFormRef.value?.validate().catch(() => false)
+  if (!valid) return
+
+  submittingChange.value = true
+  try {
+    const data = {
+      title: changeForm.value.title,
+      productStage: changeForm.value.productStage,
+      productType: changeForm.value.productType,
+      projectNo: changeForm.value.projectNo,
+      customer: changeForm.value.customer,
+      keywords: changeForm.value.keywords,
+      problemType: changeForm.value.problemType,
+      severity: Array.isArray(changeForm.value.severity) ? changeForm.value.severity.join(',') : changeForm.value.severity,
+      relatedParts: changeForm.value.relatedParts.join(','),
+      discoveryForm: changeForm.value.discoveryForm.join(','),
+      responsibleIds: changeForm.value.responsibleIds.join(','),
+      supervisorId: changeForm.value.supervisorId,
+      dueDate: changeForm.value.dueDate,
+      description: changeForm.value.description,
+      notifyUsers: changeForm.value.notifyUsers,
+      // 变更相关字段
+      isChanged: 1,
+      changeSourceId: event.value.id,
+      changeSourceNo: event.value.event_no
+    }
+    
+    const res = await qualityEventApi.create(data)
+    if (res.code === 200) {
+      ElMessage.success('变更事件创建成功')
+      changeDialogVisible.value = false
+      isChangeChecked.value = false
+      // 可选：跳转到新创建的事件详情页
+      // router.push(`/quality-events/${res.data.id}`)
+    }
+  } catch (error) {
+    console.error('创建变更事件失败:', error)
+    ElMessage.error(error.response?.data?.message || '创建变更事件失败')
+  } finally {
+    submittingChange.value = false
+  }
+}
 
 // 权限判断
 // 只有当前处理人可以编辑和填写
