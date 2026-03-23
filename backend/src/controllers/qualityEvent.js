@@ -774,10 +774,14 @@ export const updateQualityEvent = async (req, res) => {
       
       // P -> D: 通知所有责任人，当前处理人设为所有责任人（用JSON数组存储）
       if (newStatus === 'DO' && (oldStatus === 'NEW' || oldStatus === 'PLAN')) {
+        console.log(`P->D转换: 事件ID=${id}, responsibleIds=${JSON.stringify(responsibleIds)}, responsibleNames=${JSON.stringify(responsibleNames)}`)
         // 更新当前处理人为所有责任人（存储为JSON数组）
         if (responsibleIds.length > 0) {
-          await query('UPDATE quality_event SET current_handler_id = NULL, current_handler_name = ? WHERE id = ?', 
+          const result = await query('UPDATE quality_event SET current_handler_id = NULL, current_handler_name = ? WHERE id = ?', 
             [JSON.stringify(responsibleNames), id])
+          console.log(`P->D转换: 更新结果=${JSON.stringify(result)}`)
+        } else {
+          console.log(`P->D转换: responsibleIds为空，不更新current_handler_name`)
         }
         await sendNotificationEmail(event, responsibleIds, '质量事件进入D阶段，需要您处理')
       }
