@@ -750,11 +750,12 @@ export const updateQualityEvent = async (req, res) => {
       const oldStatus = oldEvent.status
       const newStatus = updateData.status
       
-      // P -> D: 通知所有责任人，当前处理人设为所有责任人
+      // P -> D: 通知所有责任人，当前处理人设为所有责任人（用JSON数组存储）
       if (newStatus === 'DO' && (oldStatus === 'NEW' || oldStatus === 'PLAN')) {
-        // 更新当前处理人为所有责任人
+        // 更新当前处理人为所有责任人（存储为JSON数组）
         if (responsibleIds.length > 0) {
-          await query('UPDATE quality_event SET current_handler_id = NULL, current_handler_name = NULL WHERE id = ?', [id])
+          await query('UPDATE quality_event SET current_handler_id = NULL, current_handler_name = ? WHERE id = ?', 
+            [JSON.stringify(responsibleNames), id])
         }
         await sendNotificationEmail(event, responsibleIds, '质量事件进入D阶段，需要您处理')
       }
@@ -776,8 +777,12 @@ export const updateQualityEvent = async (req, res) => {
         }
       }
       
-      // C -> D (不通过): 通知所有责任人
+      // C -> D (不通过): 通知所有责任人，当前处理人恢复为所有责任人
       else if (newStatus === 'DO' && oldStatus === 'CHECK') {
+        if (responsibleIds.length > 0) {
+          await query('UPDATE quality_event SET current_handler_id = NULL, current_handler_name = ? WHERE id = ?', 
+            [JSON.stringify(responsibleNames), id])
+        }
         await sendNotificationEmail(event, responsibleIds, '质量事件验证不通过，返回D阶段，需要您重新处理')
       }
       
@@ -1168,10 +1173,10 @@ export const checkOverdueEvents = async () => {
       // 计算是否应该发送提醒（每隔一天）
       const lastOverdueReminder = event.last_overdue_reminder_at ? new Date(event.last_overdue_reminder_at) : null
       const now = new Date()
-      const shouldSend = !lastOverdueReminder || (now - lastOverdueReminder) >= (2 * 24 * 60 * 60 * 1000)
-      
+      const shouldSend = !lastOverdueReminder || (now - lastOverdueReminder) >= (1 * 24 * 60 * 60 * 1000)
+
       if (!shouldSend) {
-        console.log(`事件 ${event.event_no} 距离上次过期提醒不足2天，跳过`)
+        console.log(`事件 ${event.event_no} 距离上次过期提醒不足1天，跳过`)
         continue
       }
       

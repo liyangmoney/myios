@@ -661,17 +661,7 @@
               @update:files="(files) => planFiles = files"
             />
           </el-form-item>
-
-          <el-form-item label="指派下一步" prop="nextHandlerId">
-            <el-select-v2
-              v-model="editForm.nextHandlerId"
-              :options="userOptions"
-              placeholder="选择下一步处理人"
-              style="width: 100%"
-              clearable
-              filterable
-            />
-          </el-form-item>
+          <!-- P阶段不提供指派下一步 -->
         </template>
 
         <template v-if="editType === 'DO'">
@@ -736,17 +726,7 @@
               <el-radio :label="false">不通过，需要重新处理</el-radio>
             </el-radio-group>
           </el-form-item>
-
-          <el-form-item label="指派下一步" prop="nextHandlerId">
-            <el-select-v2
-              v-model="editForm.nextHandlerId"
-              :options="userOptions"
-              placeholder="选择下一步处理人"
-              style="width: 100%"
-              clearable
-              filterable
-            />
-          </el-form-item>
+          <!-- C阶段不提供指派下一步 -->
         </template>
 
         <template v-if="editType === 'ACT'">
