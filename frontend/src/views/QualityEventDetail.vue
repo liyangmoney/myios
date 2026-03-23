@@ -96,29 +96,19 @@
             </el-tag>
             <span v-else class="text-gray">未分配</span>
           </el-descriptions-item>
-          <el-descriptions-item label="下一步" :span="2">
-            <div v-if="event.next_step || event.next_handler_name">
-              <el-tag v-if="event.next_step" size="small" class="mr-2">
-                {{ getStepLabel(event.next_step) }}
-              </el-tag>
-              <span v-if="event.next_handler_name" class="text-primary">
-                待 {{ event.next_handler_name }} 处理
+          <el-descriptions-item label="截止日期" :span="2">
+            <div class="due-date-display">
+              <span :class="getDueDateClass(event.due_date, event.status)" class="due-date-text">
+                {{ formatDueDate(event.due_date) }}
               </span>
-            </div>
-            <span v-else class="text-gray">暂无</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="下一步" :span="2">
-            <div v-if="event.next_step || event.next_handler_name">
-              <el-tag v-if="event.next_step" size="small" class="mr-2">
-                {{ getStepLabel(event.next_step) }}
+              <el-tag v-if="event.due_date && event.status !== 'CLOSED'"
+                      :type="getDueDateTagType(event.due_date)"
+                      size="small"
+                      class="due-date-tag">
+                {{ getDueDateText(event.due_date) }}
               </el-tag>
-              <span v-if="event.next_handler_name" class="text-primary">
-                待 {{ event.next_handler_name }} 处理
-              </span>
             </div>
-            <span v-else class="text-gray">暂无</span>
           </el-descriptions-item>
-          <el-descriptions-item label="截止日期" :span="3">
             <div class="due-date-display">
               <span :class="getDueDateClass(event.due_date, event.status)" class="due-date-text">
                 {{ formatDueDate(event.due_date) }}

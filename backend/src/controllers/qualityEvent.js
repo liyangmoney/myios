@@ -401,9 +401,14 @@ export const createQualityEvent = async (req, res) => {
     `, [
       eventNo, title, description,
       productStage, productType, projectNo, customer, keywords, problemType,
-      severity, relatedParts, discoveryForm,
+      severity, 
+      // 将逗号分隔字符串转为JSON数组
+      relatedParts ? JSON.stringify(relatedParts.split(',').filter(Boolean)) : '[]',
+      discoveryForm ? JSON.stringify(discoveryForm.split(',').filter(Boolean)) : '[]',
       reporterId, reporterName,
-      JSON.stringify(responsibleIds || []), responsibleName, supervisorId, supervisorName,
+      // 责任人可能是逗号分隔字符串或数组
+      typeof responsibleIds === 'string' ? JSON.stringify(responsibleIds.split(',').filter(Boolean)) : JSON.stringify(responsibleIds || []),
+      responsibleName, supervisorId, supervisorName,
       responsibleId, responsibleName, dueDate, JSON.stringify(notifyUsers || []),
       JSON.stringify(descriptionFiles || []), isChanged || 0, changeSourceId || null, changeSourceNo || null
     ])
