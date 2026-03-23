@@ -823,7 +823,7 @@
     <el-dialog
       v-model="changeDialogVisible"
       title="创建变更事件"
-      width="700px"
+      width="850px"
       top="5vh"
       :close-on-click-modal="false"
       class="change-event-dialog"
