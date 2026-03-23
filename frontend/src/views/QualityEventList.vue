@@ -131,15 +131,15 @@
     <!-- 事件列表 - PC端表格 -->
     <el-card class="table-card pc-only">
       <el-table :data="eventList" v-loading="loading" stripe @row-click="handleRowClick">
-        <el-table-column prop="event_no" label="事件编号" width="130">
+        <el-table-column prop="event_no" label="事件编号" width="120">
           <template #default="{ row }">
             <el-link type="primary" @click.stop="viewDetail(row)">{{ row.event_no }}</el-link>
           </template>
         </el-table-column>
         
-        <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="title" label="标题" min-width="150" show-overflow-tooltip />
         
-        <el-table-column prop="severity" label="严重程度" width="180">
+        <el-table-column prop="severity" label="严重程度" width="220">
           <template #default="{ row }">
             <div v-if="parseMultiSelect(row.severity).length > 0">
               <el-tag 
