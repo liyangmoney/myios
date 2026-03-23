@@ -33,26 +33,79 @@
           <el-descriptions-item label="事件标题" :span="3">
             {{ event.title }}
           </el-descriptions-item>
-          <el-descriptions-item label="事件类型">
-            {{ event.event_type }}
+          <el-descriptions-item label="产品阶段">
+            {{ event.product_stage }}
           </el-descriptions-item>
-          <el-descriptions-item label="严重程度">
-            <el-tag :type="getSeverityType(event.severity)">{{ event.severity }}</el-tag>
+          <el-descriptions-item label="产品类型">
+            {{ event.product_type }}
           </el-descriptions-item>
-          <el-descriptions-item label="当前状态">
-            <el-tag :type="getStatusType(event.status)">{{ getStatusLabel(event.status) }}</el-tag>
+          <el-descriptions-item label="项目号/生产任务单号">
+            {{ event.project_no || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="用户">
+            {{ event.customer || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="关键字">
+            {{ event.keywords || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="问题类型">
+            {{ event.problem_type || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="故障严重程度" :span="2">
+            <el-tag v-for="(sev, idx) in parseMultiSelect(event.severity)" :key="idx" :type="getSeverityType(sev)" class="mr-2">
+              {{ sev }}
+            </el-tag>
+            <span v-if="!event.severity" class="text-gray">-</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="涉及相关部件" :span="3">
+            <div v-if="parseJsonArray(event.related_parts).length > 0">
+              <el-tag v-for="(part, idx) in parseJsonArray(event.related_parts)" :key="idx" size="small" class="mr-2" type="info">
+                {{ part }}
+              </el-tag>
+            </div>
+            <span v-else class="text-gray">-</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="问题发现/提出形式" :span="3">
+            <div v-if="parseJsonArray(event.discovery_form).length > 0">
+              <el-tag v-for="(form, idx) in parseJsonArray(event.discovery_form)" :key="idx" size="small" class="mr-2" type="info">
+                {{ form }}
+              </el-tag>
+            </div>
+            <span v-else class="text-gray">-</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="监督/确认人">
+            {{ event.supervisor_name || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="责任人">
+            <div v-if="parseJsonArray(event.responsible_ids).length > 0">
+              <el-tag v-for="(name, idx) in parseResponsibleNames(event.responsible_ids, event.responsible_name)" :key="idx" size="small" class="mr-2">
+                {{ name }}
+              </el-tag>
+            </div>
+            <span v-else class="text-gray">未分配</span>
           </el-descriptions-item>
           <el-descriptions-item label="创建人">
             {{ event.reporter_name }}
           </el-descriptions-item>
-          <el-descriptions-item label="责任人">
-            {{ event.responsible_name || '未分配' }}
+          <el-descriptions-item label="当前状态">
+            <el-tag :type="getStatusType(event.status)">{{ getStatusLabel(event.status) }}</el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="当前处理人">
             <el-tag v-if="event.current_handler_name" type="primary" effect="dark">
               {{ event.current_handler_name }}
             </el-tag>
             <span v-else class="text-gray">未分配</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="下一步" :span="2">
+            <div v-if="event.next_step || event.next_handler_name">
+              <el-tag v-if="event.next_step" size="small" class="mr-2">
+                {{ getStepLabel(event.next_step) }}
+              </el-tag>
+              <span v-if="event.next_handler_name" class="text-primary">
+                待 {{ event.next_handler_name }} 处理
+              </span>
+            </div>
+            <span v-else class="text-gray">暂无</span>
           </el-descriptions-item>
           <el-descriptions-item label="下一步" :span="2">
             <div v-if="event.next_step || event.next_handler_name">
@@ -103,22 +156,84 @@
         </div>
         <div class="mobile-info-grid">
           <div class="mobile-info-item">
-            <span class="mobile-info-label">事件类型</span>
-            <span class="mobile-info-value">{{ event.event_type }}</span>
+            <span class="mobile-info-label">产品阶段</span>
+            <span class="mobile-info-value">{{ event.product_stage || '-' }}</span>
           </div>
           <div class="mobile-info-item">
-            <span class="mobile-info-label">严重程度</span>
-            <el-tag :type="getSeverityType(event.severity)" size="small">{{ event.severity }}</el-tag>
+            <span class="mobile-info-label">产品类型</span>
+            <span class="mobile-info-value">{{ event.product_type || '-' }}</span>
           </div>
         </div>
         <div class="mobile-info-grid">
           <div class="mobile-info-item">
-            <span class="mobile-info-label">当前状态</span>
-            <el-tag :type="getStatusType(event.status)" size="small">{{ getStatusLabel(event.status) }}</el-tag>
+            <span class="mobile-info-label">项目号/生产任务单号</span>
+            <span class="mobile-info-value">{{ event.project_no || '-' }}</span>
+          </div>
+          <div class="mobile-info-item">
+            <span class="mobile-info-label">用户</span>
+            <span class="mobile-info-value">{{ event.customer || '-' }}</span>
+          </div>
+        </div>
+        <div class="mobile-info-grid">
+          <div class="mobile-info-item">
+            <span class="mobile-info-label">关键字</span>
+            <span class="mobile-info-value">{{ event.keywords || '-' }}</span>
+          </div>
+          <div class="mobile-info-item">
+            <span class="mobile-info-label">问题类型</span>
+            <span class="mobile-info-value">{{ event.problem_type || '-' }}</span>
+          </div>
+        </div>
+        <div class="mobile-info-item">
+          <span class="mobile-info-label">故障严重程度</span>
+          <div>
+            <el-tag v-for="(sev, idx) in parseMultiSelect(event.severity)" :key="idx" :type="getSeverityType(sev)" size="small" class="mr-2">
+              {{ sev }}
+            </el-tag>
+            <span v-if="!event.severity" class="text-gray">-</span>
+          </div>
+        </div>
+        <div class="mobile-info-item">
+          <span class="mobile-info-label">涉及相关部件</span>
+          <div v-if="parseJsonArray(event.related_parts).length > 0">
+            <el-tag v-for="(part, idx) in parseJsonArray(event.related_parts)" :key="idx" size="small" class="mr-2" type="info">
+              {{ part }}
+            </el-tag>
+          </div>
+          <span v-else class="text-gray">-</span>
+        </div>
+        <div class="mobile-info-item">
+          <span class="mobile-info-label">问题发现/提出形式</span>
+          <div v-if="parseJsonArray(event.discovery_form).length > 0">
+            <el-tag v-for="(form, idx) in parseJsonArray(event.discovery_form)" :key="idx" size="small" class="mr-2" type="info">
+              {{ form }}
+            </el-tag>
+          </div>
+          <span v-else class="text-gray">-</span>
+        </div>
+        <div class="mobile-info-grid">
+          <div class="mobile-info-item">
+            <span class="mobile-info-label">监督/确认人</span>
+            <span class="mobile-info-value">{{ event.supervisor_name || '-' }}</span>
           </div>
           <div class="mobile-info-item">
             <span class="mobile-info-label">责任人</span>
-            <span class="mobile-info-value">{{ event.responsible_name || '未分配' }}</span>
+            <div v-if="parseJsonArray(event.responsible_ids).length > 0">
+              <el-tag v-for="(name, idx) in parseResponsibleNames(event.responsible_ids, event.responsible_name)" :key="idx" size="small" class="mr-2">
+                {{ name }}
+              </el-tag>
+            </div>
+            <span v-else class="text-gray">未分配</span>
+          </div>
+        </div>
+        <div class="mobile-info-grid">
+          <div class="mobile-info-item">
+            <span class="mobile-info-label">创建人</span>
+            <span class="mobile-info-value">{{ event.reporter_name }}</span>
+          </div>
+          <div class="mobile-info-item">
+            <span class="mobile-info-label">当前状态</span>
+            <el-tag :type="getStatusType(event.status)" size="small">{{ getStatusLabel(event.status) }}</el-tag>
           </div>
         </div>
         <div class="mobile-info-item">
@@ -1620,6 +1735,48 @@ const handleFileClick = async (fileUrl, fileName) => {
       window.open(fullUrl, '_blank')
     }
   }
+}
+
+// 解析多选字段（逗号分隔字符串或数组）
+const parseMultiSelect = (value) => {
+  if (!value) return []
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string') {
+    // 尝试解析JSON数组
+    try {
+      const parsed = JSON.parse(value)
+      if (Array.isArray(parsed)) return parsed
+    } catch {}
+    // 逗号分隔
+    return value.split(',').map(v => v.trim()).filter(v => v)
+  }
+  return []
+}
+
+// 解析JSON数组字段
+const parseJsonArray = (value) => {
+  if (!value) return []
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value)
+      if (Array.isArray(parsed)) return parsed
+    } catch {}
+  }
+  return []
+}
+
+// 解析责任人名称（支持多选）
+const parseResponsibleNames = (ids, namesStr) => {
+  const idsArr = parseJsonArray(ids)
+  if (idsArr.length === 0) return []
+  
+  // 如果 namesStr 是逗号分隔的字符串
+  if (namesStr && typeof namesStr === 'string') {
+    return namesStr.split(',').map(n => n.trim()).filter(n => n)
+  }
+  
+  return idsArr.map(id => typeof id === 'object' ? (id.name || id.label || JSON.stringify(id)) : String(id))
 }
 
 // 判断字符串是否为JSON
