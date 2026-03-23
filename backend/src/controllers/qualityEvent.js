@@ -133,11 +133,9 @@ export const getQualityEvents = async (req, res) => {
     let sql = `
       SELECT e.*, 
              r.user_name as reporter_name,
-             u.user_name as responsible_name,
              c.user_name as current_handler_name
       FROM quality_event e
       LEFT JOIN sys_user r ON e.reporter_id = r.id
-      LEFT JOIN sys_user u ON e.responsible_id = u.id
       LEFT JOIN sys_user c ON e.current_handler_id = c.id
       WHERE e.deleted_at IS NULL
     `
@@ -169,13 +167,13 @@ export const getQualityEvents = async (req, res) => {
     }
     
     if (responsibleId) {
-      sql += ' AND e.responsible_id = ?'
+      sql += ' AND JSON_CONTAINS(e.responsible_ids, ?)'
       params.push(responsibleId)
     }
     
     if (currentHandlerId) {
       // 筛选当前处理人的事件（包括状态为 CLOSED 的）
-      sql += ' AND (e.current_handler_id = ? OR e.responsible_id = ? OR e.reporter_id = ?)'
+      sql += ' AND (e.current_handler_id = ? OR JSON_CONTAINS(e.responsible_ids, ?) OR e.reporter_id = ?)'
       params.push(currentHandlerId, currentHandlerId, currentHandlerId)
     }
     
@@ -190,8 +188,8 @@ export const getQualityEvents = async (req, res) => {
     
     const events = await query(sql, params)
     
-    // 解析通知人列表
-    events.forEach(event => {
+    // 解析通知人列表和查询责任人姓名
+    for (const event of events) {
       if (event.notify_users) {
         try {
           event.notify_users = JSON.parse(event.notify_users)
@@ -201,7 +199,28 @@ export const getQualityEvents = async (req, res) => {
       } else {
         event.notify_users = []
       }
-    })
+      
+      // 查询责任人姓名
+      if (event.responsible_ids) {
+        try {
+          const responsibleIds = JSON.parse(event.responsible_ids)
+          if (responsibleIds.length > 0) {
+            const placeholders = responsibleIds.map(() => '?').join(',')
+            const users = await query(
+              `SELECT user_name FROM sys_user WHERE id IN (${placeholders})`,
+              responsibleIds
+            )
+            event.responsible_name = users.map(u => u.user_name).join(', ')
+          } else {
+            event.responsible_name = '-'
+          }
+        } catch {
+          event.responsible_name = '-'
+        }
+      } else {
+        event.responsible_name = '-'
+      }
+    }
     
     // 获取总数
     let countSql = 'SELECT COUNT(*) as total FROM quality_event WHERE deleted_at IS NULL'
@@ -223,8 +242,12 @@ export const getQualityEvents = async (req, res) => {
       countSql += ' AND event_type = ?'
       countParams.push(eventType)
     }
+    if (responsibleId) {
+      countSql += ' AND JSON_CONTAINS(responsible_ids, ?)'
+      countParams.push(responsibleId)
+    }
     if (currentHandlerId) {
-      countSql += ' AND (current_handler_id = ? OR responsible_id = ? OR reporter_id = ?)'
+      countSql += ' AND (current_handler_id = ? OR JSON_CONTAINS(responsible_ids, ?) OR reporter_id = ?)'
       countParams.push(currentHandlerId, currentHandlerId, currentHandlerId)
     }
     
