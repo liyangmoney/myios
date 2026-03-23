@@ -297,8 +297,9 @@
         ref="formRef"
         :model="formData" 
         :rules="formRules"
-        :label-width="isMobile ? '80px' : '100px'"
+        :label-width="isMobile ? '80px' : '140px'"
         :label-position="isMobile ? 'top' : 'right'"
+        class="quality-event-form"
       >
         <el-form-item label="事件标题" prop="title">
           <el-input v-model="formData.title" placeholder="请输入事件标题" />
@@ -324,10 +325,10 @@
             </el-col>
           </el-row>
           
-          <!-- 第二行：项目号 + 用户 -->
+          <!-- 第二行：项目号/生产任务单号 + 用户 -->
           <el-row :gutter="20">
             <el-col :span="12">
-              <el-form-item label="项目号/生产任务单号" prop="projectNo">
+              <el-form-item label="项目号/生产任务单号" prop="projectNo" class="long-label">
                 <el-input v-model="formData.projectNo" placeholder="请输入" />
               </el-form-item>
             </el-col>
@@ -354,22 +355,22 @@
             </el-col>
           </el-row>
           
-          <!-- 第四行：故障严重程度（多选） -->
-          <el-form-item label="故障严重程度" prop="severity">
+          <!-- 第四行：故障严重程度（多选）- 占满整行 -->
+          <el-form-item label="故障严重程度" prop="severity" class="full-width-item">
             <el-select v-model="formData.severity" multiple placeholder="请选择（可多选）" style="width: 100%">
               <el-option v-for="opt in severityOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
           </el-form-item>
           
-          <!-- 第五行：涉及相关部件（多选） -->
-          <el-form-item label="涉及相关部件" prop="relatedParts">
+          <!-- 第五行：涉及相关部件（多选）- 占满整行 -->
+          <el-form-item label="涉及相关部件" prop="relatedParts" class="full-width-item">
             <el-select v-model="formData.relatedParts" multiple placeholder="请选择（可多选）" style="width: 100%">
               <el-option v-for="opt in relatedPartsOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
           </el-form-item>
           
-          <!-- 第六行：问题发现形式（多选） -->
-          <el-form-item label="问题发现/提出形式" prop="discoveryForm">
+          <!-- 第六行：问题发现/提出形式（多选）- 占满整行 -->
+          <el-form-item label="问题发现/提出形式" prop="discoveryForm" class="full-width-item">
             <el-select v-model="formData.discoveryForm" multiple placeholder="请选择（可多选）" style="width: 100%">
               <el-option v-for="opt in discoveryFormOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
@@ -391,7 +392,7 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="监督/确认人" prop="supervisorId">
+              <el-form-item label="监督/确认人" prop="supervisorId" class="long-label">
                 <el-select-v2
                   v-model="formData.supervisorId"
                   :options="userOptions"
@@ -1290,5 +1291,57 @@ onMounted(() => {
     justify-content: center;
     padding: 10px 0;
   }
+}
+
+/* PC端表单样式优化 */
+.quality-event-form :deep(.el-form-item__label) {
+  line-height: 32px;
+  padding-right: 12px;
+}
+
+.quality-event-form :deep(.el-form-item) {
+  margin-bottom: 18px;
+}
+
+.quality-event-form .full-width-item {
+  width: 100%;
+}
+
+.quality-event-form .long-label :deep(.el-form-item__label) {
+  font-size: 13px;
+}
+
+/* 对话框样式 */
+.quality-event-dialog :deep(.el-dialog__body) {
+  padding: 20px 30px 10px;
+}
+
+/* 上传文件列表样式 */
+.uploaded-files {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #f5f7fa;
+  border-radius: 4px;
+}
+
+.uploaded-file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.uploaded-file-item:last-child {
+  border-bottom: none;
+}
+
+.uploaded-file-item .file-name {
+  flex: 1;
+  font-size: 13px;
+  color: #606266;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>
