@@ -304,87 +304,185 @@
           <el-input v-model="formData.title" placeholder="请输入事件标题" />
         </el-form-item>
         
-        <!-- PC端两列布局 -->
+        <!-- PC端布局 -->
         <template v-if="!isMobile">
+          <!-- 第一行：产品阶段 + 产品类型 -->
           <el-row :gutter="20">
             <el-col :span="12">
-              <el-form-item label="事件类型" prop="eventType">
-                <el-select v-model="formData.eventType" placeholder="请选择" style="width: 100%">
-                  <el-option label="内部不符合" value="内部不符合" />
-                  <el-option label="外部不符合" value="外部不符合" />
-                  <el-option label="审核发现" value="审核发现" />
-                  <el-option label="过程异常" value="过程异常" />
-                  <el-option label="设备异常" value="设备异常" />
-                  <el-option label="其他" value="其他" />
+              <el-form-item label="产品阶段" prop="productStage">
+                <el-select v-model="formData.productStage" placeholder="请选择" style="width: 100%">
+                  <el-option v-for="opt in productStageOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
                 </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="严重程度" prop="severity">
-                <el-select v-model="formData.severity" placeholder="请选择" style="width: 100%">
-                  <el-option label="轻微" value="轻微" />
-                  <el-option label="一般" value="一般" />
-                  <el-option label="严重" value="严重" />
-                  <el-option label="致命" value="致命" />
+              <el-form-item label="产品类型" prop="productType">
+                <el-select v-model="formData.productType" placeholder="请选择" style="width: 100%">
+                  <el-option v-for="opt in productTypeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
                 </el-select>
               </el-form-item>
             </el-col>
           </el-row>
           
+          <!-- 第二行：项目号 + 用户 -->
           <el-row :gutter="20">
             <el-col :span="12">
-              <el-form-item label="责任人" prop="responsibleId">
+              <el-form-item label="项目号/生产任务单号" prop="projectNo">
+                <el-input v-model="formData.projectNo" placeholder="请输入" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="用户" prop="customer">
+                <el-input v-model="formData.customer" placeholder="请输入用户" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          
+          <!-- 第三行：问题类型 + 关键字 -->
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="问题类型" prop="problemType">
+                <el-select v-model="formData.problemType" placeholder="请选择" style="width: 100%">
+                  <el-option v-for="opt in problemTypeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="关键字" prop="keywords">
+                <el-input v-model="formData.keywords" placeholder="请输入关键字（选填）" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          
+          <!-- 第四行：故障严重程度（多选） -->
+          <el-form-item label="故障严重程度" prop="severity">
+            <el-select v-model="formData.severity" multiple placeholder="请选择（可多选）" style="width: 100%">
+              <el-option v-for="opt in severityOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+            </el-select>
+          </el-form-item>
+          
+          <!-- 第五行：涉及相关部件（多选） -->
+          <el-form-item label="涉及相关部件" prop="relatedParts">
+            <el-select v-model="formData.relatedParts" multiple placeholder="请选择（可多选）" style="width: 100%">
+              <el-option v-for="opt in relatedPartsOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+            </el-select>
+          </el-form-item>
+          
+          <!-- 第六行：问题发现形式（多选） -->
+          <el-form-item label="问题发现/提出形式" prop="discoveryForm">
+            <el-select v-model="formData.discoveryForm" multiple placeholder="请选择（可多选）" style="width: 100%">
+              <el-option v-for="opt in discoveryFormOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+            </el-select>
+          </el-form-item>
+          
+          <!-- 第七行：责任人（多选） + 监督/确认人 -->
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="责任人" prop="responsibleIds">
                 <el-select-v2
-                  v-model="formData.responsibleId"
+                  v-model="formData.responsibleIds"
                   :options="userOptions"
-                  placeholder="请选择责任人"
+                  placeholder="请选择责任人（可多选）"
                   style="width: 100%"
+                  multiple
                   clearable
                   filterable
                 />
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="截止日期" prop="dueDate">
-                <el-date-picker
-                  v-model="formData.dueDate"
-                  type="date"
-                  placeholder="选择日期"
+              <el-form-item label="监督/确认人" prop="supervisorId">
+                <el-select-v2
+                  v-model="formData.supervisorId"
+                  :options="userOptions"
+                  placeholder="请选择监督/确认人"
                   style="width: 100%"
-                  value-format="YYYY-MM-DD"
+                  clearable
+                  filterable
                 />
               </el-form-item>
             </el-col>
           </el-row>
+          
+          <!-- 第八行：截止日期 -->
+          <el-form-item label="截止日期" prop="dueDate">
+            <el-date-picker
+              v-model="formData.dueDate"
+              type="date"
+              placeholder="选择日期"
+              style="width: 100%"
+              value-format="YYYY-MM-DD"
+            />
+          </el-form-item>
         </template>
         
         <!-- 移动端单列布局 -->
         <template v-else>
-          <el-form-item label="事件类型" prop="eventType">
-            <el-select v-model="formData.eventType" placeholder="请选择" style="width: 100%">
-              <el-option label="内部不符合" value="内部不符合" />
-              <el-option label="外部不符合" value="外部不符合" />
-              <el-option label="审核发现" value="审核发现" />
-              <el-option label="过程异常" value="过程异常" />
-              <el-option label="设备异常" value="设备异常" />
-              <el-option label="其他" value="其他" />
+          <el-form-item label="产品阶段" prop="productStage">
+            <el-select v-model="formData.productStage" placeholder="请选择" style="width: 100%">
+              <el-option v-for="opt in productStageOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
           </el-form-item>
           
-          <el-form-item label="严重程度" prop="severity">
-            <el-select v-model="formData.severity" placeholder="请选择" style="width: 100%">
-              <el-option label="轻微" value="轻微" />
-              <el-option label="一般" value="一般" />
-              <el-option label="严重" value="严重" />
-              <el-option label="致命" value="致命" />
+          <el-form-item label="产品类型" prop="productType">
+            <el-select v-model="formData.productType" placeholder="请选择" style="width: 100%">
+              <el-option v-for="opt in productTypeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
           </el-form-item>
           
-          <el-form-item label="责任人" prop="responsibleId">
+          <el-form-item label="项目号/生产任务单号" prop="projectNo">
+            <el-input v-model="formData.projectNo" placeholder="请输入" />
+          </el-form-item>
+          
+          <el-form-item label="用户" prop="customer">
+            <el-input v-model="formData.customer" placeholder="请输入用户" />
+          </el-form-item>
+          
+          <el-form-item label="问题类型" prop="problemType">
+            <el-select v-model="formData.problemType" placeholder="请选择" style="width: 100%">
+              <el-option v-for="opt in problemTypeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+            </el-select>
+          </el-form-item>
+          
+          <el-form-item label="关键字" prop="keywords">
+            <el-input v-model="formData.keywords" placeholder="请输入关键字（选填）" />
+          </el-form-item>
+          
+          <el-form-item label="故障严重程度" prop="severity">
+            <el-select v-model="formData.severity" multiple placeholder="请选择（可多选）" style="width: 100%">
+              <el-option v-for="opt in severityOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+            </el-select>
+          </el-form-item>
+          
+          <el-form-item label="涉及相关部件" prop="relatedParts">
+            <el-select v-model="formData.relatedParts" multiple placeholder="请选择（可多选）" style="width: 100%">
+              <el-option v-for="opt in relatedPartsOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+            </el-select>
+          </el-form-item>
+          
+          <el-form-item label="问题发现/提出形式" prop="discoveryForm">
+            <el-select v-model="formData.discoveryForm" multiple placeholder="请选择（可多选）" style="width: 100%">
+              <el-option v-for="opt in discoveryFormOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+            </el-select>
+          </el-form-item>
+          
+          <el-form-item label="责任人" prop="responsibleIds">
             <el-select-v2
-              v-model="formData.responsibleId"
+              v-model="formData.responsibleIds"
               :options="userOptions"
-              placeholder="请选择责任人"
+              placeholder="请选择责任人（可多选）"
+              style="width: 100%"
+              multiple
+              clearable
+              filterable
+            />
+          </el-form-item>
+          
+          <el-form-item label="监督/确认人" prop="supervisorId">
+            <el-select-v2
+              v-model="formData.supervisorId"
+              :options="userOptions"
+              placeholder="请选择监督/确认人"
               style="width: 100%"
               clearable
               filterable
@@ -487,9 +585,18 @@ const submitting = ref(false)
 const formData = reactive({
   id: null,
   title: '',
-  eventType: '',
-  severity: '',
-  responsibleId: null,
+  // 删除 eventType，添加新字段
+  productStage: '',        // 产品阶段
+  productType: '',         // 产品类型
+  projectNo: '',           // 项目号/生产任务单号
+  customer: '',            // 用户
+  keywords: '',            // 关键字
+  problemType: '',         // 问题类型
+  severity: '',            // 严重程度（改为多选，逗号分隔）
+  relatedParts: [],        // 涉及相关部件（多选）
+  discoveryForm: [],       // 问题发现形式（多选）
+  responsibleIds: [],      // 责任人（多选）
+  supervisorId: null,      // 监督/确认人
   dueDate: '',
   description: '',
   notifyUsers: []
@@ -500,12 +607,88 @@ const formRules = {
     { required: true, message: '请输入事件标题', trigger: 'blur' },
     { max: 100, message: '事件标题长度不能超过100个字符', trigger: 'blur' }
   ],
-  eventType: [{ required: true, message: '请选择事件类型', trigger: 'change' }],
-  severity: [{ required: true, message: '请选择严重程度', trigger: 'change' }],
-  responsibleId: [{ required: true, message: '请选择责任人', trigger: 'change' }],
+  productStage: [{ required: true, message: '请选择产品阶段', trigger: 'change' }],
+  productType: [{ required: true, message: '请选择产品类型', trigger: 'change' }],
+  projectNo: [{ required: true, message: '请输入项目号/生产任务单号', trigger: 'blur' }],
+  customer: [{ required: true, message: '请输入用户', trigger: 'blur' }],
+  problemType: [{ required: true, message: '请选择问题类型', trigger: 'change' }],
+  severity: [{ required: true, message: '请选择故障严重程度', trigger: 'change' }],
+  relatedParts: [{ required: true, message: '请选择涉及相关部件', trigger: 'change' }],
+  discoveryForm: [{ required: true, message: '请选择问题发现形式', trigger: 'change' }],
+  responsibleIds: [{ required: true, message: '请选择责任人', trigger: 'change' }],
+  supervisorId: [{ required: true, message: '请选择监督/确认人', trigger: 'change' }],
   dueDate: [{ required: true, message: '请选择截止日期', trigger: 'change' }],
   description: [{ required: true, message: '请输入问题描述', trigger: 'blur' }]
 }
+
+// 选项列表
+const productStageOptions = [
+  { label: '设计阶段', value: '设计阶段' },
+  { label: '研发制造阶段', value: '研发制造阶段' },
+  { label: '生产阶段', value: '生产阶段' },
+  { label: '试用阶段', value: '试用阶段' },
+  { label: '交付后正式使用阶段', value: '交付后正式使用阶段' }
+]
+
+const productTypeOptions = [
+  { label: '地铁机器人', value: '地铁机器人' },
+  { label: '国铁巡检仪', value: '国铁巡检仪' },
+  { label: '国铁功能模块-扣件', value: '国铁功能模块-扣件' },
+  { label: '国铁功能模块-位移', value: '国铁功能模块-位移' },
+  { label: '国铁功能模块-廓形', value: '国铁功能模块-廓形' },
+  { label: '车载系统', value: '车载系统' }
+]
+
+const problemTypeOptions = [
+  { label: '软件算法', value: '软件算法' },
+  { label: '嵌入式硬件', value: '嵌入式硬件' },
+  { label: '机械电器', value: '机械电器' }
+]
+
+const severityOptions = [
+  { label: 'a.无法行车', value: 'a.无法行车' },
+  { label: 'b.可行车但有安全隐患', value: 'b.可行车但有安全隐患' },
+  { label: 'c.无法采集图像', value: 'c.无法采集图像' },
+  { label: 'd.图像质量不佳', value: 'd.图像质量不佳' },
+  { label: 'e.引起设备部件故障或不合格但不影响采集效果', value: 'e.引起设备部件故障或不合格但不影响采集效果' },
+  { label: 'f.影响设备整体寿命', value: 'f.影响设备整体寿命' },
+  { label: 'g.影响用户感受', value: 'g.影响用户感受' },
+  { label: 'h.影响生产效率', value: 'h.影响生产效率' },
+  { label: 'i.优化', value: 'i.优化' }
+]
+
+const relatedPartsOptions = [
+  { label: '触摸屏', value: '触摸屏' },
+  { label: '串口屏', value: '串口屏' },
+  { label: '工控机', value: '工控机' },
+  { label: 'TIVR采集器', value: 'TIVR采集器' },
+  { label: '控制器/分频器', value: '控制器/分频器' },
+  { label: '电机', value: '电机' },
+  { label: '电池', value: '电池' },
+  { label: '线束', value: '线束' },
+  { label: '相机', value: '相机' },
+  { label: '镜头', value: '镜头' },
+  { label: '激光器', value: '激光器' },
+  { label: '光源', value: '光源' },
+  { label: '车轮', value: '车轮' },
+  { label: '车轴', value: '车轴' },
+  { label: '车架', value: '车架' },
+  { label: '航插及线束', value: '航插及线束' },
+  { label: '工作站', value: '工作站' },
+  { label: '采集软件', value: '采集软件' },
+  { label: '分析软件', value: '分析软件' },
+  { label: '工装', value: '工装' }
+]
+
+const discoveryFormOptions = [
+  { label: '质量小组会', value: '质量小组会' },
+  { label: 'DFMEA分析', value: 'DFMEA分析' },
+  { label: '主动检查发现', value: '主动检查发现' },
+  { label: '用户提出', value: '用户提出' },
+  { label: '售后检查', value: '售后检查' },
+  { label: '月保养', value: '月保养' },
+  { label: '使用中暴露', value: '使用中暴露' }
+]
 
 // 获取事件列表
 const fetchEventList = async () => {
@@ -604,9 +787,18 @@ const showCreateDialog = () => {
   isEdit.value = false
   formData.id = null
   formData.title = ''
-  formData.eventType = ''
-  formData.severity = ''
-  formData.responsibleId = null
+  // 新字段
+  formData.productStage = ''
+  formData.productType = ''
+  formData.projectNo = ''
+  formData.customer = ''
+  formData.keywords = ''
+  formData.problemType = ''
+  formData.severity = []
+  formData.relatedParts = []
+  formData.discoveryForm = []
+  formData.responsibleIds = []
+  formData.supervisorId = null
   formData.dueDate = ''
   formData.description = ''
   formData.notifyUsers = []
@@ -622,9 +814,19 @@ const handleSubmit = async () => {
   try {
     const data = {
       title: formData.title,
-      eventType: formData.eventType,
-      severity: formData.severity,
-      responsibleId: formData.responsibleId,
+      // 新字段
+      productStage: formData.productStage,
+      productType: formData.productType,
+      projectNo: formData.projectNo,
+      customer: formData.customer,
+      keywords: formData.keywords,
+      problemType: formData.problemType,
+      // 多选字段转为逗号分隔字符串
+      severity: Array.isArray(formData.severity) ? formData.severity.join(',') : formData.severity,
+      relatedParts: formData.relatedParts.join(','),
+      discoveryForm: formData.discoveryForm.join(','),
+      responsibleIds: formData.responsibleIds.join(','),
+      supervisorId: formData.supervisorId,
       dueDate: formData.dueDate,
       description: formData.description,
       notifyUsers: formData.notifyUsers

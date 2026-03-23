@@ -153,7 +153,7 @@
           <el-input v-model="formData.phone" placeholder="请输入手机号" />
         </el-form-item>
         
-        <el-form-item label="部门">
+        <el-form-item label="部门" prop="department" required>
           <el-select v-model="formData.department" placeholder="请选择部门" style="width: 100%">
             <el-option 
               v-for="dept in departmentList" 
@@ -256,7 +256,22 @@ const searchForm = reactive({
 
 // 用户列表
 const userList = ref([])
-const departmentList = ref([])
+// 固定的部门列表（13个部门）
+const departmentList = ref([
+  { id: 1, dept_name: '品控中心' },
+  { id: 2, dept_name: '轨道技术研究院' },
+  { id: 3, dept_name: '生产中心' },
+  { id: 4, dept_name: '销售部' },
+  { id: 5, dept_name: '技术支持中心' },
+  { id: 6, dept_name: '采购中心' },
+  { id: 7, dept_name: '财务部' },
+  { id: 8, dept_name: '创新技术研究院' },
+  { id: 9, dept_name: '软件中心' },
+  { id: 10, dept_name: '人力资源中心' },
+  { id: 11, dept_name: '综合行政部' },
+  { id: 12, dept_name: '总经办' },
+  { id: 13, dept_name: '科技管理部' }
+])
 const loading = ref(false)
 const pagination = reactive({
   page: 1,
@@ -301,6 +316,9 @@ const formRules = {
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
+  ],
+  department: [
+    { required: true, message: '请选择部门', trigger: 'change' }
   ]
 }
 
