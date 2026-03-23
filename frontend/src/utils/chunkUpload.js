@@ -20,13 +20,11 @@ const getApiUrl = (path) => {
     return `${DEFAULT_SERVER_URL}${baseURL}${path}`
   }
   
-  // 浏览器环境
+  // 浏览器环境：返回相对路径，让代理处理
   if (baseURL.startsWith('http')) {
     return `${baseURL}${path}`
   }
-  if (baseURL.startsWith('/')) {
-    return `${window.location.origin}${baseURL}${path}`
-  }
+  // 相对路径，Vite代理会自动处理
   return `${baseURL}${path}`
 }
 
