@@ -1008,6 +1008,11 @@ const handleDescFileUpload = async (options) => {
 
 const handleDescFileSuccess = (response, file) => {
   console.log('文件上传成功:', response, file)
+  // 安全检查：确保 response 存在
+  if (!response) {
+    console.error('上传成功但 response 为空')
+    return
+  }
   if (response.code === 200 && response.data) {
     const files = Array.isArray(response.data) ? response.data : [response.data]
     if (files.length > 0) {
@@ -1017,9 +1022,11 @@ const handleDescFileSuccess = (response, file) => {
         type: file.raw?.type || '',
         size: file.size
       })
-      // 不清空el-upload的文件列表，让用户能看到上传状态
-      // descUploadRef.value?.clearFiles()
+      // 清除 el-upload 的文件列表
+      descUploadRef.value?.clearFiles()
     }
+  } else {
+    console.error('上传返回错误:', response)
   }
 }
 
