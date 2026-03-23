@@ -1067,6 +1067,7 @@ export const uploadFiles = async (req, res) => {
       files: newFiles, // 包含完整文件信息（name 和 url）
       message: `上传了 ${newFiles.length} 个 ${stageLabels[stage]} 阶段附件: ${newFiles.map(f => f.name).join(', ')}`
     })])
+    }
     
     res.json({
       code: 200,
