@@ -441,7 +441,8 @@ export const createQualityEvent = async (req, res) => {
       reporterId, reporterName,
       // 责任人可能是逗号分隔字符串或数组
       JSON.stringify(parsedResponsibleIds), responsibleName, supervisorId, supervisorName,
-      responsibleId, responsibleName, dueDate, JSON.stringify(notifyUsers || []),
+      // 当前处理人设为创建人（P阶段由创建人编写）
+      reporterId, reporterName, dueDate, JSON.stringify(notifyUsers || []),
       JSON.stringify(descriptionFiles || []), isChanged || 0, changeSourceId || null, changeSourceNo || null
     ])
     
@@ -507,8 +508,15 @@ export const createQualityEvent = async (req, res) => {
       responsible_name: responsibleName
     }
     
+    // 新逻辑：通知所有责任人 + 监督/确认人 + 通知人列表
+    const allNotifyIds = [...new Set([
+      ...parsedResponsibleIds,
+      ...(supervisorId ? [supervisorId] : []),
+      ...(notifyUsers || [])
+    ])]
+    
     // 发送通知邮件
-    await sendNotificationEmail(event, notifyUsers, '新建质量事件')
+    await sendNotificationEmail(event, allNotifyIds, '新建质量事件')
     
     // 记录操作日志
     await query(`
@@ -696,27 +704,63 @@ export const updateQualityEvent = async (req, res) => {
     // 获取更新后的事件信息
     const [event] = await query('SELECT * FROM quality_event WHERE id = ?', [id])
     
-    // 如果有新的处理人，查询姓名并添加到 updateData 中用于日志记录
-    if (updateData.currentHandlerId) {
-      const handlerUsers = await query('SELECT user_name FROM sys_user WHERE id = ?', [updateData.currentHandlerId])
-      if (handlerUsers.length > 0) {
-        updateData.currentHandlerName = handlerUsers[0].user_name
-      }
+    // 解析责任人IDs
+    let responsibleIds = []
+    if (event.responsible_ids) {
+      try {
+        responsibleIds = JSON.parse(event.responsible_ids)
+      } catch {}
     }
     
-    // 发送通知 - 根据新的业务规则
-    if (updateData.status === 'CLOSED') {
-      // 1. 事件关闭时，通知通知人
-      let notifyUserIds = []
-      if (event.notify_users) {
-        try {
-          notifyUserIds = JSON.parse(event.notify_users)
-        } catch {}
+    // 解析通知人列表
+    let notifyUserIds = []
+    if (event.notify_users) {
+      try {
+        notifyUserIds = JSON.parse(event.notify_users)
+      } catch {}
+    }
+    
+    // 新PDCA通知逻辑
+    if (updateData.status) {
+      const oldStatus = oldEvent.status
+      const newStatus = updateData.status
+      
+      // P -> D: 通知所有责任人，当前处理人设为所有责任人
+      if (newStatus === 'DO' && (oldStatus === 'NEW' || oldStatus === 'PLAN')) {
+        // 更新当前处理人为所有责任人
+        if (responsibleIds.length > 0) {
+          await query('UPDATE quality_event SET current_handler_id = NULL, current_handler_name = NULL WHERE id = ?', [id])
+        }
+        await sendNotificationEmail(event, responsibleIds, '质量事件进入D阶段，需要您处理')
       }
-      await sendNotificationEmail(event, notifyUserIds, '质量事件已关闭')
-    } else if (updateData.status && updateData.currentHandlerId) {
-      // 2. 状态变换时，只通知变更后的当前处理人
-      await sendNotificationEmail(event, [updateData.currentHandlerId], `状态变更为${getStatusLabel(updateData.status)}`)
+      
+      // D -> C: 通知C阶段指定人
+      else if (newStatus === 'CHECK' && oldStatus === 'DO') {
+        // C阶段处理人在前端指定，这里使用currentHandlerId
+        if (updateData.currentHandlerId) {
+          await sendNotificationEmail(event, [updateData.currentHandlerId], '质量事件进入C阶段，需要您验证')
+        }
+      }
+      
+      // C -> A (通过): 通知监督/确认人
+      else if (newStatus === 'ACT' && oldStatus === 'CHECK') {
+        if (event.supervisor_id) {
+          await query('UPDATE quality_event SET current_handler_id = ?, current_handler_name = ? WHERE id = ?', 
+            [event.supervisor_id, event.supervisor_name, id])
+          await sendNotificationEmail(event, [event.supervisor_id], '质量事件进入A阶段，需要您确认关闭')
+        }
+      }
+      
+      // C -> D (不通过): 通知所有责任人
+      else if (newStatus === 'DO' && oldStatus === 'CHECK') {
+        await sendNotificationEmail(event, responsibleIds, '质量事件验证不通过，返回D阶段，需要您重新处理')
+      }
+      
+      // A -> CLOSED: 通知创建人和通知人
+      else if (newStatus === 'CLOSED') {
+        const allNotifyIds = [...new Set([event.reporter_id, ...notifyUserIds])]
+        await sendNotificationEmail(event, allNotifyIds, '质量事件已关闭')
+      }
     }
     
     // 记录操作日志
@@ -1023,36 +1067,24 @@ export const checkDueDateReminders = async () => {
       // 只处理72小时内的
       if (hoursLeft > 72 || hoursLeft < 0) continue
       
-      // 计算是否应该发送提醒（每3小时一次）
+      // 计算是否应该发送提醒（每24小时一次）
       const lastReminder = event.last_reminder_at ? new Date(event.last_reminder_at) : null
       const now = new Date()
-      const shouldSend = !lastReminder || (now - lastReminder) >= (3 * 60 * 60 * 1000)
+      const shouldSend = !lastReminder || (now - lastReminder) >= (24 * 60 * 60 * 1000)
       
       if (!shouldSend) {
-        console.log(`事件 ${event.event_no} 距离上次提醒不足3小时，跳过`)
+        console.log(`事件 ${event.event_no} 距离上次提醒不足24小时，跳过`)
         continue
       }
       
-      // 准备通知列表
-      let notifyUserIds = []
-      if (event.notify_users) {
-        try {
-          notifyUserIds = JSON.parse(event.notify_users)
-        } catch {}
-      }
-      
-      // 添加当前处理人
-      if (event.current_handler_id && !notifyUserIds.includes(event.current_handler_id)) {
+      // 新逻辑：到期提醒只通知当前处理人
+      const notifyUserIds = []
+      if (event.current_handler_id) {
         notifyUserIds.push(event.current_handler_id)
       }
       
-      // 添加责任人
-      if (event.responsible_id && !notifyUserIds.includes(event.responsible_id)) {
-        notifyUserIds.push(event.responsible_id)
-      }
-      
       if (notifyUserIds.length === 0) {
-        console.log(`事件 ${event.event_no} 没有通知人，跳过`)
+        console.log(`事件 ${event.event_no} 没有当前处理人，跳过`)
         continue
       }
       
@@ -1073,26 +1105,66 @@ export const checkDueDateReminders = async () => {
   }
 }
 
-// 检查超过截止日期30天未关闭的质量事件，发送邮件给通知人
-export const checkOverdue30DaysEvents = async () => {
+// 定时任务：检查已过期的事件，发送邮件给通知人列表
+export const checkOverdueEvents = async () => {
   try {
-    console.log('[' + new Date().toISOString() + '] 检查超过截止日期30天未关闭的质量事件...')
+    console.log('[' + new Date().toISOString() + '] 检查已过期质量事件...')
     
-    // 查找未关闭且超过截止日期30天的事件
+    // 查找未关闭且已过期超过7天的事件
     const events = await query(`
       SELECT * FROM quality_event
       WHERE deleted_at IS NULL
         AND status != 'CLOSED'
         AND status != 'REJECTED'
         AND due_date IS NOT NULL
-        AND due_date <= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        AND due_date <= DATE_SUB(NOW(), INTERVAL 7 DAY)
     `)
     
-    console.log(`找到 ${events.length} 个超过截止日期30天未关闭的事件`)
+    console.log(`找到 ${events.length} 个已过期超过7天的事件`)
     
     for (const event of events) {
       // 计算超期天数
       const daysOverdue = Math.floor((new Date() - new Date(event.due_date)) / (1000 * 60 * 60 * 24))
+      
+      // 计算是否应该发送提醒（每隔一天）
+      const lastOverdueReminder = event.last_overdue_reminder_at ? new Date(event.last_overdue_reminder_at) : null
+      const now = new Date()
+      const shouldSend = !lastOverdueReminder || (now - lastOverdueReminder) >= (2 * 24 * 60 * 60 * 1000)
+      
+      if (!shouldSend) {
+        console.log(`事件 ${event.event_no} 距离上次过期提醒不足2天，跳过`)
+        continue
+      }
+      
+      // 新逻辑：过期提醒通知通知人列表
+      let notifyUserIds = []
+      if (event.notify_users) {
+        try {
+          notifyUserIds = JSON.parse(event.notify_users)
+        } catch {}
+      }
+      
+      if (notifyUserIds.length === 0) {
+        console.log(`事件 ${event.event_no} 没有通知人，跳过`)
+        continue
+      }
+      
+      // 发送过期提醒邮件
+      await sendNotificationEmail(event, notifyUserIds, `已超期${daysOverdue}天`, true)
+      console.log(`已发送过期提醒：${event.event_no}，已超期 ${daysOverdue} 天`)
+      
+      // 更新最后过期提醒时间
+      await query(
+        'UPDATE quality_event SET last_overdue_reminder_at = NOW() WHERE id = ?',
+        [event.id]
+      )
+    }
+    
+    console.log('过期提醒检查完成')
+  } catch (error) {
+    console.error('检查过期提醒失败:', error)
+  }
+}
       
       // 检查是否已经发送过提醒（每月只发一次）
       const lastReminder = event.last_reminder_at ? new Date(event.last_reminder_at) : null

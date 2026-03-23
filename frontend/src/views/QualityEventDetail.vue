@@ -1223,16 +1223,27 @@ const submitChangeEvent = async () => {
 }
 
 // 权限判断
-// 只有当前处理人可以编辑和填写
-const canEdit = computed(() => {
-  return event.value?.current_handler_id === currentUserId.value
+// P阶段：只有创建人可以编辑
+const canEditPlan = computed(() => {
+  return event.value?.reporter_id === currentUserId.value && 
+         (event.value?.status === 'NEW' || event.value?.status === 'PLAN')
 })
 
-// 各阶段编辑权限（当前处理人只能编辑当前对应的阶段）
-const canEditPlan = computed(() => canEdit.value && (event.value?.status === 'NEW' || event.value?.status === 'PLAN'))
-const canEditDo = computed(() => canEdit.value && event.value?.status === 'DO')
-const canEditCheck = computed(() => canEdit.value && event.value?.status === 'CHECK')
-const canEditAct = computed(() => canEdit.value && event.value?.status === 'ACT')
+// D阶段：任何责任人都可以编辑
+const canEditDo = computed(() => {
+  const responsibleIds = parseJsonArray(event.value?.responsible_ids)
+  return responsibleIds.includes(currentUserId.value) && event.value?.status === 'DO'
+})
+
+// C阶段：当前处理人（C阶段指定人）可以编辑
+const canEditCheck = computed(() => {
+  return event.value?.current_handler_id === currentUserId.value && event.value?.status === 'CHECK'
+})
+
+// A阶段：监督/确认人可以编辑
+const canEditAct = computed(() => {
+  return event.value?.supervisor_id === currentUserId.value && event.value?.status === 'ACT'
+})
 
 // 是否可以评论（所有人都可以评论）
 const canComment = computed(() => true)
@@ -1331,14 +1342,16 @@ const savePDCA = async () => {
       data.correctiveAction = editForm.value.correctiveAction
       data.planFiles = planFiles.value
       data.status = 'DO' // Plan填写完成，进入DO阶段
-      data.currentHandlerId = editForm.value.nextHandlerId || currentUserId.value
-      data.nextHandlerId = editForm.value.nextHandlerId
+      // P阶段不指定下一步人，D阶段任何责任人都可以处理
+      data.currentHandlerId = null
+      data.nextHandlerId = null
       data.nextStep = 'DO'
     } else if (editType.value === 'DO') {
       data.implementation = editForm.value.implementation
       data.doFiles = doFiles.value
       data.status = 'CHECK' // Do填写完成，进入CHECK阶段
-      data.currentHandlerId = editForm.value.nextHandlerId || currentUserId.value
+      // D阶段需要指定C阶段处理人
+      data.currentHandlerId = editForm.value.nextHandlerId
       data.nextHandlerId = editForm.value.nextHandlerId
       data.nextStep = 'CHECK'
     } else if (editType.value === 'CHECK') {
@@ -1346,18 +1359,21 @@ const savePDCA = async () => {
       data.checkFiles = checkFiles.value
       if (editForm.value.passed) {
         data.status = 'ACT' // 验证通过，进入ACT阶段
-        data.currentHandlerId = editForm.value.nextHandlerId || currentUserId.value
-        data.nextHandlerId = editForm.value.nextHandlerId
+        // C阶段不指定下一步人，A阶段由监督/确认人处理
+        data.currentHandlerId = event.value.supervisor_id
+        data.nextHandlerId = null
         data.nextStep = 'ACT'
       } else {
         data.status = 'DO' // 不通过，回到DO阶段
-        data.currentHandlerId = editForm.value.nextHandlerId || currentUserId.value
-        data.nextHandlerId = editForm.value.nextHandlerId
+        // 返回D阶段，任何责任人都可以处理
+        data.currentHandlerId = null
+        data.nextHandlerId = null
         data.nextStep = 'DO'
       }
     } else if (editType.value === 'ACT') {
       data.standardization = editForm.value.standardization
       data.actFiles = actFiles.value
+      data.causeType = editForm.value.causeType // 原因类型
       data.status = editForm.value.status // CLOSED 或保持 ACT
       if (editForm.value.status === 'CLOSED') {
         data.currentHandlerId = null
