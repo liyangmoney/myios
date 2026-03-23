@@ -4,6 +4,9 @@
 
 USE pis_system;
 
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
 -- 清空现有部门数据
 DELETE FROM sys_department;
 
