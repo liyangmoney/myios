@@ -289,7 +289,7 @@
     <el-dialog 
       v-model="dialogVisible" 
       :title="isEdit ? '编辑质量事件' : '新建质量事件'" 
-      :width="isMobile ? '90%' : '700px'"
+      :width="isMobile ? '90%' : '900px'"
       :close-on-click-modal="false"
       class="quality-event-dialog"
     >
@@ -325,10 +325,21 @@
             </el-col>
           </el-row>
           
-          <!-- 第二行：项目号/生产任务单号 - 占满整行 -->
-          <el-form-item label="项目号/生产任务单号" prop="projectNo" class="full-width-item">
-            <el-input v-model="formData.projectNo" placeholder="请输入" />
-          </el-form-item>
+          <!-- 第二行：项目号/生产任务单号 + 问题类型 -->
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="项目号/生产任务单号" prop="projectNo">
+                <el-input v-model="formData.projectNo" placeholder="请输入" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="问题类型" prop="problemType">
+                <el-select v-model="formData.problemType" placeholder="请选择" style="width: 100%">
+                  <el-option v-for="opt in problemTypeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
           
           <!-- 第三行：用户 + 关键字 -->
           <el-row :gutter="20">
@@ -344,14 +355,7 @@
             </el-col>
           </el-row>
           
-          <!-- 第四行：问题类型 -->
-          <el-form-item label="问题类型" prop="problemType" class="full-width-item">
-            <el-select v-model="formData.problemType" placeholder="请选择" style="width: 100%">
-              <el-option v-for="opt in problemTypeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
-            </el-select>
-          </el-form-item>
-          
-          <!-- 第五行：故障严重程度（多选）- 占满整行 -->
+          <!-- 第四行：故障严重程度（多选）- 占满整行 -->
           <el-form-item label="故障严重程度" prop="severity" class="full-width-item">
             <el-select v-model="formData.severity" multiple placeholder="请选择（可多选）" style="width: 100%">
               <el-option v-for="opt in severityOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
@@ -385,28 +389,32 @@
             />
           </el-form-item>
           
-          <!-- 第八行：监督/确认人 - 占满整行 -->
-          <el-form-item label="监督/确认人" prop="supervisorId" class="full-width-item">
-            <el-select-v2
-              v-model="formData.supervisorId"
-              :options="userOptions"
-              placeholder="请选择监督/确认人"
-              style="width: 100%"
-              clearable
-              filterable
-            />
-          </el-form-item>
-          
-          <!-- 第九行：截止日期 -->
-          <el-form-item label="截止日期" prop="dueDate" class="full-width-item">
-            <el-date-picker
-              v-model="formData.dueDate"
-              type="date"
-              placeholder="选择日期"
-              style="width: 100%"
-              value-format="YYYY-MM-DD"
-            />
-          </el-form-item>
+          <!-- 第八行：监督/确认人 + 截止日期 -->
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="监督/确认人" prop="supervisorId">
+                <el-select-v2
+                  v-model="formData.supervisorId"
+                  :options="userOptions"
+                  placeholder="请选择监督/确认人"
+                  style="width: 100%"
+                  clearable
+                  filterable
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="截止日期" prop="dueDate">
+                <el-date-picker
+                  v-model="formData.dueDate"
+                  type="date"
+                  placeholder="选择日期"
+                  style="width: 100%"
+                  value-format="YYYY-MM-DD"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
         </template>
         
         <!-- 移动端单列布局 -->
