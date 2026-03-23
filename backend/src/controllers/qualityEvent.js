@@ -394,8 +394,18 @@ export const createQualityEvent = async (req, res) => {
     
     // 获取责任人姓名列表
     let responsibleName = null
-    const responsibleId = Array.isArray(responsibleIds) ? responsibleIds[0] : responsibleIds
-    if (responsibleId) {
+    let responsibleId = null
+    
+    // 解析责任人IDs
+    let parsedResponsibleIds = []
+    if (typeof responsibleIds === 'string') {
+      parsedResponsibleIds = responsibleIds.split(',').filter(Boolean).map(id => parseInt(id.trim())).filter(id => !isNaN(id))
+    } else if (Array.isArray(responsibleIds)) {
+      parsedResponsibleIds = responsibleIds.map(id => typeof id === 'string' ? parseInt(id) : id).filter(id => !isNaN(id))
+    }
+    
+    if (parsedResponsibleIds.length > 0) {
+      responsibleId = parsedResponsibleIds[0] // 取第一个作为当前处理人
       const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [responsibleId])
       if (users.length > 0) {
         responsibleName = users[0].user_name
@@ -430,8 +440,7 @@ export const createQualityEvent = async (req, res) => {
       discoveryForm ? JSON.stringify(discoveryForm.split(',').filter(Boolean)) : '[]',
       reporterId, reporterName,
       // 责任人可能是逗号分隔字符串或数组
-      typeof responsibleIds === 'string' ? JSON.stringify(responsibleIds.split(',').filter(Boolean)) : JSON.stringify(responsibleIds || []),
-      responsibleName, supervisorId, supervisorName,
+      JSON.stringify(parsedResponsibleIds), responsibleName, supervisorId, supervisorName,
       responsibleId, responsibleName, dueDate, JSON.stringify(notifyUsers || []),
       JSON.stringify(descriptionFiles || []), isChanged || 0, changeSourceId || null, changeSourceNo || null
     ])
