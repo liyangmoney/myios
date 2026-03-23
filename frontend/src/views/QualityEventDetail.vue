@@ -860,28 +860,24 @@
           </el-col>
         </el-row>
 
+        <!-- 项目号/生产任务单号 - 独占一行 -->
+        <el-form-item label="项目号/生产任务单号" prop="projectNo">
+          <el-input v-model="changeForm.projectNo" placeholder="请输入" />
+        </el-form-item>
+
+        <!-- 用户 + 关键字 -->
         <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="项目号/生产任务单号" prop="projectNo">
-              <el-input v-model="changeForm.projectNo" placeholder="请输入" />
-            </el-form-item>
-          </el-col>
           <el-col :span="12">
             <el-form-item label="用户" prop="customer">
               <el-input v-model="changeForm.customer" placeholder="请输入用户" />
             </el-form-item>
           </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="问题类型" prop="problemType">
-              <el-select v-model="changeForm.problemType" placeholder="请选择" style="width: 100%">
-                <el-option label="软件算法" value="软件算法" />
-                <el-option label="嵌入式硬件" value="嵌入式硬件" />
-                <el-option label="机械电器" value="机械电器" />
-              </el-select>
+            <el-form-item label="关键字" prop="keywords">
+              <el-input v-model="changeForm.keywords" placeholder="请输入关键字（选填）" />
             </el-form-item>
+          </el-col>
+        </el-row>
           </el-col>
           <el-col :span="12">
             <el-form-item label="关键字" prop="keywords">
