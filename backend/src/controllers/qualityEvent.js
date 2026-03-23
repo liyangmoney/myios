@@ -1067,13 +1067,13 @@ export const checkDueDateReminders = async () => {
       // 只处理72小时内的
       if (hoursLeft > 72 || hoursLeft < 0) continue
       
-      // 计算是否应该发送提醒（每24小时一次）
+      // 计算是否应该发送提醒（每6小时一次）
       const lastReminder = event.last_reminder_at ? new Date(event.last_reminder_at) : null
       const now = new Date()
-      const shouldSend = !lastReminder || (now - lastReminder) >= (24 * 60 * 60 * 1000)
+      const shouldSend = !lastReminder || (now - lastReminder) >= (6 * 60 * 60 * 1000)
       
       if (!shouldSend) {
-        console.log(`事件 ${event.event_no} 距离上次提醒不足24小时，跳过`)
+        console.log(`事件 ${event.event_no} 距离上次提醒不足6小时，跳过`)
         continue
       }
       

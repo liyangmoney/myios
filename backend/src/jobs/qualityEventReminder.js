@@ -1,16 +1,16 @@
 import { checkDueDateReminders, checkOverdueEvents } from '../controllers/qualityEvent.js'
 
-// 每24小时执行一次到期提醒检查
+// 每6小时执行一次到期提醒检查
 export const startQualityEventReminderJob = () => {
   console.log('启动质量事件到期提醒定时任务...')
   
   // 立即执行一次
   checkDueDateReminders()
   
-  // 每24小时执行一次 (24 * 60 * 60 * 1000 = 86400000 ms)
-  setInterval(checkDueDateReminders, 24 * 60 * 60 * 1000)
+  // 每6小时执行一次 (6 * 60 * 60 * 1000 = 21600000 ms)
+  setInterval(checkDueDateReminders, 6 * 60 * 60 * 1000)
   
-  console.log('质量事件到期提醒定时任务已启动，每24小时检查一次')
+  console.log('质量事件到期提醒定时任务已启动，每6小时检查一次')
 }
 
 // 每天执行一次过期提醒检查
