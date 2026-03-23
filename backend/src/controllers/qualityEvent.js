@@ -940,48 +940,61 @@ export const uploadFiles = async (req, res) => {
       return res.status(400).json({ code: 400, message: '没有上传文件' })
     }
     
-    // 获取当前文件列表
-    const events = await query('SELECT * FROM quality_event WHERE id = ?', [id])
-    if (events.length === 0) {
-      return res.status(404).json({ code: 404, message: '事件不存在' })
-    }
+    // 准备文件信息
+    let newFiles = []
+    let eventNo = 'temp'
     
-    const event = events[0]
-    
-    // 准备文件信息 - 包含事件编号文件夹路径
-    const newFiles = req.files.map(file => {
-      // 处理中文文件名
-      let originalName = file.originalname
-      
-      // 通过 isBase64 区分来源：
-      // - 安卓端：isBase64=true，直接使用（已是 UTF-8）
-      // - PC/H5 端：isBase64 不存在，需要 latin1 转 utf8
-      if (!req.body.isBase64) {
-        // PC/H5 端需要转换
-        try {
-          originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
-        } catch (e) {
-          // 转换失败，保持原样
+    // 如果是临时上传（创建事件前），不查询数据库
+    if (id === 'temp') {
+      newFiles = req.files.map(file => {
+        let originalName = file.originalname
+        if (!req.body.isBase64) {
+          try {
+            originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
+          } catch (e) {}
         }
+        return {
+          name: originalName,
+          url: `/uploads/quality-events/temp/${file.filename}`,
+          type: file.mimetype,
+          size: file.size,
+          uploadTime: new Date().toISOString()
+        }
+      })
+    } else {
+      // 正常上传，查询事件
+      const events = await query('SELECT * FROM quality_event WHERE id = ?', [id])
+      if (events.length === 0) {
+        return res.status(404).json({ code: 404, message: '事件不存在' })
       }
-      // 安卓端直接使用 file.originalname（已是 UTF-8）
       
-      return {
-        name: originalName,
-        url: `/uploads/quality-events/${event.event_no}/${file.filename}`,
-        type: file.mimetype,
-        size: file.size,
-        uploadTime: new Date().toISOString()
-      }
-    })
+      const event = events[0]
+      eventNo = event.event_no
+      
+      // 准备文件信息
+      newFiles = req.files.map(file => {
+        let originalName = file.originalname
+        if (!req.body.isBase64) {
+          try {
+            originalName = Buffer.from(file.originalname, 'latin1').toString('utf8')
+          } catch (e) {}
+        }
+        return {
+          name: originalName,
+          url: `/uploads/quality-events/${eventNo}/${file.filename}`,
+          type: file.mimetype,
+          size: file.size,
+          uploadTime: new Date().toISOString()
+        }
+      })
     
     // 根据阶段更新对应的文件字段
     let fieldName
     let existingFiles = []
     
-    // 如果是评论附件或PDCA阶段附件，直接返回文件信息，不更新事件表
+    // 如果是评论附件、PDCA阶段附件 或 创建事件时的描述附件，直接返回文件信息
     // 由前端在提交时统一处理
-    if (stage === 'comment' || stage === 'plan' || stage === 'do' || stage === 'check' || stage === 'act') {
+    if (stage === 'comment' || stage === 'plan' || stage === 'do' || stage === 'check' || stage === 'act' || stage === 'description' || id === 'temp') {
       res.json({
         code: 200,
         message: '文件上传成功',
