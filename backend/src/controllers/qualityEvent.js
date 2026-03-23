@@ -297,6 +297,9 @@ export const getQualityEventDetail = async (req, res) => {
     
     const event = events[0]
     
+    // 调试日志：检查current_handler_name
+    console.log(`[DEBUG] 事件详情: id=${id}, current_handler_name=${event.current_handler_name}, current_handler_id=${event.current_handler_id}`)
+    
     // 处理当前处理人名称（可能是JSON数组，用于D阶段的多责任人）
     if (event.current_handler_name) {
       try {
