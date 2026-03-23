@@ -16,7 +16,7 @@ import {
   getStatistics,
   uploadFiles,
   checkDueDateReminders,
-  checkOverdue30DaysEvents
+  checkOverdueEvents
 } from '../controllers/qualityEvent.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -199,7 +199,7 @@ router.post('/admin/check-overdue-30days', async (req, res) => {
       return res.status(403).json({ code: 403, message: '只有管理员可以执行此操作' })
     }
     
-    await checkOverdue30DaysEvents()
+    await checkOverdueEvents()
     res.json({ code: 200, message: '超期30天事件检查完成' })
   } catch (error) {
     console.error('手动触发超期30天检查失败:', error)
