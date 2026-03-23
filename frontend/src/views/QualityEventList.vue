@@ -297,7 +297,7 @@
         ref="formRef"
         :model="formData" 
         :rules="formRules"
-        :label-width="isMobile ? '80px' : '140px'"
+        :label-width="isMobile ? '80px' : '165px'"
         :label-position="isMobile ? 'top' : 'right'"
         class="quality-event-form"
       >
@@ -1297,6 +1297,7 @@ onMounted(() => {
 .quality-event-form :deep(.el-form-item__label) {
   line-height: 32px;
   padding-right: 12px;
+  white-space: nowrap;
 }
 
 .quality-event-form :deep(.el-form-item) {
