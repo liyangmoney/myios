@@ -1118,6 +1118,31 @@
           />
         </el-form-item>
 
+        <el-form-item label="问题描述附件">
+          <el-upload
+            ref="changeDescUploadRef"
+            :http-request="(options) => handleChangeDescFileUpload(options)"
+            :multiple="true"
+            :auto-upload="true"
+            :show-file-list="false"
+            accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4"
+            :on-success="(res, file) => handleChangeDescFileSuccess(res, file)"
+          >
+            <el-button type="info" :icon="Paperclip">添加附件</el-button>
+            <template #tip>
+              <div class="el-upload__tip">支持图片、文档、视频等格式</div>
+            </template>
+          </el-upload>
+          <!-- 已上传附件列表 -->
+          <div v-if="changeForm.descriptionFiles.length > 0" class="uploaded-files">
+            <div v-for="(file, idx) in changeForm.descriptionFiles" :key="idx" class="uploaded-file-item">
+              <el-icon><Document /></el-icon>
+              <span class="file-name" :title="file.name" @click="previewFile(file)" style="cursor: pointer; color: #409EFF;">{{ truncateFileName(file.name, 20) }}</span>
+              <el-button link type="danger" size="small" @click="removeChangeDescFile(idx)">删除</el-button>
+            </div>
+          </div>
+        </el-form-item>
+
         <el-form-item label="通知人">
           <el-select-v2
             v-model="changeForm.notifyUsers"
@@ -1135,6 +1160,17 @@
         <el-button @click="handleChangeCancel">取消</el-button>
         <el-button type="primary" @click="submitChangeEvent" :loading="submittingChange">确认创建</el-button>
       </template>
+    </el-dialog>
+
+    <!-- 图片预览对话框 -->
+    <el-dialog
+      v-model="previewImageVisible"
+      title="图片预览"
+      width="80%"
+      center
+      destroy-on-close
+    >
+      <img :src="previewImageUrl" style="width: 100%; max-height: 70vh; object-fit: contain;" />
     </el-dialog>
   </div>
 </template>
@@ -1177,9 +1213,15 @@ const changeForm = ref({
   supervisorId: null,
   dueDate: '',
   description: '',
+  descriptionFiles: [],  // 问题描述附件
   notifyUsers: []
 })
 const submittingChange = ref(false)
+const changeDescUploadRef = ref(null)  // 变更事件附件上传ref
+
+// 图片预览
+const previewImageVisible = ref(false)
+const previewImageUrl = ref('')
 
 // 移动端检测
 const isMobile = ref(false)
@@ -1320,6 +1362,7 @@ const openChangeDialog = () => {
     supervisorId: event.value.supervisor_id || null,
     dueDate: event.value.due_date || '',
     description: `此事件由${event.value.event_no}事件变更而来\n\n${event.value.description || ''}`,
+    descriptionFiles: [],  // 清空附件列表
     notifyUsers: event.value.notify_users || []
   }
   
@@ -1358,6 +1401,7 @@ const submitChangeEvent = async () => {
       supervisorId: changeForm.value.supervisorId,
       dueDate: changeForm.value.dueDate,
       description: changeForm.value.description,
+      descriptionFiles: changeForm.value.descriptionFiles,  // 附件列表
       notifyUsers: changeForm.value.notifyUsers,
       // 变更相关字段
       isChanged: 1,
@@ -1378,6 +1422,118 @@ const submitChangeEvent = async () => {
   } finally {
     submittingChange.value = false
   }
+}
+
+// 变更事件附件上传处理
+const handleChangeDescFileUpload = async (options) => {
+  const { file, onProgress, onSuccess, onError } = options
+  try {
+    const result = await qualityEventApi.uploadTempFile(file, 'description', onProgress)
+    if (result.code === 200) {
+      onSuccess(result)
+    } else {
+      onError(new Error(result.message || '上传失败'))
+    }
+  } catch (error) {
+    console.error('附件上传失败:', error)
+    onError(error)
+    ElMessage.error('附件上传失败: ' + (error.message || '未知错误'))
+  }
+}
+
+// 变更事件附件上传成功回调
+const handleChangeDescFileSuccess = (response, file) => {
+  if (response.code === 200 && response.data) {
+    const fileData = response.data
+    changeForm.value.descriptionFiles.push({
+      name: fileData.originalName || file.name,
+      url: fileData.url || fileData.fileUrl,
+      size: fileData.size || file.size,
+      type: fileData.type || file.type
+    })
+    ElMessage.success(`"${file.name}" 上传成功`)
+  } else {
+    ElMessage.error(response.message || '上传失败')
+  }
+}
+
+// 删除变更事件附件
+const removeChangeDescFile = async (idx) => {
+  const file = changeForm.value.descriptionFiles[idx]
+  if (!file) return
+  
+  try {
+    // 从临时目录删除文件
+    if (file.name) {
+      await qualityEventApi.deleteTempFile(file.name)
+    }
+  } catch (error) {
+    console.error('删除临时文件失败:', error)
+  }
+  
+  changeForm.value.descriptionFiles.splice(idx, 1)
+  ElMessage.success('附件已删除')
+}
+
+// 截断文件名（过长时显示省略号）
+const truncateFileName = (name, maxLength = 20) => {
+  if (!name || name.length <= maxLength) return name
+  const ext = name.lastIndexOf('.') > 0 ? name.substring(name.lastIndexOf('.')) : ''
+  const base = name.substring(0, name.lastIndexOf('.'))
+  const keepLength = maxLength - ext.length - 3
+  if (keepLength <= 0) return name.substring(0, maxLength) + '...'
+  return base.substring(0, keepLength) + '...' + ext
+}
+
+// 预览文件
+const previewFile = (file) => {
+  if (!file || !file.url) {
+    ElMessage.warning('文件链接无效')
+    return
+  }
+  
+  const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name || file.url)
+  
+  if (isImage) {
+    // 图片使用预览对话框
+    previewImageUrl.value = getFileUrl(file.url)
+    previewImageVisible.value = true
+  } else {
+    // 其他文件直接下载
+    const fullUrl = getFileUrl(file.url)
+    window.open(fullUrl, '_blank')
+  }
+}
+
+// 获取完整的文件URL
+const getFileUrl = (url) => {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  
+  // 使用下载接口
+  if (url.includes('/uploads/')) {
+    const filename = url.split('/').pop()
+    return `${getFullBaseURL()}/api/download?filename=${encodeURIComponent(filename)}`
+  }
+  
+  return `${getFullBaseURL()}${url.startsWith('/') ? '' : '/'}${url}`
+}
+
+// 获取完整的 API 基础 URL
+const getFullBaseURL = () => {
+  const baseURL = apiConfig.baseURL
+  if (baseURL.startsWith('http')) {
+    return baseURL
+  }
+  // 原生平台必须使用完整服务器地址
+  if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform()) {
+    return `http://myjghy.myds.me:9090`
+  }
+  // 浏览器环境
+  if (baseURL.startsWith('/')) {
+    return `${window.location.origin}${baseURL}`
+  }
+  return baseURL
 }
 
 // 权限判断
