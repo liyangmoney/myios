@@ -7,7 +7,6 @@
           <el-icon><ArrowLeft /></el-icon> 返回
         </el-button>
         <span class="event-no">{{ event.event_no }}</span>
-        <el-tag :type="getSeverityType(event.severity)" size="small">{{ event.severity }}</el-tag>
         <el-tag :type="getStatusType(event.status)" size="small">{{ getStatusLabel(event.status) }}</el-tag>
       </div>
       <div class="header-right">
