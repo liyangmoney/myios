@@ -162,6 +162,15 @@
           </div>
         </div>
         <div class="mobile-info-item">
+          <span class="mobile-info-label">故障严重程度</span>
+          <div>
+            <el-tag v-for="(sev, idx) in parseMultiSelect(event.severity)" :key="idx" :type="getSeverityType(sev)" size="small" class="mr-2">
+              {{ sev }}
+            </el-tag>
+            <span v-if="!event.severity" class="text-gray">-</span>
+          </div>
+        </div>
+        <div class="mobile-info-item">
           <span class="mobile-info-label">涉及相关部件</span>
           <div v-if="parseJsonArray(event.related_parts).length > 0">
             <el-tag v-for="(part, idx) in parseJsonArray(event.related_parts)" :key="idx" size="small" class="mr-2" type="info">
