@@ -263,24 +263,27 @@
           <span class="responsible-names">{{ event.responsible_name || '-' }}</span>
         </div>
 
-        <div class="mobile-event-info">
-          <div class="mobile-info-row">
-            <span class="mobile-info-label">当前处理：</span>
-            <span class="handler-names">
-              <el-tag v-if="event.current_handler_name" type="primary" size="small">{{ event.current_handler_name }}</el-tag>
-              <span v-else class="text-gray">未分配</span>
-            </span>
-          </div>
-          <div class="mobile-info-row">
-            <span class="mobile-info-label">创建人：</span>
-            <span>{{ event.reporter_name }}</span>
-          </div>
-          <div class="mobile-info-row">
-            <span class="mobile-info-label">截止：</span>
-            <span :class="{ 'overdue': isOverdue(event.due_date, event.status) }">
-              {{ event.due_date ? formatDateTime(event.due_date).split(' ')[0] : '-' }}
-            </span>
-          </div>
+        <!-- 当前处理人 -->
+        <div class="mobile-event-handler">
+          <span class="mobile-info-label">当前处理：</span>
+          <span class="handler-names">
+            <el-tag v-if="event.current_handler_name" type="primary" size="small">{{ event.current_handler_name }}</el-tag>
+            <span v-else class="text-gray">未分配</span>
+          </span>
+        </div>
+
+        <!-- 创建人 -->
+        <div class="mobile-event-creator">
+          <span class="mobile-info-label">创建人：</span>
+          <span>{{ event.reporter_name }}</span>
+        </div>
+
+        <!-- 截止日期 -->
+        <div class="mobile-event-due">
+          <span class="mobile-info-label">截止：</span>
+          <span :class="{ 'overdue': isOverdue(event.due_date, event.status) }">
+            {{ event.due_date ? formatDateTime(event.due_date).split(' ')[0] : '-' }}
+          </span>
         </div>
       </div>
 
@@ -1442,24 +1445,43 @@ onMounted(() => {
     line-height: 1.5;
   }
 
-  .mobile-event-info {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
+  /* 当前处理人 - 单独一行 */
+  .mobile-event-handler {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    margin-bottom: 6px;
     font-size: 12px;
     color: #606266;
   }
 
-  .mobile-info-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 4px;
-  }
-
-  .mobile-info-row .handler-names {
+  .mobile-event-handler .handler-names {
     flex: 1;
     word-break: break-all;
     line-height: 1.5;
+  }
+
+  /* 创建人 - 单独一行 */
+  .mobile-event-creator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #606266;
+  }
+
+  /* 截止日期 - 单独一行 */
+  .mobile-event-due {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #606266;
+  }
+
+  .mobile-event-info {
+    display: none;
   }
 
   .mobile-info-label {
