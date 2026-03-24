@@ -600,16 +600,14 @@ export const createQualityEvent = async (req, res) => {
       VALUES (?, ?, ?, 'CREATE', ?)
     `, [eventId, reporterId, reporterName, JSON.stringify(logEntry)])
     
-    // 如果是变更事件，在源事件中也记录日志
+    // 如果是变更事件，在源事件中也记录日志（只记录关键信息）
     if (isChanged && changeSourceId && changeSourceNo) {
       await query(`
         INSERT INTO quality_event_log (event_id, user_id, user_name, action, new_value)
         VALUES (?, ?, ?, 'UPDATE', ?)
       `, [changeSourceId, reporterId, reporterName, JSON.stringify({
         actionDetail: '创建关联变更事件',
-        changeEventNo: eventNo,
-        changeEventId: eventId,
-        message: `创建了变更事件 ${eventNo}`
+        changeEventNo: eventNo
       })])
     }
     
