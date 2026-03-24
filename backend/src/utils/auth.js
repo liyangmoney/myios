@@ -10,7 +10,7 @@ export const verifyToken = (token) => {
   return jwt.verify(token, process.env.JWT_SECRET)
 }
 
-export const authMiddleware = (req, res, next) => {
+export const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -23,6 +23,7 @@ export const authMiddleware = (req, res, next) => {
     const decoded = verifyToken(token)
     req.userId = decoded.userId
     req.username = decoded.username
+    req.userName = decoded.username  // 添加 userName（大写N）
     req.userRole = decoded.role
     next()
   } catch (error) {
