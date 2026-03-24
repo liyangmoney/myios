@@ -115,14 +115,6 @@
             <el-option label="已关闭" value="CLOSED" />
           </el-select>
 
-          <el-select v-model="searchForm.severity" placeholder="严重程度" clearable size="small">
-            <el-option label="全部" value="" />
-            <el-option label="轻微" value="轻微" />
-            <el-option label="一般" value="一般" />
-            <el-option label="严重" value="严重" />
-            <el-option label="致命" value="致命" />
-          </el-select>
-
           <el-checkbox v-model="searchForm.myEvents" size="small">我的</el-checkbox>
         </div>
       </div>
