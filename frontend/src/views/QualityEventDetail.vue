@@ -1423,45 +1423,45 @@ const submitChangeEvent = async () => {
 const handleChangeDescFileUpload = async (options) => {
   const { file, onProgress, onSuccess, onError } = options
   try {
-    const result = await qualityEventApi.uploadTempFile(file, 'description', onProgress)
-    if (result.code === 200) {
-      onSuccess(result)
-    } else {
-      onError(new Error(result.message || '上传失败'))
-    }
+    // 使用 smartUpload 统一处理（支持分片和原生平台）
+    const result = await smartUpload(
+      file,
+      'temp', // 使用 temp 作为临时ID，文件会保存到 temp 文件夹
+      'temp', // 临时事件编号
+      'description',
+      (percent) => {
+        onProgress({ percent })
+      }
+    )
+    onSuccess({ code: 200, data: result })
   } catch (error) {
-    console.error('附件上传失败:', error)
+    console.error('上传失败:', error)
     onError(error)
-    ElMessage.error('附件上传失败: ' + (error.message || '未知错误'))
   }
 }
 
 // 变更事件附件上传成功回调
 const handleChangeDescFileSuccess = (response, file) => {
-  // 处理安卓端 response 可能为 undefined 的情况
+  console.log('文件上传成功:', response, file)
+  // 安全检查：确保 response 存在
   if (!response) {
-    // 如果是从 http-request 直接调用，file 对象本身包含信息
-    changeForm.value.descriptionFiles.push({
-      name: file.name,
-      url: file.response?.data?.url || file.response?.data?.fileUrl || '',
-      size: file.size,
-      type: file.type
-    })
-    ElMessage.success(`"${file.name}" 上传成功`)
+    console.error('上传成功但 response 为空')
     return
   }
-  
   if (response.code === 200 && response.data) {
-    const fileData = response.data
-    changeForm.value.descriptionFiles.push({
-      name: fileData.originalName || file.name,
-      url: fileData.url || fileData.fileUrl,
-      size: fileData.size || file.size,
-      type: fileData.type || file.type
-    })
-    ElMessage.success(`"${file.name}" 上传成功`)
+    const files = Array.isArray(response.data) ? response.data : [response.data]
+    if (files.length > 0) {
+      changeForm.value.descriptionFiles.push({
+        name: file.name,
+        url: files[0].url || files[0],
+        type: file.raw?.type || '',
+        size: file.size
+      })
+      // 清除 el-upload 的文件列表，防止重复显示
+      changeDescUploadRef.value?.clearFiles()
+    }
   } else {
-    ElMessage.error(response?.message || '上传失败')
+    console.error('上传返回错误:', response)
   }
 }
 
@@ -1470,17 +1470,17 @@ const removeChangeDescFile = async (idx) => {
   const file = changeForm.value.descriptionFiles[idx]
   if (!file) return
   
-  try {
-    // 从临时目录删除文件
-    if (file.name) {
-      await qualityEventApi.deleteTempFile(file.name)
+  // 删除 temp 文件夹中的文件
+  if (file.url && file.url.includes('/temp/')) {
+    try {
+      const filename = file.url.split('/').pop()
+      await qualityEventApi.deleteTempFile(filename)
+    } catch (error) {
+      console.error('删除临时文件失败:', error)
     }
-  } catch (error) {
-    console.error('删除临时文件失败:', error)
   }
   
   changeForm.value.descriptionFiles.splice(idx, 1)
-  ElMessage.success('附件已删除')
 }
 
 // 截断文件名（过长时显示省略号）
