@@ -668,7 +668,7 @@ const previewImageUrl = ref('')
 const formRules = {
   title: [
     { required: true, message: '请输入事件标题', trigger: 'blur' },
-    { max: 200, message: '事件标题长度不能超过200个字符', trigger: 'blur' }
+    { max: 100, message: '事件标题长度不能超过100个字符', trigger: 'blur' }
   ],
   productStage: [{ required: true, message: '请选择产品阶段', trigger: 'change' }],
   productType: [{ required: true, message: '请选择产品类型', trigger: 'change' }],
