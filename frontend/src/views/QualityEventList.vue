@@ -266,8 +266,10 @@
         <div class="mobile-event-info">
           <div class="mobile-info-row">
             <span class="mobile-info-label">当前处理：</span>
-            <el-tag v-if="event.current_handler_name" type="primary" size="small">{{ event.current_handler_name }}</el-tag>
-            <span v-else class="text-gray">未分配</span>
+            <span class="handler-names">
+              <el-tag v-if="event.current_handler_name" type="primary" size="small">{{ event.current_handler_name }}</el-tag>
+              <span v-else class="text-gray">未分配</span>
+            </span>
           </div>
           <div class="mobile-info-row">
             <span class="mobile-info-label">创建人：</span>
@@ -1450,8 +1452,14 @@ onMounted(() => {
 
   .mobile-info-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 4px;
+  }
+
+  .mobile-info-row .handler-names {
+    flex: 1;
+    word-break: break-all;
+    line-height: 1.5;
   }
 
   .mobile-info-label {
