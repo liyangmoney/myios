@@ -786,7 +786,7 @@
       </el-form>
 
       <template #footer>
-        <el-button @click="editDialogVisible = false">取消</el-button>
+        <el-button @click="handleEditCancel">取消</el-button>
         <el-button type="primary" @click="savePDCA" :loading="saving">保存</el-button>
       </template>
     </el-dialog>
@@ -1158,17 +1158,6 @@
         <el-button @click="handleChangeCancel">取消</el-button>
         <el-button type="primary" @click="submitChangeEvent" :loading="submittingChange">确认创建</el-button>
       </template>
-    </el-dialog>
-
-    <!-- 图片预览对话框 -->
-    <el-dialog
-      v-model="previewImageVisible"
-      title="图片预览"
-      width="80%"
-      center
-      destroy-on-close
-    >
-      <img :src="previewImageUrl" style="width: 100%; max-height: 70vh; object-fit: contain;" />
     </el-dialog>
   </div>
 </template>
@@ -1559,7 +1548,8 @@ const editPlan = () => {
   editType.value = 'PLAN'
   editForm.value = {
     rootCause: event.value.root_cause || '',
-    correctiveAction: event.value.corrective_action || ''
+    correctiveAction: event.value.corrective_action || '',
+    needsChange: false  // 初始化为未勾选
   }
   // 加载已有附件
   planFiles.value = parseFiles(event.value.plan_files)
@@ -1663,6 +1653,15 @@ const savePDCA = async () => {
   } finally {
     saving.value = false
   }
+}
+
+// 取消编辑
+const handleEditCancel = () => {
+  // 关闭弹窗前重置"需要变更"状态
+  if (editForm.value) {
+    editForm.value.needsChange = false
+  }
+  editDialogVisible.value = false
 }
 
 // 添加评论
