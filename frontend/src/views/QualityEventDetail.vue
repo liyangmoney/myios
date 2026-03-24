@@ -2595,4 +2595,48 @@ onMounted(() => {
 .change-event-dialog :deep(.el-form-item__label) {
   line-height: 32px;
 }
+
+/* 变更事件对话框移动端适配 */
+@media screen and (max-width: 768px) {
+  .change-event-dialog :deep(.el-dialog) {
+    width: 95% !important;
+    margin: 0 auto;
+  }
+  
+  .change-event-dialog :deep(.el-dialog__body) {
+    padding: 15px;
+  }
+  
+  .change-event-dialog :deep(.el-form) {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .change-event-dialog :deep(.el-form-item) {
+    margin-bottom: 12px;
+  }
+  
+  .change-event-dialog :deep(.el-form-item__label) {
+    float: none;
+    display: block;
+    text-align: left;
+    padding: 0 0 8px;
+    line-height: 1.5;
+  }
+  
+  .change-event-dialog :deep(.el-form-item__content) {
+    margin-left: 0 !important;
+  }
+  
+  .change-event-dialog :deep(.el-row) {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .change-event-dialog :deep(.el-col) {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+}
 </style>
