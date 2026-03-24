@@ -1438,6 +1438,19 @@ const handleChangeDescFileUpload = async (options) => {
 
 // 变更事件附件上传成功回调
 const handleChangeDescFileSuccess = (response, file) => {
+  // 处理安卓端 response 可能为 undefined 的情况
+  if (!response) {
+    // 如果是从 http-request 直接调用，file 对象本身包含信息
+    changeForm.value.descriptionFiles.push({
+      name: file.name,
+      url: file.response?.data?.url || file.response?.data?.fileUrl || '',
+      size: file.size,
+      type: file.type
+    })
+    ElMessage.success(`"${file.name}" 上传成功`)
+    return
+  }
+  
   if (response.code === 200 && response.data) {
     const fileData = response.data
     changeForm.value.descriptionFiles.push({
@@ -1448,7 +1461,7 @@ const handleChangeDescFileSuccess = (response, file) => {
     })
     ElMessage.success(`"${file.name}" 上传成功`)
   } else {
-    ElMessage.error(response.message || '上传失败')
+    ElMessage.error(response?.message || '上传失败')
   }
 }
 
