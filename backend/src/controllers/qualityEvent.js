@@ -132,11 +132,9 @@ export const getQualityEvents = async (req, res) => {
     
     let sql = `
       SELECT e.*, 
-             r.user_name as reporter_name,
-             c.user_name as current_handler_name
+             r.user_name as reporter_name
       FROM quality_event e
       LEFT JOIN sys_user r ON e.reporter_id = r.id
-      LEFT JOIN sys_user c ON e.current_handler_id = c.id
       WHERE e.deleted_at IS NULL
     `
     const params = []
@@ -188,7 +186,7 @@ export const getQualityEvents = async (req, res) => {
     
     const events = await query(sql, params)
     
-    // 解析通知人列表和查询责任人姓名
+    // 解析通知人列表和查询责任人姓名、当前处理人名称
     for (const event of events) {
       if (event.notify_users) {
         try {
@@ -198,6 +196,24 @@ export const getQualityEvents = async (req, res) => {
         }
       } else {
         event.notify_users = []
+      }
+      
+      // 处理当前处理人名称（可能是JSON数组，用于D阶段的多责任人）
+      if (event.current_handler_name) {
+        try {
+          const parsed = JSON.parse(event.current_handler_name)
+          if (Array.isArray(parsed)) {
+            event.current_handler_name = parsed.join(', ')
+          }
+        } catch {
+          // 不是JSON，保持原样
+        }
+      } else if (event.current_handler_id) {
+        // 如果current_handler_name为空但有current_handler_id，查询数据库
+        const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [event.current_handler_id])
+        event.current_handler_name = users[0]?.user_name || '-'
+      } else {
+        event.current_handler_name = '-'
       }
       
       // 查询责任人姓名
