@@ -221,14 +221,6 @@
           <span v-else class="text-gray">未分配</span>
         </div>
         <div class="mobile-info-item">
-          <span class="mobile-info-label">下一步</span>
-          <div v-if="event.next_step || event.next_handler_name">
-            <el-tag v-if="event.next_step" size="small">{{ getStepLabel(event.next_step) }}</el-tag>
-            <span v-if="event.next_handler_name" class="text-primary"> 待 {{ event.next_handler_name }} 处理</span>
-          </div>
-          <span v-else class="text-gray">暂无</span>
-        </div>
-        <div class="mobile-info-item">
           <span class="mobile-info-label">截止日期</span>
           <div class="due-date-display">
             <span :class="getDueDateClass(event.due_date, event.status)">
@@ -237,6 +229,16 @@
             <el-tag v-if="event.due_date && event.status !== 'CLOSED'" :type="getDueDateTagType(event.due_date)" size="small">
               {{ getDueDateText(event.due_date) }}
             </el-tag>
+          </div>
+        </div>
+        <div class="mobile-info-grid">
+          <div class="mobile-info-item">
+            <span class="mobile-info-label">创建时间</span>
+            <span class="mobile-info-value">{{ formatDateTime(event.created_at) }}</span>
+          </div>
+          <div class="mobile-info-item">
+            <span class="mobile-info-label">更新时间</span>
+            <span class="mobile-info-value">{{ formatDateTime(event.updated_at) }}</span>
           </div>
         </div>
       </div>
