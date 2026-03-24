@@ -668,12 +668,21 @@ const previewImageUrl = ref('')
 const formRules = {
   title: [
     { required: true, message: '请输入事件标题', trigger: 'blur' },
-    { max: 100, message: '事件标题长度不能超过100个字符', trigger: 'blur' }
+    { max: 200, message: '事件标题长度不能超过200个字符', trigger: 'blur' }
   ],
   productStage: [{ required: true, message: '请选择产品阶段', trigger: 'change' }],
   productType: [{ required: true, message: '请选择产品类型', trigger: 'change' }],
-  projectNo: [{ required: true, message: '请输入项目号/生产任务单号', trigger: 'blur' }],
-  customer: [{ required: true, message: '请输入用户', trigger: 'blur' }],
+  projectNo: [
+    { required: true, message: '请输入项目号/生产任务单号', trigger: 'blur' },
+    { max: 200, message: '项目号/生产任务单号长度不能超过200个字符', trigger: 'blur' }
+  ],
+  customer: [
+    { required: true, message: '请输入用户', trigger: 'blur' },
+    { max: 200, message: '用户长度不能超过200个字符', trigger: 'blur' }
+  ],
+  keywords: [
+    { max: 200, message: '关键字长度不能超过200个字符', trigger: 'blur' }
+  ],
   problemType: [{ required: true, message: '请选择问题类型', trigger: 'change' }],
   severity: [{ required: true, message: '请选择故障严重程度', trigger: 'change' }],
   relatedParts: [{ required: true, message: '请选择涉及相关部件', trigger: 'change' }],
