@@ -1284,9 +1284,6 @@ const editDialogVisible = ref(false)
 const editType = ref('')
 const editFormRef = ref(null)
 
-// 图片预览
-const previewImageVisible = ref(false)
-const previewImageUrl = ref('')
 const editDialogTitle = computed(() => {
   const titles = {
     PLAN: '编辑 Plan（计划）',
