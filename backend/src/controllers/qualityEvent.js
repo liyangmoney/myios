@@ -843,11 +843,25 @@ export const updateQualityEvent = async (req, res) => {
       }
     }
     
+    // 构建详细的操作日志内容
+    const logNewValue = { ...updateData }
+    
+    // A阶段（进入CLOSED状态）添加详细信息
+    if (updateData.status === 'CLOSED' && oldEvent.status === 'ACT') {
+      logNewValue.actionDetail = 'A阶段确认关闭'
+      if (updateData.causeType) {
+        logNewValue.causeTypeDetail = `原因类型: ${Array.isArray(updateData.causeType) ? updateData.causeType.join(', ') : updateData.causeType}`
+      }
+      if (updateData.standardization) {
+        logNewValue.standardizationDetail = `标准化措施: ${updateData.standardization}`
+      }
+    }
+    
     // 记录操作日志
     await query(`
       INSERT INTO quality_event_log (event_id, user_id, user_name, action, old_value, new_value)
       VALUES (?, ?, ?, 'UPDATE', ?, ?)
-    `, [id, userId, userName, JSON.stringify(oldEvent), JSON.stringify(updateData)])
+    `, [id, userId, userName, JSON.stringify(oldEvent), JSON.stringify(logNewValue)])
     
     res.json({ code: 200, message: '质量事件更新成功' })
   } catch (error) {

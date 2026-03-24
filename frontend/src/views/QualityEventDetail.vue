@@ -1629,12 +1629,29 @@ const getOtherChanges = (data) => {
   if (!data) return ''
   const details = []
 
+  // A阶段详细信息
+  if (data.actionDetail) {
+    details.push(data.actionDetail)
+  }
+  if (data.causeTypeDetail) {
+    details.push(data.causeTypeDetail)
+  }
+  if (data.standardizationDetail) {
+    details.push(data.standardizationDetail)
+  }
+
   // 文本字段变更
   if (data.rootCause) details.push(`根本原因: ${data.rootCause}`)
   if (data.correctiveAction) details.push(`纠正措施: ${data.correctiveAction}`)
   if (data.implementation) details.push(`实施记录: ${data.implementation}`)
   if (data.verificationResult) details.push(`验证结果: ${data.verificationResult}`)
   if (data.standardization) details.push(`标准化措施: ${data.standardization}`)
+  
+  // 原因类型（兼容直接存储的情况）
+  if (data.causeType) {
+    const causeTypeStr = Array.isArray(data.causeType) ? data.causeType.join(', ') : data.causeType
+    details.push(`原因类型: ${causeTypeStr}`)
+  }
 
   // 状态变更
   if (data.status) {
