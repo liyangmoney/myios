@@ -582,10 +582,36 @@ export const createQualityEvent = async (req, res) => {
     await sendNotificationEmail(event, allNotifyIds, '新建质量事件')
     
     // 记录操作日志
+    const logEntry = {
+      title,
+      eventNo,
+      isChanged: isChanged || 0
+    }
+    
+    // 如果是变更事件，记录源事件信息
+    if (isChanged && changeSourceId && changeSourceNo) {
+      logEntry.actionDetail = '创建变更事件'
+      logEntry.sourceEventNo = changeSourceNo
+      logEntry.sourceEventId = changeSourceId
+    }
+    
     await query(`
       INSERT INTO quality_event_log (event_id, user_id, user_name, action, new_value)
       VALUES (?, ?, ?, 'CREATE', ?)
-    `, [eventId, reporterId, reporterName, JSON.stringify({ title, eventNo })])
+    `, [eventId, reporterId, reporterName, JSON.stringify(logEntry)])
+    
+    // 如果是变更事件，在源事件中也记录日志
+    if (isChanged && changeSourceId && changeSourceNo) {
+      await query(`
+        INSERT INTO quality_event_log (event_id, user_id, user_name, action, new_value)
+        VALUES (?, ?, ?, 'UPDATE', ?)
+      `, [changeSourceId, reporterId, reporterName, JSON.stringify({
+        actionDetail: '创建关联变更事件',
+        changeEventNo: eventNo,
+        changeEventId: eventId,
+        message: `创建了变更事件 ${eventNo}`
+      })])
+    }
     
     res.json({
       code: 200,

@@ -301,15 +301,6 @@
                 :can-upload="false"
               />
             </el-descriptions-item>
-            <el-descriptions-item label="变更">
-              <el-checkbox 
-                v-model="isChangeChecked" 
-                :disabled="!canEditPlan"
-                @change="handleChangeCheck"
-              >
-                此事件需要变更
-              </el-checkbox>
-            </el-descriptions-item>
           </el-descriptions>
         </div>
       </div>
@@ -542,6 +533,14 @@
             </div>
             <!-- 操作日志内容 -->
             <div class="log-detail">
+              <!-- 创建事件（包含变更事件） -->
+              <template v-if="log.action === 'CREATE' && log.new_value && isJson(log.new_value)">
+                <template v-for="(data, idx) in [JSON.parse(log.new_value)]" :key="idx">
+                  <div v-if="data.isChanged">创建变更事件</div>
+                  <div v-if="data.sourceEventNo">源事件: {{ data.sourceEventNo }}</div>
+                  <div v-if="data.title">标题: {{ data.title }}</div>
+                </template>
+              </template>
               <!-- 评论且包含附件 -->
               <template v-if="log.action === 'COMMENT' && log.new_value">
                 <template v-if="isJson(log.new_value)">
@@ -1004,7 +1003,6 @@ const newComment = ref('')
 const userOptions = ref([])
 
 // 变更相关
-const isChangeChecked = ref(false)
 const changeDialogVisible = ref(false)
 const changeForm = ref({
   title: '',
@@ -1139,14 +1137,6 @@ const changeFormRules = {
 // 变更表单ref
 const changeFormRef = ref(null)
 
-// 处理变更勾选
-const handleChangeCheck = (val) => {
-  if (val) {
-    // 勾选时打开弹窗并预填充数据
-    openChangeDialog()
-  }
-}
-
 // 打开变更弹窗并预填充当前事件数据
 const openChangeDialog = () => {
   if (!event.value) return
@@ -1174,14 +1164,11 @@ const openChangeDialog = () => {
 
 // 处理变更弹窗关闭
 const handleChangeDialogClose = () => {
-  // 如果取消或关闭弹窗，取消勾选状态
-  isChangeChecked.value = false
   changeDialogVisible.value = false
 }
 
 // 处理变更取消
 const handleChangeCancel = () => {
-  isChangeChecked.value = false
   changeDialogVisible.value = false
 }
 
@@ -1218,7 +1205,6 @@ const submitChangeEvent = async () => {
     if (res.code === 200) {
       ElMessage.success('变更事件创建成功')
       changeDialogVisible.value = false
-      isChangeChecked.value = false
       // 可选：跳转到新创建的事件详情页
       // router.push(`/quality-events/${res.data.id}`)
     }
@@ -1645,6 +1631,18 @@ const getStepLabel = (step) => {
 const getOtherChanges = (data) => {
   if (!data) return ''
   const details = []
+
+  // 变更事件相关信息
+  if (data.actionDetail === '创建关联变更事件') {
+    details.push(data.actionDetail)
+    if (data.changeEventNo) {
+      details.push(`变更事件编号: ${data.changeEventNo}`)
+    }
+    if (data.message) {
+      details.push(data.message)
+    }
+    return details.join('; ')
+  }
 
   // A阶段详细信息
   if (data.actionDetail) {
