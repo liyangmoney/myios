@@ -241,8 +241,19 @@
         
         <div class="mobile-event-title">{{ event.title }}</div>
         
-        <div class="mobile-event-tags">
-          <el-tag :type="getSeverityType(event.severity)" size="small">{{ event.severity }}</el-tag>
+        <!-- 严重程度 - 支持多标签换行 -->
+        <div class="mobile-event-severity">
+          <el-tag 
+            v-for="(sev, idx) in parseMultiSelect(event.severity)" 
+            :key="idx"
+            :type="getSeverityType(sev)" 
+            size="small"
+            class="severity-tag"
+          >{{ sev }}</el-tag>
+        </div>
+        
+        <!-- 状态 - 单独一行 -->
+        <div class="mobile-event-status">
           <el-tag :type="getStatusType(event.status)" size="small">{{ getStatusLabel(event.status) }}</el-tag>
         </div>
         
@@ -1366,33 +1377,48 @@ onMounted(() => {
   
   .mobile-event-card {
     background: #fff;
-    border-radius: 8px;
-    padding: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    border: 1px solid #ebeef5;
+    margin-bottom: 12px;
   }
-  
+
   .mobile-event-card:active {
     background: #f5f7fa;
   }
-  
+
   .mobile-event-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #e4e7ed;
   }
-  
+
   .mobile-event-title {
-    font-size: 15px;
-    font-weight: 500;
+    font-size: 16px;
+    font-weight: 600;
     color: #303133;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     line-height: 1.4;
   }
-  
-  .mobile-event-tags {
+
+  /* 严重程度 - 支持换行 */
+  .mobile-event-severity {
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .mobile-event-severity .severity-tag {
+    margin-bottom: 4px;
+  }
+
+  /* 状态 - 单独一行 */
+  .mobile-event-status {
     margin-bottom: 10px;
   }
   
