@@ -527,7 +527,7 @@
           <div v-if="formData.descriptionFiles.length > 0" class="uploaded-files">
             <div v-for="(file, idx) in formData.descriptionFiles" :key="idx" class="uploaded-file-item">
               <el-icon><Document /></el-icon>
-              <span class="file-name" @click="previewFile(file)" style="cursor: pointer; color: #409EFF;">{{ file.name }}</span>
+              <span class="file-name" :title="file.name" @click="previewFile(file)" style="cursor: pointer; color: #409EFF;">{{ truncateFileName(file.name, 20) }}</span>
               <el-button link type="danger" size="small" @click="removeDescFile(idx)">删除</el-button>
             </div>
           </div>
@@ -581,6 +581,16 @@ const currentUserId = computed(() => userStore.userInfo?.id)
 
 // 默认服务器地址（用于原生平台）
 const DEFAULT_SERVER_URL = 'http://myjghy.myds.me:9090'
+
+// 截断文件名（过长时显示省略号）
+const truncateFileName = (name, maxLength = 20) => {
+  if (!name || name.length <= maxLength) return name
+  const ext = name.lastIndexOf('.') > 0 ? name.substring(name.lastIndexOf('.')) : ''
+  const base = name.substring(0, name.lastIndexOf('.'))
+  const keepLength = maxLength - ext.length - 3
+  if (keepLength <= 0) return name.substring(0, maxLength) + '...'
+  return base.substring(0, keepLength) + '...' + ext
+}
 
 // 获取完整的 API 基础 URL
 const getFullBaseURL = () => {
@@ -1466,5 +1476,12 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 200px;
+}
+
+@media (max-width: 768px) {
+  .uploaded-file-item .file-name {
+    max-width: 150px;
+  }
 }
 </style>
