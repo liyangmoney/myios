@@ -1482,57 +1482,6 @@ const truncateFileName = (name, maxLength = 20) => {
   return base.substring(0, keepLength) + '...' + ext
 }
 
-// 预览文件
-const previewFile = (file) => {
-  if (!file || !file.url) {
-    ElMessage.warning('文件链接无效')
-    return
-  }
-  
-  const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name || file.url)
-  
-  if (isImage) {
-    // 图片使用预览对话框
-    previewImageUrl.value = getFileUrl(file.url)
-    previewImageVisible.value = true
-  } else {
-    // 其他文件直接下载
-    const fullUrl = getFileUrl(file.url)
-    window.open(fullUrl, '_blank')
-  }
-}
-
-// 获取完整的文件URL
-const getFileUrl = (url) => {
-  if (!url) return ''
-  if (url.startsWith('http')) return url
-  
-  // 使用下载接口
-  if (url.includes('/uploads/')) {
-    const filename = url.split('/').pop()
-    return `${getFullBaseURL()}/api/download?filename=${encodeURIComponent(filename)}`
-  }
-  
-  return `${getFullBaseURL()}${url.startsWith('/') ? '' : '/'}${url}`
-}
-
-// 获取完整的 API 基础 URL
-const getFullBaseURL = () => {
-  const baseURL = apiConfig.baseURL
-  if (baseURL.startsWith('http')) {
-    return baseURL
-  }
-  // 原生平台必须使用完整服务器地址
-  if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform()) {
-    return `http://myjghy.myds.me:9090`
-  }
-  // 浏览器环境
-  if (baseURL.startsWith('/')) {
-    return `${window.location.origin}${baseURL}`
-  }
-  return baseURL
-}
-
 // 权限判断
 // P阶段：只有创建人可以编辑
 const canEditPlan = computed(() => {
@@ -2373,6 +2322,26 @@ const getFileUrl = (url) => {
   }
   
   return downloadPath
+}
+
+// 预览文件（用于变更事件附件）
+const previewFile = (file) => {
+  if (!file || !file.url) {
+    ElMessage.warning('文件链接无效')
+    return
+  }
+  
+  const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name || file.url)
+  
+  if (isImage) {
+    // 图片使用预览对话框
+    previewImageUrl.value = getFileUrl(file.url)
+    previewImageVisible.value = true
+  } else {
+    // 其他文件直接下载
+    const fullUrl = getFileUrl(file.url)
+    window.open(fullUrl, '_blank')
+  }
 }
 
 // 处理文件点击 - 图片/PDF预览，其他下载
