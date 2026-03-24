@@ -59,8 +59,8 @@
     <el-card class="search-card pc-only">
       <el-form :inline="true" :model="searchForm">
         <el-form-item label="关键词">
-          <el-input 
-            v-model="searchForm.keyword" 
+          <el-input
+            v-model="searchForm.keyword"
             placeholder="编号/标题"
             clearable
             @keyup.enter="handleSearch"
@@ -91,8 +91,8 @@
     <!-- 搜索栏 - 移动端 -->
     <el-card class="search-card mobile-only">
       <div class="mobile-search">
-        <el-input 
-          v-model="searchForm.keyword" 
+        <el-input
+          v-model="searchForm.keyword"
           placeholder="搜索编号/标题"
           clearable
           @keyup.enter="handleSearch"
@@ -104,7 +104,7 @@
             </el-button>
           </template>
         </el-input>
-        
+
         <div class="mobile-filter-row">
           <el-select v-model="searchForm.status" placeholder="状态" clearable size="small">
             <el-option label="全部" value="" />
@@ -114,7 +114,7 @@
             <el-option label="处理中" value="ACT" />
             <el-option label="已关闭" value="CLOSED" />
           </el-select>
-          
+
           <el-select v-model="searchForm.severity" placeholder="严重程度" clearable size="small">
             <el-option label="全部" value="" />
             <el-option label="轻微" value="轻微" />
@@ -122,7 +122,7 @@
             <el-option label="严重" value="严重" />
             <el-option label="致命" value="致命" />
           </el-select>
-          
+
           <el-checkbox v-model="searchForm.myEvents" size="small">我的</el-checkbox>
         </div>
       </div>
@@ -136,16 +136,16 @@
             <el-link type="primary" @click.stop="viewDetail(row)">{{ row.event_no }}</el-link>
           </template>
         </el-table-column>
-        
+
         <el-table-column prop="title" label="标题" min-width="150" show-overflow-tooltip />
-        
+
         <el-table-column prop="severity" label="严重程度" min-width="200">
           <template #default="{ row }">
             <div v-if="parseMultiSelect(row.severity).length > 0" class="severity-tags">
-              <el-tag 
-                v-for="(sev, idx) in parseMultiSelect(row.severity)" 
-                :key="idx" 
-                :type="getSeverityType(sev)" 
+              <el-tag
+                v-for="(sev, idx) in parseMultiSelect(row.severity)"
+                :key="idx"
+                :type="getSeverityType(sev)"
                 size="small"
                 class="severity-tag"
               >
@@ -155,15 +155,15 @@
             <span v-else class="text-gray">-</span>
           </template>
         </el-table-column>
-        
+
         <el-table-column prop="status" label="状态" width="120" align="center">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)" size="small">{{ getStatusLabel(row.status) }}</el-tag>
           </template>
         </el-table-column>
-        
+
         <el-table-column prop="responsible_name" label="责任人" width="100" />
-        
+
         <el-table-column prop="current_handler_name" label="当前处理人" width="100">
           <template #default="{ row }">
             <el-tag v-if="row.current_handler_name" type="primary" size="small">
@@ -172,9 +172,9 @@
             <span v-else class="text-gray">-</span>
           </template>
         </el-table-column>
-        
+
         <el-table-column prop="reporter_name" label="创建人" width="100" />
-        
+
         <el-table-column prop="due_date" label="截止日期" width="140">
           <template #default="{ row }">
             <span :class="{ 'overdue': isOverdue(row.due_date, row.status) }">
@@ -182,19 +182,19 @@
             </span>
           </template>
         </el-table-column>
-        
+
         <el-table-column prop="created_at" label="创建时间" width="160">
           <template #default="{ row }">
             {{ formatDateTime(row.created_at) }}
           </template>
         </el-table-column>
-        
+
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click.stop="viewDetail(row)">详情</el-button>
-            <el-button 
-              v-if="row.reporter_id === currentUserId" 
-              link type="danger" 
+            <el-button
+              v-if="row.reporter_id === currentUserId"
+              link type="danger"
               @click.stop="handleDelete(row)"
             >
               删除
@@ -219,18 +219,18 @@
 
     <!-- 事件列表 - 移动端卡片 -->
     <div class="mobile-list mobile-only">
-      <div 
-        v-for="event in eventList" 
-        :key="event.id" 
+      <div
+        v-for="event in eventList"
+        :key="event.id"
         class="mobile-event-card"
         @click="viewDetail(event)"
       >
         <div class="mobile-event-header">
           <el-link type="primary" @click.stop="viewDetail(event)">{{ event.event_no }}</el-link>
           <div class="mobile-event-actions">
-            <el-button 
-              v-if="event.reporter_id === currentUserId" 
-              link type="danger" 
+            <el-button
+              v-if="event.reporter_id === currentUserId"
+              link type="danger"
               size="small"
               @click.stop="handleDelete(event)"
             >
@@ -238,30 +238,32 @@
             </el-button>
           </div>
         </div>
-        
+
         <div class="mobile-event-title">{{ event.title }}</div>
-        
+
         <!-- 严重程度 - 支持多标签换行 -->
         <div class="mobile-event-severity">
-          <el-tag 
-            v-for="(sev, idx) in parseMultiSelect(event.severity)" 
+          <el-tag
+            v-for="(sev, idx) in parseMultiSelect(event.severity)"
             :key="idx"
-            :type="getSeverityType(sev)" 
+            :type="getSeverityType(sev)"
             size="small"
             class="severity-tag"
           >{{ sev }}</el-tag>
         </div>
-        
+
         <!-- 状态 - 单独一行 -->
         <div class="mobile-event-status">
           <el-tag :type="getStatusType(event.status)" size="small">{{ getStatusLabel(event.status) }}</el-tag>
         </div>
-        
+
+        <!-- 责任人 - 单独一行，支持换行 -->
+        <div class="mobile-event-responsible">
+          <span class="mobile-info-label">责任人：</span>
+          <span class="responsible-names">{{ event.responsible_name || '-' }}</span>
+        </div>
+
         <div class="mobile-event-info">
-          <div class="mobile-info-row">
-            <span class="mobile-info-label">责任人：</span>
-            <span>{{ event.responsible_name || '-' }}</span>
-          </div>
           <div class="mobile-info-row">
             <span class="mobile-info-label">当前处理：</span>
             <el-tag v-if="event.current_handler_name" type="primary" size="small">{{ event.current_handler_name }}</el-tag>
@@ -279,7 +281,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- 分页 -->
       <div class="mobile-pagination">
         <el-pagination
@@ -301,9 +303,9 @@
       :close-on-click-modal="false"
       class="quality-event-dialog"
     >
-      <el-form 
+      <el-form
         ref="formRef"
-        :model="formData" 
+        :model="formData"
         :rules="formRules"
         :label-width="isMobile ? '80px' : '165px'"
         :label-position="isMobile ? 'top' : 'right'"
@@ -312,7 +314,7 @@
         <el-form-item label="事件标题" prop="title">
           <el-input v-model="formData.title" placeholder="请输入事件标题" />
         </el-form-item>
-        
+
         <!-- PC端布局 -->
         <template v-if="!isMobile">
           <!-- 第一行：产品阶段 + 产品类型 -->
@@ -332,7 +334,7 @@
               </el-form-item>
             </el-col>
           </el-row>
-          
+
           <!-- 第二行：项目号/生产任务单号 + 问题类型 -->
           <el-row :gutter="20">
             <el-col :span="12">
@@ -348,7 +350,7 @@
               </el-form-item>
             </el-col>
           </el-row>
-          
+
           <!-- 第三行：用户 + 关键字 -->
           <el-row :gutter="20">
             <el-col :span="12">
@@ -362,28 +364,28 @@
               </el-form-item>
             </el-col>
           </el-row>
-          
+
           <!-- 第四行：故障严重程度（多选）- 占满整行 -->
           <el-form-item label="故障严重程度" prop="severity" class="full-width-item">
             <el-select v-model="formData.severity" multiple placeholder="请选择（可多选）" style="width: 100%">
               <el-option v-for="opt in severityOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
           </el-form-item>
-          
+
           <!-- 第五行：涉及相关部件（多选）- 占满整行 -->
           <el-form-item label="涉及相关部件" prop="relatedParts" class="full-width-item">
             <el-select v-model="formData.relatedParts" multiple placeholder="请选择（可多选）" style="width: 100%">
               <el-option v-for="opt in relatedPartsOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
           </el-form-item>
-          
+
           <!-- 第六行：问题发现/提出形式（多选）- 占满整行 -->
           <el-form-item label="问题发现/提出形式" prop="discoveryForm" class="full-width-item">
             <el-select v-model="formData.discoveryForm" multiple placeholder="请选择（可多选）" style="width: 100%">
               <el-option v-for="opt in discoveryFormOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
           </el-form-item>
-          
+
           <!-- 第七行：责任人（多选）- 占满整行 -->
           <el-form-item label="责任人" prop="responsibleIds" class="full-width-item">
             <el-select-v2
@@ -396,7 +398,7 @@
               filterable
             />
           </el-form-item>
-          
+
           <!-- 第八行：监督/确认人 + 截止日期 -->
           <el-row :gutter="20">
             <el-col :span="12">
@@ -424,7 +426,7 @@
             </el-col>
           </el-row>
         </template>
-        
+
         <!-- 移动端单列布局 -->
         <template v-else>
           <el-form-item label="产品阶段" prop="productStage">
@@ -432,49 +434,49 @@
               <el-option v-for="opt in productStageOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
           </el-form-item>
-          
+
           <el-form-item label="产品类型" prop="productType">
             <el-select v-model="formData.productType" placeholder="请选择" style="width: 100%">
               <el-option v-for="opt in productTypeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
           </el-form-item>
-          
+
           <el-form-item label="项目号/生产任务单号" prop="projectNo">
             <el-input v-model="formData.projectNo" placeholder="请输入" />
           </el-form-item>
-          
+
           <el-form-item label="用户" prop="customer">
             <el-input v-model="formData.customer" placeholder="请输入用户" />
           </el-form-item>
-          
+
           <el-form-item label="问题类型" prop="problemType">
             <el-select v-model="formData.problemType" placeholder="请选择" style="width: 100%">
               <el-option v-for="opt in problemTypeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
           </el-form-item>
-          
+
           <el-form-item label="关键字" prop="keywords">
             <el-input v-model="formData.keywords" placeholder="请输入关键字（选填）" />
           </el-form-item>
-          
+
           <el-form-item label="故障严重程度" prop="severity">
             <el-select v-model="formData.severity" multiple placeholder="请选择（可多选）" style="width: 100%">
               <el-option v-for="opt in severityOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
           </el-form-item>
-          
+
           <el-form-item label="涉及相关部件" prop="relatedParts">
             <el-select v-model="formData.relatedParts" multiple placeholder="请选择（可多选）" style="width: 100%">
               <el-option v-for="opt in relatedPartsOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
           </el-form-item>
-          
+
           <el-form-item label="问题发现/提出形式" prop="discoveryForm">
             <el-select v-model="formData.discoveryForm" multiple placeholder="请选择（可多选）" style="width: 100%">
               <el-option v-for="opt in discoveryFormOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
           </el-form-item>
-          
+
           <el-form-item label="责任人" prop="responsibleIds">
             <el-select-v2
               v-model="formData.responsibleIds"
@@ -486,7 +488,7 @@
               filterable
             />
           </el-form-item>
-          
+
           <el-form-item label="监督/确认人" prop="supervisorId">
             <el-select-v2
               v-model="formData.supervisorId"
@@ -497,7 +499,7 @@
               filterable
             />
           </el-form-item>
-          
+
           <el-form-item label="截止日期" prop="dueDate">
             <el-date-picker
               v-model="formData.dueDate"
@@ -508,16 +510,16 @@
             />
           </el-form-item>
         </template>
-        
+
         <el-form-item label="问题描述" prop="description">
-          <el-input 
-            v-model="formData.description" 
-            type="textarea" 
+          <el-input
+            v-model="formData.description"
+            type="textarea"
             :rows="4"
             placeholder="请详细描述问题情况..."
           />
         </el-form-item>
-        
+
         <el-form-item label="问题描述附件">
           <el-upload
             ref="descUploadRef"
@@ -542,7 +544,7 @@
             </div>
           </div>
         </el-form-item>
-        
+
         <el-form-item label="通知人">
           <el-select-v2
             v-model="formData.notifyUsers"
@@ -555,7 +557,7 @@
           />
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
@@ -793,12 +795,12 @@ const fetchEventList = async () => {
       page: pagination.page,
       pageSize: pagination.pageSize
     }
-    
+
     if (searchForm.myEvents) {
       // 我的事件包括：我创建的 或 我负责的 或 我是当前处理人的
       params.currentHandlerId = currentUserId.value
     }
-    
+
     const res = await qualityEventApi.getList(params)
     if (res.code === 200) {
       eventList.value = res.data.list
@@ -820,7 +822,7 @@ const fetchStatistics = async () => {
       const statusStats = res.data.byStatus
       stats.value = {
         new: statusStats.find(s => s.status === 'NEW')?.count || 0,
-        processing: (statusStats.find(s => s.status === 'DO')?.count || 0) + 
+        processing: (statusStats.find(s => s.status === 'DO')?.count || 0) +
                    (statusStats.find(s => s.status === 'ACT')?.count || 0),
         checking: statusStats.find(s => s.status === 'CHECK')?.count || 0,
         closed: statusStats.find(s => s.status === 'CLOSED')?.count || 0
@@ -925,7 +927,7 @@ const handleSubmit = async () => {
       descriptionFiles: formData.descriptionFiles,
       notifyUsers: formData.notifyUsers
     }
-    
+
     if (isEdit.value) {
       await qualityEventApi.update(formData.id, data)
       ElMessage.success('更新成功')
@@ -933,7 +935,7 @@ const handleSubmit = async () => {
       await qualityEventApi.create(data)
       ElMessage.success('创建成功')
     }
-    
+
     dialogVisible.value = false
     fetchEventList()
     fetchStatistics()
@@ -962,7 +964,7 @@ const handleDelete = async (row) => {
       '确认删除',
       { type: 'warning' }
     )
-    
+
     await qualityEventApi.delete(row.id)
     ElMessage.success('删除成功')
     fetchEventList()
@@ -1120,32 +1122,32 @@ const removeDescFile = async (idx) => {
 const getFileUrl = (url) => {
   if (!url) return ''
   if (url.startsWith('http')) return url
-  
+
   // 提取路径部分，使用下载接口
   // URL格式: /uploads/quality-events/temp/filename.ext 或 /uploads/quality-events/QE-xxx/filename.ext
   const parts = url.split('/')
   const eventNo = parts[parts.length - 2] // 倒数第二是事件编号或temp
   const filename = parts[parts.length - 1] // 最后是文件名
   const downloadPath = `/api/download?filename=${encodeURIComponent(`${eventNo}/${filename}`)}`
-  
+
   // 原生平台需要使用完整URL
   if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform()) {
     return `http://myjghy.myds.me:9090${downloadPath}`
   }
-  
+
   return downloadPath
 }
 
 // 预览文件
 const previewFile = (file) => {
   if (!file.url) return
-  
+
   // 使用getFileUrl获取完整URL
   const fullUrl = getFileUrl(file.url)
-  
+
   // 判断文件类型
   const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name)
-  
+
   if (isImage) {
     // 图片预览 - 使用对话框
     previewImageUrl.value = fullUrl
@@ -1187,7 +1189,7 @@ onMounted(() => {
     align-items: center;
     gap: 12px;
   }
-  
+
   .stat-icon {
     width: 48px;
     height: 48px;
@@ -1197,13 +1199,13 @@ onMounted(() => {
     justify-content: center;
     color: #fff;
   }
-  
+
   .stat-value {
     font-size: 24px;
     font-weight: bold;
     color: #303133;
   }
-  
+
   .stat-label {
     font-size: 14px;
     color: #909399;
@@ -1281,92 +1283,92 @@ onMounted(() => {
   .pc-only {
     display: none !important;
   }
-  
+
   .mobile-only {
     display: block !important;
   }
-  
+
   .quality-event {
     padding: 10px;
   }
-  
+
   .page-header {
     flex-direction: row;
     align-items: center;
     margin-bottom: 15px;
   }
-  
+
   .page-header h2 {
     font-size: 18px;
   }
-  
+
   /* 统计卡片网格 */
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
     margin-bottom: 15px;
   }
-  
+
   .stat-card {
     margin-bottom: 0;
   }
-  
+
   .stat-card :deep(.el-card__body) {
     padding: 12px;
   }
-  
+
   .stat-item {
     flex-direction: column;
     align-items: center;
     gap: 6px;
   }
-  
+
   .stat-icon {
     width: 36px;
     height: 36px;
   }
-  
+
   .stat-icon .el-icon {
     font-size: 18px;
   }
-  
+
   .stat-value {
     font-size: 18px;
   }
-  
+
   .stat-label {
     font-size: 11px;
   }
-  
+
   /* 搜索卡片 */
   .search-card {
     margin-bottom: 15px;
   }
-  
+
   .search-card :deep(.el-card__body) {
     padding: 12px;
   }
-  
+
   /* 表格卡片 */
   .table-card {
     margin-bottom: 15px;
   }
-  
+
   .table-card :deep(.el-card__body) {
     padding: 0;
   }
-  
+
   /* 分页 */
   .pagination {
     justify-content: center;
     padding: 10px;
   }
-  
+
   .pagination :deep(.el-pagination__total),
   .pagination :deep(.el-pagination__sizes) {
     display: none;
   }
-  
+
   /* 移动端卡片列表 */
   .mobile-list {
     display: flex;
@@ -1374,7 +1376,7 @@ onMounted(() => {
     gap: 10px;
     margin-bottom: 20px;
   }
-  
+
   .mobile-event-card {
     background: #fff;
     border-radius: 12px;
@@ -1421,7 +1423,23 @@ onMounted(() => {
   .mobile-event-status {
     margin-bottom: 10px;
   }
-  
+
+  /* 责任人 - 单独一行，支持换行 */
+  .mobile-event-responsible {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: #606266;
+  }
+
+  .mobile-event-responsible .responsible-names {
+    flex: 1;
+    word-break: break-all;
+    line-height: 1.5;
+  }
+
   .mobile-event-info {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1429,18 +1447,19 @@ onMounted(() => {
     font-size: 12px;
     color: #606266;
   }
-  
+
   .mobile-info-row {
     display: flex;
     align-items: center;
     gap: 4px;
   }
-  
+
   .mobile-info-label {
     color: #909399;
     white-space: nowrap;
+    flex-shrink: 0;
   }
-  
+
   .mobile-pagination {
     display: flex;
     justify-content: center;
