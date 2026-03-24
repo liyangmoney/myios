@@ -1,12 +1,13 @@
 // APP 版本配置
 // 每次发布新版本时，修改这里的版本号和更新日志
 
-export const version = '1.7.3'
+export const version = '1.7.4'
 
-export const updateLog = `1. 修复图片预览对话框重复问题
-2. P阶段取消编辑时重置变更状态
-3. 变更事件附件上传优化
-4. 统一问题类型选项`
+export const updateLog = `1. 安卓端事件列表界面优化
+2. 支持多责任人换行显示
+3. 移除详情页头部严重程度显示
+4. 同步安卓端和PC端基本信息字段
+5. 安卓端移除严重程度筛选`
 
 export const forceUpdate = false
 
