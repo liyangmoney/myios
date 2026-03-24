@@ -5,7 +5,7 @@ import { Toast } from '@capacitor/toast'
 import { Filesystem, Directory } from '@capacitor/filesystem'
 
 // 当前版本号（每次发版时更新）
-const CURRENT_VERSION = '1.6.2'
+const CURRENT_VERSION = '1.7.2'
 const UPDATE_SERVER_URL = 'http://myjghy.myds.me:9090'
 
 /**
