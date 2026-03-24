@@ -90,6 +90,28 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
 
+    - name: Sync version from backend to frontend
+      run: |
+        echo "=== 同步版本号 ==="
+        # 从 backend/config/version.js 读取版本号
+        BACKEND_VERSION=$(grep "export const version" ../backend/config/version.js | sed "s/.*'\(.*\)'.*/\1/")
+        echo "Backend version: $BACKEND_VERSION"
+        
+        # 更新前端代码中的版本号
+        sed -i "s/const CURRENT_VERSION = '.*'/const CURRENT_VERSION = '$BACKEND_VERSION'/" src/utils/appUpdate.js
+        
+        # 验证更新
+        FRONTEND_VERSION=$(grep "const CURRENT_VERSION" src/utils/appUpdate.js | sed "s/.*'\(.*\)'.*/\1/")
+        echo "Frontend version: $FRONTEND_VERSION"
+        
+        if [ "$BACKEND_VERSION" = "$FRONTEND_VERSION" ]; then
+          echo "✅ 版本号同步成功"
+        else
+          echo "❌ 版本号同步失败"
+          exit 1
+        fi
+        echo "=== 版本同步完成 ==="
+
     - name: Install dependencies
       run: npm ci
 
