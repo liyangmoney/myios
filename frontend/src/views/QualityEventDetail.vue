@@ -862,10 +862,9 @@
             <el-col :span="12">
               <el-form-item label="问题类型" prop="problemType">
                 <el-select v-model="changeForm.problemType" placeholder="请选择" style="width: 100%">
-                  <el-option label="设计问题" value="设计问题" />
-                  <el-option label="工艺问题" value="工艺问题" />
-                  <el-option label="质量问题" value="质量问题" />
-                  <el-option label="其他" value="其他" />
+                  <el-option label="软件算法" value="软件算法" />
+                  <el-option label="嵌入式硬件" value="嵌入式硬件" />
+                  <el-option label="机械电器" value="机械电器" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -1013,10 +1012,9 @@
 
           <el-form-item label="问题类型" prop="problemType">
             <el-select v-model="changeForm.problemType" placeholder="请选择" style="width: 100%">
-              <el-option label="设计问题" value="设计问题" />
-              <el-option label="工艺问题" value="工艺问题" />
-              <el-option label="质量问题" value="质量问题" />
-              <el-option label="其他" value="其他" />
+              <el-option label="软件算法" value="软件算法" />
+              <el-option label="嵌入式硬件" value="嵌入式硬件" />
+              <el-option label="机械电器" value="机械电器" />
             </el-select>
           </el-form-item>
 
