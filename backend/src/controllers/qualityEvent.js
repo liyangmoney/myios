@@ -443,6 +443,9 @@ export const createQualityEvent = async (req, res) => {
       return res.status(400).json({ code: 400, message: '截止日期不能为空' })
     }
     
+    // 将ISO日期格式转换为MySQL日期格式 (YYYY-MM-DD)
+    const formattedDueDate = dueDate ? new Date(dueDate).toISOString().split('T')[0] : null
+    
     const eventNo = await generateEventNo()
     const reporterId = req.userId
     const reporterName = req.userName
@@ -502,7 +505,7 @@ export const createQualityEvent = async (req, res) => {
       // 责任人可能是逗号分隔字符串或数组
       JSON.stringify(parsedResponsibleIds), responsibleName, supervisorId, supervisorName,
       // 当前处理人设为创建人（P阶段由创建人编写）
-      reporterId, reporterName, dueDate, JSON.stringify(notifyUsers || []),
+      reporterId, reporterName, formattedDueDate, JSON.stringify(notifyUsers || []),
       JSON.stringify(descriptionFiles || []), isChanged || 0, changeSourceId || null, changeSourceNo || null
     ])
     

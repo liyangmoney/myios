@@ -661,6 +661,22 @@
               @update:files="(files) => planFiles = files"
             />
           </el-form-item>
+
+          <!-- 需要变更 -->
+          <el-form-item>
+            <el-checkbox v-model="editForm.needsChange" @change="handleNeedsChangeChange">
+              此事件需要变更
+            </el-checkbox>
+            <el-button
+              v-if="editForm.needsChange"
+              type="warning"
+              size="small"
+              @click="openChangeDialog"
+              style="margin-left: 10px;"
+            >
+              创建变更事件
+            </el-button>
+          </el-form-item>
           <!-- P阶段不提供指派下一步 -->
         </template>
 
@@ -1097,7 +1113,8 @@ const editForm = ref({
   causeType: [],
   standardization: '',
   status: 'CLOSED',
-  nextHandlerId: null
+  nextHandlerId: null,
+  needsChange: false
 })
 
 const saving = ref(false)
