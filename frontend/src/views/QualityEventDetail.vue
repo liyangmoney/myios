@@ -730,7 +730,17 @@
         </template>
 
         <template v-if="editType === 'ACT'">
-          <el-form-item label="标准化措施" prop="standardization">
+          <!-- 原因类型 -->
+          <el-form-item label="原因类型" prop="causeType">
+            <el-select v-model="editForm.causeType" multiple placeholder="请选择原因类型（可多选）" style="width: 100%">
+              <el-option label="设计考虑不周" value="设计考虑不周" />
+              <el-option label="培训不足" value="培训不足" />
+              <el-option label="人员能力不足" value="人员能力不足" />
+              <el-option label="流程不全" value="流程不全" />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="标准化措施">
             <el-input
               v-model="editForm.standardization"
               type="textarea"
@@ -1074,7 +1084,7 @@ const editFormRules = {
   nextHandlerId: [{ required: true, message: '请选择下一步处理人', trigger: 'change' }],
   implementation: [{ required: true, message: '请输入实施记录', trigger: 'blur' }],
   verificationResult: [{ required: true, message: '请输入验证结果', trigger: 'blur' }],
-  standardization: [{ required: true, message: '请输入标准化措施', trigger: 'blur' }],
+  causeType: [{ required: true, message: '请选择原因类型', trigger: 'change', type: 'array' }],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }]
 }
 
@@ -1084,6 +1094,7 @@ const editForm = ref({
   implementation: '',
   verificationResult: '',
   passed: true,
+  causeType: [],
   standardization: '',
   status: 'CLOSED',
   nextHandlerId: null
