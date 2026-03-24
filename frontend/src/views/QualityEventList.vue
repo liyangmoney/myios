@@ -139,16 +139,15 @@
         
         <el-table-column prop="title" label="标题" min-width="150" show-overflow-tooltip />
         
-        <el-table-column prop="severity" label="严重程度" width="300">
+        <el-table-column prop="severity" label="严重程度" min-width="200">
           <template #default="{ row }">
-            <div v-if="parseMultiSelect(row.severity).length > 0">
+            <div v-if="parseMultiSelect(row.severity).length > 0" class="severity-tags">
               <el-tag 
                 v-for="(sev, idx) in parseMultiSelect(row.severity)" 
                 :key="idx" 
                 :type="getSeverityType(sev)" 
                 size="small"
-                class="mr-2"
-                style="margin-bottom: 4px;"
+                class="severity-tag"
               >
                 {{ sev }}
               </el-tag>
@@ -157,7 +156,7 @@
           </template>
         </el-table-column>
         
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column prop="status" label="状态" width="120" align="center">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)" size="small">{{ getStatusLabel(row.status) }}</el-tag>
           </template>
@@ -1477,6 +1476,17 @@ onMounted(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 200px;
+}
+
+/* 严重程度标签样式 */
+.severity-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.severity-tag {
+  margin: 0;
 }
 
 @media (max-width: 768px) {
