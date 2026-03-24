@@ -164,11 +164,11 @@
 
         <el-table-column prop="responsible_name" label="责任人" width="100" />
 
-        <el-table-column prop="current_handler_name" label="当前处理人" width="100">
+        <el-table-column prop="current_handler_name" label="当前处理人" min-width="120">
           <template #default="{ row }">
-            <el-tag v-if="row.current_handler_name" type="primary" size="small">
+            <div v-if="row.current_handler_name" class="handler-cell">
               {{ row.current_handler_name }}
-            </el-tag>
+            </div>
             <span v-else class="text-gray">-</span>
           </template>
         </el-table-column>
@@ -1540,6 +1540,14 @@ onMounted(() => {
 
 .severity-tag {
   margin: 0;
+}
+
+/* PC端当前处理人换行样式 */
+.handler-cell {
+  word-break: break-all;
+  line-height: 1.5;
+  color: #409EFF;
+  font-size: 12px;
 }
 
 @media (max-width: 768px) {
