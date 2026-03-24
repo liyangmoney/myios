@@ -305,9 +305,15 @@ const authMiddleware = async (req, res, next) => {
     req.userId = decoded.userId
     req.userRole = decoded.role
     
+    // 调试日志
+    console.log(`[DEBUG] Token decoded: userId=${decoded.userId}, username=${decoded.username}, role=${decoded.role}`)
+    
     // 获取用户信息
     const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [decoded.userId])
+    console.log(`[DEBUG] DB query result: users=${JSON.stringify(users)}`)
+    
     req.userName = users[0]?.user_name || decoded.username || '用户'
+    console.log(`[DEBUG] Final userName: ${req.userName}`)
     
     next()
   } catch (error) {
