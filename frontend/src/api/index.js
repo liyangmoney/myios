@@ -131,7 +131,7 @@ export const qualityEventApi = {
   // 临时文件上传（用于创建事件前的附件上传）
   uploadTempFile: (file, stage = 'description', onProgress) => {
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append('files', file)  // 改为 'files' 与后端匹配
     formData.append('stage', stage)
     return post('/quality-events/temp/upload', formData, { 
       'Content-Type': 'multipart/form-data'
