@@ -806,150 +806,308 @@
     <el-dialog
       v-model="changeDialogVisible"
       title="创建变更事件"
-      width="850px"
+      :width="isMobile ? '95%' : '900px'"
       top="5vh"
       :close-on-click-modal="false"
       class="change-event-dialog"
       @close="handleChangeDialogClose"
     >
-      <el-form ref="changeFormRef" :model="changeForm" :rules="changeFormRules" label-width="200px">
+      <el-form
+        ref="changeFormRef"
+        :model="changeForm"
+        :rules="changeFormRules"
+        :label-width="isMobile ? '80px' : '165px'"
+        :label-position="isMobile ? 'top' : 'right'"
+      >
         <el-form-item label="事件标题" prop="title">
           <el-input v-model="changeForm.title" placeholder="请输入事件标题" />
         </el-form-item>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="产品阶段" prop="productStage">
-              <el-select v-model="changeForm.productStage" placeholder="请选择" style="width: 100%">
-                <el-option label="设计阶段" value="设计阶段" />
-                <el-option label="研发制造阶段" value="研发制造阶段" />
-                <el-option label="生产阶段" value="生产阶段" />
-                <el-option label="试用阶段" value="试用阶段" />
-                <el-option label="交付后正式使用阶段" value="交付后正式使用阶段" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="产品类型" prop="productType">
-              <el-select v-model="changeForm.productType" placeholder="请选择" style="width: 100%">
-                <el-option label="地铁机器人" value="地铁机器人" />
-                <el-option label="国铁巡检仪" value="国铁巡检仪" />
-                <el-option label="国铁功能模块-扣件" value="国铁功能模块-扣件" />
-                <el-option label="国铁功能模块-位移" value="国铁功能模块-位移" />
-                <el-option label="国铁功能模块-廓形" value="国铁功能模块-廓形" />
-                <el-option label="车载系统" value="车载系统" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <!-- PC端双列布局 -->
+        <template v-if="!isMobile">
+          <!-- 第一行：产品阶段 + 产品类型 -->
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="产品阶段" prop="productStage">
+                <el-select v-model="changeForm.productStage" placeholder="请选择" style="width: 100%">
+                  <el-option label="设计阶段" value="设计阶段" />
+                  <el-option label="研发制造阶段" value="研发制造阶段" />
+                  <el-option label="生产阶段" value="生产阶段" />
+                  <el-option label="试用阶段" value="试用阶段" />
+                  <el-option label="交付后正式使用阶段" value="交付后正式使用阶段" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="产品类型" prop="productType">
+                <el-select v-model="changeForm.productType" placeholder="请选择" style="width: 100%">
+                  <el-option label="地铁机器人" value="地铁机器人" />
+                  <el-option label="国铁巡检仪" value="国铁巡检仪" />
+                  <el-option label="国铁功能模块-扣件" value="国铁功能模块-扣件" />
+                  <el-option label="国铁功能模块-位移" value="国铁功能模块-位移" />
+                  <el-option label="国铁功能模块-廓形" value="国铁功能模块-廓形" />
+                  <el-option label="车载系统" value="车载系统" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
 
-        <!-- 项目号/生产任务单号 - 独占一行 -->
-        <el-form-item label="项目号/生产任务单号" prop="projectNo">
-          <el-input v-model="changeForm.projectNo" placeholder="请输入" />
-        </el-form-item>
+          <!-- 第二行：项目号/生产任务单号 + 问题类型 -->
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="项目号/生产任务单号" prop="projectNo">
+                <el-input v-model="changeForm.projectNo" placeholder="请输入" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="问题类型" prop="problemType">
+                <el-select v-model="changeForm.problemType" placeholder="请选择" style="width: 100%">
+                  <el-option label="设计问题" value="设计问题" />
+                  <el-option label="工艺问题" value="工艺问题" />
+                  <el-option label="质量问题" value="质量问题" />
+                  <el-option label="其他" value="其他" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
 
-        <!-- 用户 + 关键字 -->
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="用户" prop="customer">
-              <el-input v-model="changeForm.customer" placeholder="请输入用户" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="关键字" prop="keywords">
-              <el-input v-model="changeForm.keywords" placeholder="请输入关键字（选填）" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+          <!-- 第三行：用户 + 关键字 -->
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="用户" prop="customer">
+                <el-input v-model="changeForm.customer" placeholder="请输入用户" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="关键字" prop="keywords">
+                <el-input v-model="changeForm.keywords" placeholder="请输入关键字（选填）" />
+              </el-form-item>
+            </el-col>
+          </el-row>
 
-        <el-form-item label="故障严重程度" prop="severity">
-          <el-select v-model="changeForm.severity" multiple placeholder="请选择（可多选）" style="width: 100%">
-            <el-option label="a.无法行车" value="a.无法行车" />
-            <el-option label="b.可行车但有安全隐患" value="b.可行车但有安全隐患" />
-            <el-option label="c.无法采集图像" value="c.无法采集图像" />
-            <el-option label="d.图像质量不佳" value="d.图像质量不佳" />
-            <el-option label="e.引起设备部件故障或不合格但不影响采集效果" value="e.引起设备部件故障或不合格但不影响采集效果" />
-            <el-option label="f.影响设备整体寿命" value="f.影响设备整体寿命" />
-            <el-option label="g.影响用户感受" value="g.影响用户感受" />
-            <el-option label="h.影响生产效率" value="h.影响生产效率" />
-            <el-option label="i.优化" value="i.优化" />
-          </el-select>
-        </el-form-item>
+          <!-- 第四行：故障严重程度（多选）- 占满整行 -->
+          <el-form-item label="故障严重程度" prop="severity">
+            <el-select v-model="changeForm.severity" multiple placeholder="请选择（可多选）" style="width: 100%">
+              <el-option label="a.无法行车" value="a.无法行车" />
+              <el-option label="b.可行车但有安全隐患" value="b.可行车但有安全隐患" />
+              <el-option label="c.无法采集图像" value="c.无法采集图像" />
+              <el-option label="d.图像质量不佳" value="d.图像质量不佳" />
+              <el-option label="e.引起设备部件故障或不合格但不影响采集效果" value="e.引起设备部件故障或不合格但不影响采集效果" />
+              <el-option label="f.影响设备整体寿命" value="f.影响设备整体寿命" />
+              <el-option label="g.影响用户感受" value="g.影响用户感受" />
+              <el-option label="h.影响生产效率" value="h.影响生产效率" />
+              <el-option label="i.优化" value="i.优化" />
+            </el-select>
+          </el-form-item>
 
-        <el-form-item label="涉及相关部件" prop="relatedParts">
-          <el-select v-model="changeForm.relatedParts" multiple placeholder="请选择（可多选）" style="width: 100%">
-            <el-option label="触摸屏" value="触摸屏" />
-            <el-option label="串口屏" value="串口屏" />
-            <el-option label="工控机" value="工控机" />
-            <el-option label="TIVR采集器" value="TIVR采集器" />
-            <el-option label="控制器/分频器" value="控制器/分频器" />
-            <el-option label="电机" value="电机" />
-            <el-option label="电池" value="电池" />
-            <el-option label="线束" value="线束" />
-            <el-option label="相机" value="相机" />
-            <el-option label="镜头" value="镜头" />
-            <el-option label="激光器" value="激光器" />
-            <el-option label="光源" value="光源" />
-            <el-option label="车轮" value="车轮" />
-            <el-option label="车轴" value="车轴" />
-            <el-option label="车架" value="车架" />
-            <el-option label="航插及线束" value="航插及线束" />
-            <el-option label="工作站" value="工作站" />
-            <el-option label="采集软件" value="采集软件" />
-            <el-option label="分析软件" value="分析软件" />
-            <el-option label="工装" value="工装" />
-          </el-select>
-        </el-form-item>
+          <!-- 第五行：涉及相关部件（多选）- 占满整行 -->
+          <el-form-item label="涉及相关部件" prop="relatedParts">
+            <el-select v-model="changeForm.relatedParts" multiple placeholder="请选择（可多选）" style="width: 100%">
+              <el-option label="触摸屏" value="触摸屏" />
+              <el-option label="串口屏" value="串口屏" />
+              <el-option label="工控机" value="工控机" />
+              <el-option label="TIVR采集器" value="TIVR采集器" />
+              <el-option label="控制器/分频器" value="控制器/分频器" />
+              <el-option label="电机" value="电机" />
+              <el-option label="电池" value="电池" />
+              <el-option label="线束" value="线束" />
+              <el-option label="相机" value="相机" />
+              <el-option label="镜头" value="镜头" />
+              <el-option label="激光器" value="激光器" />
+              <el-option label="光源" value="光源" />
+              <el-option label="车轮" value="车轮" />
+              <el-option label="车轴" value="车轴" />
+              <el-option label="车架" value="车架" />
+              <el-option label="航插及线束" value="航插及线束" />
+              <el-option label="工作站" value="工作站" />
+              <el-option label="采集软件" value="采集软件" />
+              <el-option label="分析软件" value="分析软件" />
+              <el-option label="工装" value="工装" />
+            </el-select>
+          </el-form-item>
 
-        <el-form-item label="问题发现/提出形式" prop="discoveryForm">
-          <el-select v-model="changeForm.discoveryForm" multiple placeholder="请选择（可多选）" style="width: 100%">
-            <el-option label="质量小组会" value="质量小组会" />
-            <el-option label="DFMEA分析" value="DFMEA分析" />
-            <el-option label="主动检查发现" value="主动检查发现" />
-            <el-option label="用户提出" value="用户提出" />
-            <el-option label="售后检查" value="售后检查" />
-            <el-option label="月保养" value="月保养" />
-            <el-option label="使用中暴露" value="使用中暴露" />
-          </el-select>
-        </el-form-item>
+          <!-- 第六行：问题发现/提出形式（多选）- 占满整行 -->
+          <el-form-item label="问题发现/提出形式" prop="discoveryForm">
+            <el-select v-model="changeForm.discoveryForm" multiple placeholder="请选择（可多选）" style="width: 100%">
+              <el-option label="质量小组会" value="质量小组会" />
+              <el-option label="DFMEA分析" value="DFMEA分析" />
+              <el-option label="主动检查发现" value="主动检查发现" />
+              <el-option label="用户提出" value="用户提出" />
+              <el-option label="售后检查" value="售后检查" />
+              <el-option label="月保养" value="月保养" />
+              <el-option label="使用中暴露" value="使用中暴露" />
+            </el-select>
+          </el-form-item>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="责任人" prop="responsibleIds">
-              <el-select-v2
-                v-model="changeForm.responsibleIds"
-                :options="userOptions"
-                placeholder="请选择责任人（可多选）"
-                style="width: 100%"
-                multiple
-                clearable
-                filterable
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="监督/确认人" prop="supervisorId">
-              <el-select-v2
-                v-model="changeForm.supervisorId"
-                :options="userOptions"
-                placeholder="请选择监督/确认人"
-                style="width: 100%"
-                clearable
-                filterable
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
+          <!-- 第七行：责任人（多选）- 占满整行 -->
+          <el-form-item label="责任人" prop="responsibleIds">
+            <el-select-v2
+              v-model="changeForm.responsibleIds"
+              :options="userOptions"
+              placeholder="请选择责任人（可多选）"
+              style="width: 100%"
+              multiple
+              clearable
+              filterable
+            />
+          </el-form-item>
 
-        <el-form-item label="截止日期" prop="dueDate">
-          <el-date-picker
-            v-model="changeForm.dueDate"
-            type="date"
-            placeholder="选择日期"
-            style="width: 100%"
-            value-format="YYYY-MM-DD"
-          />
-        </el-form-item>
+          <!-- 第八行：监督/确认人 + 截止日期 -->
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="监督/确认人" prop="supervisorId">
+                <el-select-v2
+                  v-model="changeForm.supervisorId"
+                  :options="userOptions"
+                  placeholder="请选择监督/确认人"
+                  style="width: 100%"
+                  clearable
+                  filterable
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="截止日期" prop="dueDate">
+                <el-date-picker
+                  v-model="changeForm.dueDate"
+                  type="date"
+                  placeholder="选择日期"
+                  style="width: 100%"
+                  value-format="YYYY-MM-DD"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </template>
+
+        <!-- 移动端单列布局 -->
+        <template v-else>
+          <el-form-item label="产品阶段" prop="productStage">
+            <el-select v-model="changeForm.productStage" placeholder="请选择" style="width: 100%">
+              <el-option label="设计阶段" value="设计阶段" />
+              <el-option label="研发制造阶段" value="研发制造阶段" />
+              <el-option label="生产阶段" value="生产阶段" />
+              <el-option label="试用阶段" value="试用阶段" />
+              <el-option label="交付后正式使用阶段" value="交付后正式使用阶段" />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="产品类型" prop="productType">
+            <el-select v-model="changeForm.productType" placeholder="请选择" style="width: 100%">
+              <el-option label="地铁机器人" value="地铁机器人" />
+              <el-option label="国铁巡检仪" value="国铁巡检仪" />
+              <el-option label="国铁功能模块-扣件" value="国铁功能模块-扣件" />
+              <el-option label="国铁功能模块-位移" value="国铁功能模块-位移" />
+              <el-option label="国铁功能模块-廓形" value="国铁功能模块-廓形" />
+              <el-option label="车载系统" value="车载系统" />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="项目号/生产任务单号" prop="projectNo">
+            <el-input v-model="changeForm.projectNo" placeholder="请输入" />
+          </el-form-item>
+
+          <el-form-item label="用户" prop="customer">
+            <el-input v-model="changeForm.customer" placeholder="请输入用户" />
+          </el-form-item>
+
+          <el-form-item label="问题类型" prop="problemType">
+            <el-select v-model="changeForm.problemType" placeholder="请选择" style="width: 100%">
+              <el-option label="设计问题" value="设计问题" />
+              <el-option label="工艺问题" value="工艺问题" />
+              <el-option label="质量问题" value="质量问题" />
+              <el-option label="其他" value="其他" />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="关键字" prop="keywords">
+            <el-input v-model="changeForm.keywords" placeholder="请输入关键字（选填）" />
+          </el-form-item>
+
+          <el-form-item label="故障严重程度" prop="severity">
+            <el-select v-model="changeForm.severity" multiple placeholder="请选择（可多选）" style="width: 100%">
+              <el-option label="a.无法行车" value="a.无法行车" />
+              <el-option label="b.可行车但有安全隐患" value="b.可行车但有安全隐患" />
+              <el-option label="c.无法采集图像" value="c.无法采集图像" />
+              <el-option label="d.图像质量不佳" value="d.图像质量不佳" />
+              <el-option label="e.引起设备部件故障或不合格但不影响采集效果" value="e.引起设备部件故障或不合格但不影响采集效果" />
+              <el-option label="f.影响设备整体寿命" value="f.影响设备整体寿命" />
+              <el-option label="g.影响用户感受" value="g.影响用户感受" />
+              <el-option label="h.影响生产效率" value="h.影响生产效率" />
+              <el-option label="i.优化" value="i.优化" />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="涉及相关部件" prop="relatedParts">
+            <el-select v-model="changeForm.relatedParts" multiple placeholder="请选择（可多选）" style="width: 100%">
+              <el-option label="触摸屏" value="触摸屏" />
+              <el-option label="串口屏" value="串口屏" />
+              <el-option label="工控机" value="工控机" />
+              <el-option label="TIVR采集器" value="TIVR采集器" />
+              <el-option label="控制器/分频器" value="控制器/分频器" />
+              <el-option label="电机" value="电机" />
+              <el-option label="电池" value="电池" />
+              <el-option label="线束" value="线束" />
+              <el-option label="相机" value="相机" />
+              <el-option label="镜头" value="镜头" />
+              <el-option label="激光器" value="激光器" />
+              <el-option label="光源" value="光源" />
+              <el-option label="车轮" value="车轮" />
+              <el-option label="车轴" value="车轴" />
+              <el-option label="车架" value="车架" />
+              <el-option label="航插及线束" value="航插及线束" />
+              <el-option label="工作站" value="工作站" />
+              <el-option label="采集软件" value="采集软件" />
+              <el-option label="分析软件" value="分析软件" />
+              <el-option label="工装" value="工装" />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="问题发现/提出形式" prop="discoveryForm">
+            <el-select v-model="changeForm.discoveryForm" multiple placeholder="请选择（可多选）" style="width: 100%">
+              <el-option label="质量小组会" value="质量小组会" />
+              <el-option label="DFMEA分析" value="DFMEA分析" />
+              <el-option label="主动检查发现" value="主动检查发现" />
+              <el-option label="用户提出" value="用户提出" />
+              <el-option label="售后检查" value="售后检查" />
+              <el-option label="月保养" value="月保养" />
+              <el-option label="使用中暴露" value="使用中暴露" />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="责任人" prop="responsibleIds">
+            <el-select-v2
+              v-model="changeForm.responsibleIds"
+              :options="userOptions"
+              placeholder="请选择责任人（可多选）"
+              style="width: 100%"
+              multiple
+              clearable
+              filterable
+            />
+          </el-form-item>
+
+          <el-form-item label="监督/确认人" prop="supervisorId">
+            <el-select-v2
+              v-model="changeForm.supervisorId"
+              :options="userOptions"
+              placeholder="请选择监督/确认人"
+              style="width: 100%"
+              clearable
+              filterable
+            />
+          </el-form-item>
+
+          <el-form-item label="截止日期" prop="dueDate">
+            <el-date-picker
+              v-model="changeForm.dueDate"
+              type="date"
+              placeholder="选择日期"
+              style="width: 100%"
+              value-format="YYYY-MM-DD"
+            />
+          </el-form-item>
+        </template>
 
         <el-form-item label="问题描述" prop="description">
           <el-input
@@ -1022,6 +1180,12 @@ const changeForm = ref({
   notifyUsers: []
 })
 const submittingChange = ref(false)
+
+// 移动端检测
+const isMobile = ref(false)
+const checkMobile = () => {
+  isMobile.value = window.innerWidth <= 768
+}
 
 // 评论附件存储
 const uploadedCommentFiles = ref([])
@@ -2155,6 +2319,8 @@ const extractAttachmentNames = (content) => {
 }
 
 onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
   fetchEventDetail()
   fetchUserList()
 })
