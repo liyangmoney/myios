@@ -123,17 +123,46 @@ const unifiedUpload = async (url, file, onProgress) => {
       // 使用 XMLHttpRequest 以支持上传进度
       const result = await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest()
+        let progressInterval = null
+        let simulatedProgress = 0
         
-        // 上传进度监听
+        // 开始模拟进度（因为 base64 编码后的数据是一次性发送的）
+        const startProgressSimulation = () => {
+          progressInterval = setInterval(() => {
+            if (simulatedProgress < 90) {
+              simulatedProgress += Math.random() * 10
+              if (simulatedProgress > 90) simulatedProgress = 90
+              if (onProgress) {
+                console.log(`[Upload] Simulated Progress: ${Math.round(simulatedProgress)}%`)
+                onProgress(Math.round(simulatedProgress))
+              }
+            }
+          }, 200)
+        }
+        
+        // 停止模拟进度
+        const stopProgressSimulation = () => {
+          if (progressInterval) {
+            clearInterval(progressInterval)
+            progressInterval = null
+          }
+        }
+        
+        // 上传进度监听（可能不会触发，因为是一次性发送）
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable && onProgress) {
             const percent = Math.round((event.loaded / event.total) * 100)
-            console.log(`[Upload] Progress: ${percent}%`)
+            console.log(`[Upload] Real Progress: ${percent}%`)
             onProgress(percent)
           }
         }
         
+        xhr.onloadstart = () => {
+          startProgressSimulation()
+        }
+        
         xhr.onload = () => {
+          stopProgressSimulation()
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
               resolve(JSON.parse(xhr.responseText))
@@ -145,8 +174,14 @@ const unifiedUpload = async (url, file, onProgress) => {
           }
         }
         
-        xhr.onerror = () => reject(new Error('Network error'))
-        xhr.ontimeout = () => reject(new Error('Request timeout'))
+        xhr.onerror = () => {
+          stopProgressSimulation()
+          reject(new Error('Network error'))
+        }
+        xhr.ontimeout = () => {
+          stopProgressSimulation()
+          reject(new Error('Request timeout'))
+        }
         
         xhr.open('POST', url, true)
         xhr.setRequestHeader('Authorization', `Bearer ${token}`)
