@@ -92,6 +92,11 @@ console.log = (...args) => {
 }
 
 console.error = (...args) => {
+  // 过滤非致命的 ResizeObserver 错误
+  const errorMsg = args[0]?.toString() || ''
+  if (errorMsg.includes('ResizeObserver loop completed with undelivered notifications')) {
+    return
+  }
   originalError.apply(console, args)
   args.forEach(arg => addLog(arg, 'error'))
 }

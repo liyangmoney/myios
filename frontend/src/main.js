@@ -11,6 +11,16 @@ import './styles/mobile.css'
 import App from './App.vue'
 import router from './router'
 
+// 抑制 ResizeObserver 循环错误（非致命）
+const originalError = window.console.error
+window.console.error = (...args) => {
+  const errorMsg = args[0]?.toString?.() || ''
+  if (errorMsg.includes('ResizeObserver loop completed with undelivered notifications')) {
+    return
+  }
+  originalError.apply(window.console, args)
+}
+
 const app = createApp(App)
 
 // 注册所有图标
