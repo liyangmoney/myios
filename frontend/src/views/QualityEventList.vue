@@ -67,7 +67,7 @@
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="searchForm.status" placeholder="全部" clearable style="width: 120px">
+          <el-select v-model="searchForm.status" placeholder="全部" clearable multiple collapse-tags style="width: 200px">
             <el-option label="新建" value="NEW" />
             <el-option label="执行中" value="DO" />
             <el-option label="验证中" value="CHECK" />
@@ -106,8 +106,7 @@
         </el-input>
 
         <div class="mobile-filter-row">
-          <el-select v-model="searchForm.status" placeholder="状态" clearable size="small">
-            <el-option label="全部" value="" />
+          <el-select v-model="searchForm.status" placeholder="状态" clearable multiple collapse-tags size="small" style="width: 140px">
             <el-option label="新建" value="NEW" />
             <el-option label="执行中" value="DO" />
             <el-option label="验证中" value="CHECK" />
@@ -639,8 +638,7 @@ const stats = ref({
 // 搜索表单
 const searchForm = reactive({
   keyword: '',
-  status: '',
-  severity: '',
+  status: [],
   myEvents: false
 })
 
@@ -787,8 +785,7 @@ const fetchEventList = async () => {
   try {
     const params = {
       keyword: searchForm.keyword,
-      status: searchForm.status,
-      severity: searchForm.severity,
+      status: searchForm.status.length > 0 ? searchForm.status.join(',') : undefined,
       page: pagination.page,
       pageSize: pagination.pageSize
     }
@@ -854,8 +851,7 @@ const handleSearch = () => {
 // 重置搜索
 const resetSearch = () => {
   searchForm.keyword = ''
-  searchForm.status = ''
-  searchForm.severity = ''
+  searchForm.status = []
   searchForm.myEvents = false
   pagination.page = 1
   fetchEventList()

@@ -145,8 +145,12 @@ export const getQualityEvents = async (req, res) => {
     }
     
     if (status) {
-      sql += ' AND e.status = ?'
-      params.push(status)
+      // 支持多选状态
+      const statusArray = status.split(',').filter(s => s)
+      if (statusArray.length > 0) {
+        sql += ` AND e.status IN (${statusArray.map(() => '?').join(',')})`
+        params.push(...statusArray)
+      }
     }
     
     if (severity) {
@@ -247,8 +251,12 @@ export const getQualityEvents = async (req, res) => {
       countParams.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
     }
     if (status) {
-      countSql += ' AND status = ?'
-      countParams.push(status)
+      // 支持多选状态
+      const statusArray = status.split(',').filter(s => s)
+      if (statusArray.length > 0) {
+        countSql += ` AND status IN (${statusArray.map(() => '?').join(',')})`
+        countParams.push(...statusArray)
+      }
     }
     if (severity) {
       countSql += ' AND severity = ?'
