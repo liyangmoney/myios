@@ -1202,10 +1202,12 @@ export const checkDueDateReminders = async () => {
       // 只处理72小时内的
       if (hoursLeft > 72 || hoursLeft < 0) continue
       
-      // 计算是否应该发送提醒（每6小时一次）
+      // 计算是否应该发送提醒（每6小时一次，保留5分钟余量）
       const lastReminder = event.last_reminder_at ? new Date(event.last_reminder_at) : null
       const now = new Date()
-      const shouldSend = !lastReminder || (now - lastReminder) >= (6 * 60 * 60 * 1000)
+      const SIX_HOURS = 6 * 60 * 60 * 1000
+      const MARGIN = 5 * 60 * 1000 // 5分钟余量
+      const shouldSend = !lastReminder || (now - lastReminder) >= (SIX_HOURS - MARGIN)
       
       if (!shouldSend) {
         console.log(`事件 ${event.event_no} 距离上次提醒不足6小时，跳过`)
@@ -1261,10 +1263,12 @@ export const checkOverdueEvents = async () => {
       // 计算超期天数
       const daysOverdue = Math.floor((new Date() - new Date(event.due_date)) / (1000 * 60 * 60 * 24))
       
-      // 计算是否应该发送提醒（每隔一天）
+      // 计算是否应该发送提醒（每隔一天，保留30分钟余量）
       const lastOverdueReminder = event.last_overdue_reminder_at ? new Date(event.last_overdue_reminder_at) : null
       const now = new Date()
-      const shouldSend = !lastOverdueReminder || (now - lastOverdueReminder) >= (1 * 24 * 60 * 60 * 1000)
+      const ONE_DAY = 1 * 24 * 60 * 60 * 1000
+      const MARGIN = 30 * 60 * 1000 // 30分钟余量
+      const shouldSend = !lastOverdueReminder || (now - lastOverdueReminder) >= (ONE_DAY - MARGIN)
 
       if (!shouldSend) {
         console.log(`事件 ${event.event_no} 距离上次过期提醒不足1天，跳过`)
