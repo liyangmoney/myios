@@ -258,7 +258,7 @@ export const smartUpload = async (file, eventId, eventNo, stage, onProgress) => 
   const NATIVE_MAX_SIZE = 200 * 1024 * 1024
   
   if (isNativePlatform() && file.size > NATIVE_MAX_SIZE) {
-    throw new Error(`文件过大(${Math.round(file.size/1024/1024)}MB)，安卓端暂不支持超过100MB的文件，请使用PC端上传`)
+    throw new Error(`文件过大(${Math.round(file.size/1024/1024)}MB)，移动端暂不支持超过200MB的文件，请使用PC端上传`)
   }
   
   // 浏览器端限制 500MB
