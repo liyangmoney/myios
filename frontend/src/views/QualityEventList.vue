@@ -796,9 +796,13 @@ const fetchEventList = async () => {
   try {
     const params = {
       keyword: searchForm.keyword,
-      status: searchForm.status.length > 0 ? searchForm.status.join(',') : undefined,
       page: pagination.page,
       pageSize: pagination.pageSize
+    }
+    
+    // 状态筛选：多选且非空时才添加
+    if (searchForm.status && searchForm.status.length > 0) {
+      params.status = searchForm.status.join(',')
     }
 
     if (searchForm.myEvents) {
