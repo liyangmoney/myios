@@ -64,6 +64,15 @@ const request = async (method, endpoint, options = {}) => {
     return response.data
   } catch (error) {
     console.error(`API Error [${method} ${endpoint}]:`, error)
+    
+    // 处理 401 未授权（CapacitorHttp 错误格式）
+    if (error.status === 401 || (error.response && error.response.status === 401)) {
+      localStorage.removeItem('token')
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+    }
+    
     throw error
   }
 }

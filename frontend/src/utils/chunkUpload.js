@@ -169,6 +169,13 @@ const unifiedUpload = async (url, file, onProgress) => {
             } catch (e) {
               reject(new Error('Invalid response'))
             }
+          } else if (xhr.status === 401) {
+            // Token 过期，清除并跳转登录页
+            localStorage.removeItem('token')
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login'
+            }
+            reject(new Error('登录已过期，请重新登录'))
           } else {
             reject(new Error(`Upload failed: ${xhr.status}`))
           }
