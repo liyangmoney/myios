@@ -1126,12 +1126,18 @@
             :show-file-list="false"
             accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4"
             :on-success="(res, file) => handleChangeDescFileSuccess(res, file)"
+            :on-error="handleChangeDescUploadError"
           >
-            <el-button type="info" :icon="Paperclip">添加附件</el-button>
+            <el-button type="info" :icon="Paperclip" :loading="changeDescUploading">添加附件</el-button>
             <template #tip>
               <div class="el-upload__tip">支持图片、文档、视频等格式</div>
             </template>
           </el-upload>
+          <!-- 上传进度条 -->
+          <div v-if="changeDescUploadProgress > 0 && changeDescUploadProgress < 100" class="upload-progress">
+            <el-progress :percentage="changeDescUploadProgress" :stroke-width="6" />
+            <span class="progress-text">{{ changeDescUploadingFileName }}</span>
+          </div>
           <!-- 已上传附件列表 -->
           <div v-if="changeForm.descriptionFiles.length > 0" class="uploaded-files">
             <div v-for="(file, idx) in changeForm.descriptionFiles" :key="idx" class="uploaded-file-item">
@@ -1206,6 +1212,11 @@ const changeForm = ref({
 })
 const submittingChange = ref(false)
 const changeDescUploadRef = ref(null)  // 变更事件附件上传ref
+
+// 变更事件附件上传进度
+const changeDescUploading = ref(false)
+const changeDescUploadProgress = ref(0)
+const changeDescUploadingFileName = ref('')
 
 // 图片预览
 const previewImageVisible = ref(false)
@@ -1413,6 +1424,9 @@ const submitChangeEvent = async () => {
 const handleChangeDescFileUpload = async (options) => {
   const { file, onProgress, onSuccess, onError } = options
   try {
+    changeDescUploading.value = true
+    changeDescUploadingFileName.value = file.name
+    
     // 使用 smartUpload 统一处理（支持分片和原生平台）
     const result = await smartUpload(
       file,
@@ -1420,14 +1434,36 @@ const handleChangeDescFileUpload = async (options) => {
       'temp', // 临时事件编号
       'description',
       (percent) => {
+        changeDescUploadProgress.value = percent
         onProgress({ percent })
       }
     )
+    
+    changeDescUploading.value = false
+    changeDescUploadProgress.value = 100
+    
+    setTimeout(() => {
+      changeDescUploadProgress.value = 0
+      changeDescUploadingFileName.value = ''
+    }, 1000)
+    
     onSuccess({ code: 200, data: result })
   } catch (error) {
+    changeDescUploading.value = false
+    changeDescUploadProgress.value = 0
+    changeDescUploadingFileName.value = ''
     console.error('上传失败:', error)
     onError(error)
   }
+}
+
+// 变更事件附件上传错误处理
+const handleChangeDescUploadError = (error) => {
+  changeDescUploading.value = false
+  changeDescUploadProgress.value = 0
+  changeDescUploadingFileName.value = ''
+  console.error('上传失败:', error)
+  ElMessage.error('文件上传失败')
 }
 
 // 变更事件附件上传成功回调

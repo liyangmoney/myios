@@ -525,12 +525,18 @@
             :show-file-list="false"
             accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4"
             :on-success="(res, file) => handleDescFileSuccess(res, file)"
+            :on-error="handleDescUploadError"
           >
-            <el-button type="info" :icon="Paperclip">添加附件</el-button>
+            <el-button type="info" :icon="Paperclip" :loading="descUploading">添加附件</el-button>
             <template #tip>
               <div class="el-upload__tip">支持图片、文档、视频等格式</div>
             </template>
           </el-upload>
+          <!-- 上传进度条 -->
+          <div v-if="descUploadProgress > 0 && descUploadProgress < 100" class="upload-progress">
+            <el-progress :percentage="descUploadProgress" :stroke-width="6" />
+            <span class="progress-text">{{ descUploadingFileName }}</span>
+          </div>
           <!-- 已上传附件列表 -->
           <div v-if="formData.descriptionFiles.length > 0" class="uploaded-files">
             <div v-for="(file, idx) in formData.descriptionFiles" :key="idx" class="uploaded-file-item">
@@ -681,6 +687,11 @@ const formData = reactive({
 // 图片预览
 const previewImageVisible = ref(false)
 const previewImageUrl = ref('')
+
+// 问题描述附件上传进度
+const descUploading = ref(false)
+const descUploadProgress = ref(0)
+const descUploadingFileName = ref('')
 
 const formRules = {
   title: [
@@ -1049,6 +1060,9 @@ const descUploadRef = ref(null)
 const handleDescFileUpload = async (options) => {
   const { file, onProgress, onSuccess, onError } = options
   try {
+    descUploading.value = true
+    descUploadingFileName.value = file.name
+    
     // 使用 smartUpload 统一处理（支持分片和原生平台）
     const result = await smartUpload(
       file,
@@ -1056,14 +1070,36 @@ const handleDescFileUpload = async (options) => {
       'temp', // 临时事件编号
       'description',
       (percent) => {
+        descUploadProgress.value = percent
         onProgress({ percent })
       }
     )
+    
+    descUploading.value = false
+    descUploadProgress.value = 100
+    
+    setTimeout(() => {
+      descUploadProgress.value = 0
+      descUploadingFileName.value = ''
+    }, 1000)
+    
     onSuccess({ code: 200, data: result })
   } catch (error) {
+    descUploading.value = false
+    descUploadProgress.value = 0
+    descUploadingFileName.value = ''
     console.error('上传失败:', error)
     onError(error)
   }
+}
+
+// 上传错误处理
+const handleDescUploadError = (error) => {
+  descUploading.value = false
+  descUploadProgress.value = 0
+  descUploadingFileName.value = ''
+  console.error('上传失败:', error)
+  ElMessage.error('文件上传失败')
 }
 
 const handleDescFileSuccess = (response, file) => {
@@ -1517,6 +1553,21 @@ onMounted(() => {
   padding: 8px 12px;
   background: #f5f7fa;
   border-radius: 4px;
+}
+
+.upload-progress {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #f5f7fa;
+  border-radius: 4px;
+}
+
+.progress-text {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #606266;
+  word-break: break-all;
 }
 
 .uploaded-file-item {
