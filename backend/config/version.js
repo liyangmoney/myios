@@ -1,13 +1,13 @@
 // APP 版本配置
 // 每次发布新版本时，修改这里的版本号和更新日志
 
-export const version = '1.7.4'
+export const version = '1.7.5'
 
-export const updateLog = `1. 安卓端事件列表界面优化
-2. 支持多责任人换行显示
-3. 移除详情页头部严重程度显示
-4. 同步安卓端和PC端基本信息字段
-5. 安卓端移除严重程度筛选`
+export const updateLog = `1. 状态筛选支持多选
+2. 新建事件和变更事件附件上传添加进度条
+3. 修复提醒时间判断余量问题
+4. 抑制 ResizeObserver 错误显示
+5. 修复状态筛选默认空数组问题`
 
 export const forceUpdate = false
 
