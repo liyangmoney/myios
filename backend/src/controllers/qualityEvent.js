@@ -202,25 +202,8 @@ export const getQualityEvents = async (req, res) => {
         event.notify_users = []
       }
       
-      // 处理当前处理人名称（可能是JSON数组，用于D阶段的多责任人）
-      if (event.current_handler_name) {
-        try {
-          const parsed = JSON.parse(event.current_handler_name)
-          if (Array.isArray(parsed)) {
-            event.current_handler_name = parsed.join(', ')
-          }
-        } catch {
-          // 不是JSON，保持原样
-        }
-      } else if (event.current_handler_id) {
-        // 如果current_handler_name为空但有current_handler_id，查询数据库
-        const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [event.current_handler_id])
-        event.current_handler_name = users[0]?.user_name || '-'
-      } else {
-        event.current_handler_name = '-'
-      }
-      
       // 查询责任人姓名
+      let responsibleNames = []
       if (event.responsible_ids) {
         try {
           const responsibleIds = JSON.parse(event.responsible_ids)
@@ -230,7 +213,8 @@ export const getQualityEvents = async (req, res) => {
               `SELECT user_name FROM sys_user WHERE id IN (${placeholders})`,
               responsibleIds
             )
-            event.responsible_name = users.map(u => u.user_name).join(', ')
+            responsibleNames = users.map(u => u.user_name)
+            event.responsible_name = responsibleNames.join(', ')
           } else {
             event.responsible_name = '-'
           }
@@ -239,6 +223,31 @@ export const getQualityEvents = async (req, res) => {
         }
       } else {
         event.responsible_name = '-'
+      }
+      
+      // P阶段：当前处理人显示为创建人 + 责任人
+      if (event.status === 'NEW' || event.status === 'PLAN') {
+        const handlers = [event.reporter_name, ...responsibleNames]
+        const uniqueHandlers = [...new Set(handlers)].filter(n => n)
+        event.current_handler_name = uniqueHandlers.join(', ') || '-'
+      } else {
+        // 处理当前处理人名称（可能是JSON数组，用于D阶段的多责任人）
+        if (event.current_handler_name) {
+          try {
+            const parsed = JSON.parse(event.current_handler_name)
+            if (Array.isArray(parsed)) {
+              event.current_handler_name = parsed.join(', ')
+            }
+          } catch {
+            // 不是JSON，保持原样
+          }
+        } else if (event.current_handler_id) {
+          // 如果current_handler_name为空但有current_handler_id，查询数据库
+          const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [event.current_handler_id])
+          event.current_handler_name = users[0]?.user_name || '-'
+        } else {
+          event.current_handler_name = '-'
+        }
       }
     }
     
@@ -359,6 +368,14 @@ export const getQualityEventDetail = async (req, res) => {
       event.responsible_ids_list = users  // 返回完整的责任人信息
     }
     event.responsible_name = responsibleNames.join(', ')  // 用逗号连接所有姓名
+    
+    // P阶段：当前处理人显示为创建人 + 责任人
+    if (event.status === 'NEW' || event.status === 'PLAN') {
+      const handlers = [event.reporter_name, ...responsibleNames]
+      // 去重
+      const uniqueHandlers = [...new Set(handlers)].filter(n => n)
+      event.current_handler_name = uniqueHandlers.join(', ')
+    }
     
     // 解析通知人列表
     let notifyUserIds = []
