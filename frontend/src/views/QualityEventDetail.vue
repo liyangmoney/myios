@@ -1635,7 +1635,7 @@ const submitSupplement = async () => {
       ? `${event.value.description}\n\n[${timeStr}] 补充：\n${supplementForm.value.content}`
       : `[${timeStr}] 补充：\n${supplementForm.value.content}`
 
-    await request.put(`/quality-events/${event.value.id}`, {
+    await qualityEventApi.update(event.value.id, {
       description: newDescription
     })
 
