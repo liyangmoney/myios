@@ -1686,9 +1686,13 @@ const submitSupplement = async () => {
       ? `${event.value.description}\n\n[${timeStr}] 补充：\n${supplementForm.value.content}`
       : `[${timeStr}] 补充：\n${supplementForm.value.content}`
 
+    // 合并附件：原有附件 + 新上传的附件
+    const existingFiles = parseFiles(event.value.description_files)
+    const allFiles = [...existingFiles, ...supplementFiles.value]
+
     await qualityEventApi.update(event.value.id, {
       description: newDescription,
-      descriptionFiles: supplementFiles.value
+      descriptionFiles: allFiles
     })
 
     ElMessage.success('补充成功')

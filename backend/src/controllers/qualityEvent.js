@@ -906,9 +906,20 @@ export const updateQualityEvent = async (req, res) => {
     
     // 检测是否是描述补充（只更新了description字段）
     const updatedFields = Object.keys(updateData)
-    if (updatedFields.length === 1 && updatedFields[0] === 'description') {
+    const isDescriptionOnly = updatedFields.length === 2 && 
+                               updatedFields.includes('description') && 
+                               updatedFields.includes('descriptionFiles')
+    
+    if (isDescriptionOnly) {
       actionDetail = 'SUPPLEMENT_DESCRIPTION'
-      logNewValue.actionDetail = '对事件描述进行了补充'
+      const supplementTime = new Date().toLocaleString('zh-CN')
+      logNewValue.actionDetail = `对事件描述进行了补充`
+      logNewValue.supplementTime = supplementTime
+      logNewValue.supplementContent = updateData.description?.substring(oldEvent.description?.length || 0) || ''
+      logNewValue.fileCount = updateData.descriptionFiles?.length || 0
+      if (logNewValue.fileCount > 0) {
+        logNewValue.fileNames = updateData.descriptionFiles.map(f => f.name).join(', ')
+      }
     }
     
     // A阶段（进入CLOSED状态）添加详细信息
