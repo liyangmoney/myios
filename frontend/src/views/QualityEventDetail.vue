@@ -244,8 +244,20 @@
       </div>
 
       <div class="description-section">
-        <h4>问题描述</h4>
-        <p>{{ event.description || '暂无描述' }}</p>
+        <div class="description-header">
+          <h4>问题描述</h4>
+          <el-button 
+            v-if="canSupplementDescription" 
+            type="primary" 
+            size="small" 
+            @click="openSupplementDialog"
+          >
+            补充描述
+          </el-button>
+        </div>
+        <div class="description-content">
+          <p v-for="(line, index) in formatDescription(event.description)" :key="index">{{ line }}</p>
+        </div>
         <div v-if="parseFiles(event.description_files).length > 0" class="description-files">
           <h5>附件</h5>
           <FileList
@@ -1166,6 +1178,33 @@
         <el-button type="primary" @click="submitChangeEvent" :loading="submittingChange">确认创建</el-button>
       </template>
     </el-dialog>
+
+    <!-- 补充描述对话框 -->
+    <el-dialog
+      v-model="supplementDialogVisible"
+      title="补充问题描述"
+      width="600px"
+      :close-on-click-modal="false"
+    >
+      <el-form 
+        ref="supplementFormRef" 
+        :model="supplementForm" 
+        label-position="top"
+      >
+        <el-form-item label="补充内容" prop="content">
+          <el-input
+            v-model="supplementForm.content"
+            type="textarea"
+            :rows="6"
+            placeholder="请输入补充内容，将追加到原描述后面..."
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="supplementDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitSupplement" :loading="submittingSupplement">确认补充</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -1282,6 +1321,14 @@ const uploadAction = (stage) => {
 const editDialogVisible = ref(false)
 const editType = ref('')
 const editFormRef = ref(null)
+
+// 补充描述对话框
+const supplementDialogVisible = ref(false)
+const supplementForm = ref({
+  content: ''
+})
+const supplementFormRef = ref(null)
+const submittingSupplement = ref(false)
 
 const editDialogTitle = computed(() => {
   const titles = {
@@ -1520,7 +1567,6 @@ const truncateFileName = (name, maxLength = 20) => {
 }
 
 // 权限判断
-// P阶段：只有创建人可以编辑
 // P阶段：创建人或责任人可以编辑
 const canEditPlan = computed(() => {
   const isCreator = event.value?.reporter_id === currentUserId.value
@@ -1528,6 +1574,11 @@ const canEditPlan = computed(() => {
   const isResponsible = responsibleIds.includes(currentUserId.value)
   return (isCreator || isResponsible) && 
          (event.value?.status === 'NEW' || event.value?.status === 'PLAN')
+})
+
+// 补充描述权限：只有创建人可以补充
+const canSupplementDescription = computed(() => {
+  return event.value?.reporter_id === currentUserId.value
 })
 
 // D阶段：任何责任人都可以编辑
@@ -1548,6 +1599,57 @@ const canEditAct = computed(() => {
 
 // 是否可以评论（所有人都可以评论）
 const canComment = computed(() => true)
+
+// 格式化描述，按行分割
+const formatDescription = (desc) => {
+  if (!desc) return ['暂无描述']
+  return desc.split('\n')
+}
+
+// 打开补充描述对话框
+const openSupplementDialog = () => {
+  supplementForm.value.content = ''
+  supplementDialogVisible.value = true
+}
+
+// 提交补充描述
+const submitSupplement = async () => {
+  if (!supplementForm.value.content.trim()) {
+    ElMessage.warning('请输入补充内容')
+    return
+  }
+
+  submittingSupplement.value = true
+  try {
+    const now = new Date()
+    const timeStr = now.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+
+    const newDescription = event.value.description
+      ? `${event.value.description}\n\n[${timeStr}] 补充：\n${supplementForm.value.content}`
+      : `[${timeStr}] 补充：\n${supplementForm.value.content}`
+
+    await request.put(`/quality-events/${event.value.id}`, {
+      description: newDescription
+    })
+
+    ElMessage.success('补充成功')
+    supplementDialogVisible.value = false
+    // 刷新事件详情
+    await fetchEventDetail()
+  } catch (error) {
+    console.error('补充描述失败:', error)
+    ElMessage.error('补充失败')
+  } finally {
+    submittingSupplement.value = false
+  }
+}
 
 const isOverdue = computed(() => {
   if (!event.value?.due_date || event.value?.status === 'CLOSED') return false
@@ -2533,9 +2635,30 @@ onMounted(() => {
   margin-top: 20px;
 }
 
-.description-section h4 {
+.description-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 10px;
+}
+
+.description-header h4 {
+  margin: 0;
   color: #606266;
+}
+
+.description-content {
+  background: #f5f7fa;
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.description-content p {
+  line-height: 1.8;
+  color: #303133;
+  margin: 0;
+  white-space: pre-wrap;
 }
 
 .description-section p {
