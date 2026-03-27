@@ -1,43 +1,67 @@
 # MyIOS - ISO 22163 质量管理体系信息化平台
 
-基于 Vue3 + Node.js + MySQL 的 ISO 22163 (IRIS) 质量管理体系数字化管理平台。
+> 基于 Vue3 + Node.js + MySQL 的 ISO 22163 (IRIS) 质量管理体系数字化管理平台
+> 
+> 🎯 **PDCA闭环管理** | 📊 **数据驱动决策** | 🔐 **企业级安全**
 
-## 功能特性
+---
 
-### 程序文件管理
-- 📑 **42个程序文件** - 完整的 ISO 22163 体系文件（C/M/S分类）
-- 👥 **人员分配** - 为每个程序文件分配编写人、审核人、批准人
-- 📎 **记录归档** - 上传和管理程序文件相关记录
-- 📅 **年份控制** - 支持按年份归档和查询
+## 🌟 核心特性
 
-### 质量事件管理 (PDCA)
-- 📝 **事件创建** - 内部/外部不符合、审核发现、过程异常等
-- 🔄 **PDCA工作流** - Plan → Do → Check → Act 完整闭环
-- 📎 **附件管理** - 各阶段支持文件上传
-- 📊 **统计分析** - 按状态、严重度、月度趋势分析
+### 📑 程序文件管理
+- **42个标准程序文件** - 完整的 ISO 22163 体系文件（C/M/S分类）
+- **智能人员分配** - 为每个程序文件分配编写人、审核人、批准人
+- **版本控制** - 支持按年份归档和版本追溯
+- **附件管理** - 程序文件相关记录的数字化归档
 
-### 用户与权限
-- 🔐 **JWT认证** - 安全的身份验证机制
-- 👤 **用户管理** - 管理员创建用户，邮件通知
-- 📝 **操作日志** - 完整的审计追踪
+### 🔄 质量事件管理（PDCA闭环）
+- **多维度事件创建** - 内部/外部不符合、审核发现、过程异常、指标异常
+- **完整PDCA工作流** - Plan → Do → Check → Act 闭环跟踪
+- **智能变更管理** - P阶段支持事件变更，自动关联源事件
+- **根因分析工具** - A阶段支持原因类型多选分析
+- **附件全生命周期** - 各阶段支持文件上传和评论关联
 
-## 技术栈
+### 📊 数据统计分析
+- **多维度筛选** - 按状态、严重度、类型、部门筛选
+- **趋势分析** - 月度事件趋势图表
+- **责任追踪** - 个人/部门事件统计
+- ** overdue提醒** - 超期未关闭事件自动提醒
 
-### 前端
-- Vue 3 + Vite
-- Element Plus
-- Pinia 状态管理
-- Vue Router
-- Axios
+### 👥 用户与权限管理
+- **JWT认证** - 安全的身份验证机制
+- **角色分级** - 管理员、质量人员、普通用户
+- **邮件通知** - 事件流转自动邮件提醒
+- **完整审计日志** - 操作全程可追溯
 
-### 后端
-- Node.js + Express
-- MySQL 8.0
-- JWT 认证
-- bcrypt 加密
-- nodemailer 邮件
+---
 
-## 快速部署
+## 🏗️ 技术架构
+
+### 前端技术栈
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| Vue | 3.x | 渐进式框架 |
+| Vite | 5.x | 构建工具 |
+| Element Plus | 2.x | UI组件库 |
+| Pinia | 2.x | 状态管理 |
+| Vue Router | 4.x | 路由管理 |
+| Axios | 1.x | HTTP客户端 |
+| ECharts | 5.x | 数据可视化 |
+
+### 后端技术栈
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| Node.js | 18+ | 运行时 |
+| Express | 4.x | Web框架 |
+| MySQL | 8.0 | 数据库 |
+| JWT | 9.x | 身份认证 |
+| bcrypt | 5.x | 密码加密 |
+| nodemailer | 6.x | 邮件服务 |
+| Multer | 1.x | 文件上传 |
+
+---
+
+## 🚀 快速开始
 
 ### 方式一：Docker 部署（推荐）
 
@@ -45,50 +69,42 @@
 - Docker 20.10+
 - Docker Compose 2.0+
 
-#### 部署步骤
-
-1. **克隆项目**
-   ```bash
-   git clone https://github.com/liyangmoney/MyIOS.git
-   cd MyIOS
-   ```
-
-2. **配置环境变量**
-   ```bash
-   cp backend/.env.example backend/.env
-   # 编辑 backend/.env，配置数据库和邮件
-   ```
-
-3. **启动服务**
-   ```bash
-   docker-compose up -d
-   ```
-
-4. **初始化数据库**（首次运行）
-   ```bash
-   # 等待 MySQL 启动完成（约30秒）
-   docker-compose exec mysql mysql -uroot -proot pis_system < database/schema.sql
-   ```
-
-5. **访问系统**
-   - 前端：http://localhost:13000
-   - 后端 API：http://localhost:9090
-   - 默认账号：admin / admin123
-
-#### 常用命令
+#### 1. 克隆项目
 ```bash
-# 查看日志
-docker-compose logs -f
-
-# 停止服务
-docker-compose down
-
-# 重启服务
-docker-compose restart
-
-# 重新构建
-docker-compose up -d --build
+git clone https://github.com/liyangmoney/MyIOS.git
+cd MyIOS
 ```
+
+#### 2. 配置环境
+```bash
+# 复制环境变量模板
+cp backend/.env.example backend/.env
+
+# 编辑配置
+vim backend/.env
+```
+
+#### 3. 启动服务
+```bash
+docker-compose up -d
+
+# 等待30秒让MySQL初始化
+docker-compose logs -f mysql
+```
+
+#### 4. 初始化数据库
+```bash
+# 首次运行需要导入表结构
+docker-compose exec -T mysql mysql -uroot -proot pis_system < database/schema.sql
+
+# 执行迁移（如有更新）
+docker-compose exec -T mysql mysql -uroot -proot pis_system < database/migrations/20250323_add_event_fields.sql
+```
+
+#### 5. 访问系统
+- 🌐 前端：http://localhost:13000
+- 🔌 API：http://localhost:9090
+- 👤 默认账号：`admin` / `admin123`
 
 ---
 
@@ -98,18 +114,19 @@ docker-compose up -d --build
 - Node.js 18+
 - MySQL 8.0+
 
-#### 1. 数据库初始化
-
+#### 1. 数据库准备
 ```bash
 # 创建数据库
 mysql -u root -p -e "CREATE DATABASE pis_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # 导入表结构
 mysql -u root -p pis_system < database/schema.sql
+
+# 执行迁移
+mysql -u root -p pis_system < database/migrations/20250323_add_event_fields.sql
 ```
 
-#### 2. 后端部署
-
+#### 2. 后端启动
 ```bash
 cd backend
 
@@ -118,23 +135,16 @@ npm install
 
 # 配置环境变量
 cp .env.example .env
-# 编辑 .env 文件：
-# DB_HOST=localhost
-# DB_USER=root
-# DB_PASSWORD=your_password
-# JWT_SECRET=your_jwt_secret
-# EMAIL_HOST=smtp.163.com
-# EMAIL_USER=your_email@163.com
-# EMAIL_PASS=your_auth_code
+# 编辑 .env
 
-# 启动服务
+# 启动开发服务器
 npm run dev
+
 # 或生产模式
 npm start
 ```
 
-#### 3. 前端部署
-
+#### 3. 前端启动
 ```bash
 cd frontend
 
@@ -148,33 +158,43 @@ npm run dev
 npm run build
 ```
 
-## 项目结构
+---
+
+## 📁 项目结构
 
 ```
 MyIOS/
-├── docker-compose.yml      # Docker 编排配置
-├── frontend/               # Vue3 前端
-│   ├── src/
-│   │   ├── api/           # API 接口
-│   │   ├── components/    # 组件
-│   │   ├── router/        # 路由
-│   │   ├── store/         # Pinia 状态
-│   │   └── views/         # 页面
-│   └── package.json
-├── backend/                # Node.js 后端
+├── 📁 .github/           # GitHub Actions CI/CD
+├── 📁 backend/            # Node.js 后端
 │   ├── src/
 │   │   ├── controllers/   # 控制器
 │   │   ├── routes/        # 路由
-│   │   └── utils/         # 工具
+│   │   ├── middleware/    # 中间件
+│   │   └── utils/         # 工具函数
 │   ├── uploads/           # 上传文件存储
+│   ├── .env.example       # 环境变量模板
 │   └── package.json
-└── database/
-    └── schema.sql         # 完整数据库脚本
+├── 📁 frontend/           # Vue3 前端
+│   ├── src/
+│   │   ├── api/           # API接口
+│   │   ├── components/    # 公共组件
+│   │   ├── router/        # 路由配置
+│   │   ├── store/         # Pinia状态
+│   │   └── views/         # 页面视图
+│   └── package.json
+├── 📁 database/           # 数据库脚本
+│   ├── schema.sql         # 完整表结构
+│   └── migrations/        # 迁移脚本
+├── 📁 docs/               # 项目文档
+├── 📄 docker-compose.yml  # Docker配置
+└── 📄 README.md           # 项目说明
 ```
 
-## 配置文件说明
+---
 
-### 后端 .env
+## ⚙️ 配置说明
+
+### 后端 .env 配置
 ```env
 # 数据库配置
 DB_HOST=localhost
@@ -184,10 +204,10 @@ DB_PASSWORD=your_password
 DB_NAME=pis_system
 
 # JWT配置
-JWT_SECRET=your_secret_key
+JWT_SECRET=your_secret_key_here
 JWT_EXPIRE=24h
 
-# 邮件配置（用于用户通知）
+# 邮件服务（用于通知）
 EMAIL_HOST=smtp.163.com
 EMAIL_PORT=465
 EMAIL_SECURE=true
@@ -195,81 +215,180 @@ EMAIL_USER=your_email@163.com
 EMAIL_PASS=your_auth_code
 SYSTEM_URL=http://localhost:13000
 
-# 服务器配置
+# 服务端口
 PORT=9090
 ```
 
-## 升级指南
-
-### 从 v1.0.0 升级到 v1.1.x
-
-1. **备份数据**
-   ```bash
-   mysqldump -u root -p pis_system > backup.sql
-   ```
-
-2. **拉取最新代码**
-   ```bash
-   git pull origin main
-   ```
-
-3. **更新数据库**（如有迁移脚本）
-   ```bash
-   # 查看 database/migrations/ 目录
-   # 按顺序执行迁移脚本
-   ```
-
-4. **重启服务**
-   ```bash
-   docker-compose restart
-   # 或手动重启前后端服务
-   ```
-
-## 常见问题
-
-### 1. 数据库连接失败
-- 检查 MySQL 服务是否启动
-- 确认数据库配置正确
-- 检查防火墙设置
-
-### 2. 文件上传失败
-- 检查 `backend/uploads` 目录权限
-- 确认文件大小不超过 10MB
-
-### 3. 邮件发送失败
-- 确认邮箱 SMTP 设置正确
-- 检查邮箱授权码（不是登录密码）
-
-### 4. 端口冲突
-```bash
-# 查看端口占用
-netstat -ano | grep :3000
-netstat -ano | grep :9090
-
-# 修改 docker-compose.yml 中的端口映射
+### 前端配置
+前端配置位于 `frontend/.env`：
+```env
+VITE_API_BASE_URL=http://localhost:9090
 ```
 
-## API 文档
+---
 
-启动后端服务后访问：
-- Swagger UI: http://localhost:9090/api-docs
+## 📈 核心功能模块
 
-## 版本历史
+### 1️⃣ 程序文件管理
+| 功能 | 说明 |
+|------|------|
+| 文件分类 | C(顾客相关)/M(管理)/S(支持) 三大类 |
+| 人员分配 | 编写人、审核人、批准人三级审批 |
+| 记录归档 | 上传PDF、Word、Excel等附件 |
+| 年份归档 | 按年份查看历史版本 |
 
-- **v1.1.1** - PDCA附件功能完善
-  - 各阶段附件上传与评论模块一致
-  - 操作日志显示附件链接
-  - 修复中文文件名乱码
+### 2️⃣ 质量事件管理
+| 阶段 | 功能 |
+|------|------|
+| **Plan** | 问题描述、根因分析、纠正措施、变更管理 |
+| **Do** | 措施执行、责任人分配、期限设定 |
+| **Check** | 效果验证、监督检查 |
+| **Act** | 标准化、预防措施、原因类型分析 |
 
-- **v1.0.0** - 初始版本
-  - 程序文件管理
-  - 质量事件管理
-  - 用户权限管理
+### 3️⃣ 用户权限
+| 角色 | 权限 |
+|------|------|
+| 管理员 | 用户管理、系统配置、数据导出 |
+| 质量人员 | 事件创建、编辑、审核、统计分析 |
+| 普通用户 | 查看事件、上传附件、执行措施 |
 
-## 许可证
+---
 
-MIT
+## 🔧 常用命令
 
-## 联系方式
+### Docker 命令
+```bash
+# 查看日志
+docker-compose logs -f backend
+docker-compose logs -f frontend
+docker-compose logs -f mysql
 
-如有问题，请提交 GitHub Issue 或联系维护者。
+# 重启服务
+docker-compose restart
+
+# 停止服务
+docker-compose down
+
+# 重新构建
+docker-compose up -d --build
+
+# 进入容器
+docker-compose exec backend sh
+docker-compose exec mysql mysql -uroot -proot pis_system
+```
+
+### 数据库命令
+```bash
+# 备份数据
+mysqldump -u root -p pis_system > backup_$(date +%Y%m%d).sql
+
+# 恢复数据
+mysql -u root -p pis_system < backup_20250101.sql
+
+# 查看迁移状态
+ls -la database/migrations/
+```
+
+---
+
+## 🐛 常见问题
+
+### 1. 数据库连接失败
+```bash
+# 检查MySQL状态
+docker-compose ps mysql
+docker-compose logs mysql
+
+# 检查端口占用
+netstat -tlnp | grep 3306
+```
+
+### 2. 文件上传失败
+```bash
+# 检查目录权限
+docker-compose exec backend ls -la uploads/
+docker-compose exec backend chmod 755 uploads/
+```
+
+### 3. 邮件发送失败
+- 确认使用的是邮箱授权码（不是登录密码）
+- 检查邮箱SMTP设置是否正确
+- 查看后端日志：`docker-compose logs backend | grep email`
+
+### 4. 前端页面空白
+```bash
+# 清除缓存并重建
+cd frontend
+rm -rf node_modules dist
+npm install
+npm run build
+```
+
+---
+
+## 📝 API 文档
+
+启动后端服务后访问 Swagger UI：
+- 📘 http://localhost:9090/api-docs
+
+---
+
+## 🔄 版本历史
+
+### v1.2.0 (2025-03-27)
+- ✅ PDCA附件功能完善
+- ✅ 事件详情页新字段显示
+- ✅ 数据库表结构升级
+- ✅ 质量事件P阶段变更功能
+- ✅ A阶段原因类型多选
+
+### v1.1.0 (2025-03-20)
+- ✅ 程序文件管理模块
+- ✅ 用户权限分级
+- ✅ 操作日志系统
+
+### v1.0.0 (2025-03-01)
+- ✅ 质量事件管理基础版
+- ✅ PDCA工作流
+- ✅ JWT认证
+
+---
+
+## 📋 待办事项
+
+- [ ] 移动端适配
+- [ ] 数据大屏可视化
+- [ ] AI智能分析建议
+- [ ] 多语言支持
+
+---
+
+## 📄 许可证
+
+MIT License © 2025 MyIOS Team
+
+---
+
+## 🤝 贡献指南
+
+欢迎提交 Issue 和 Pull Request！
+
+1. Fork 本项目
+2. 创建分支 (`git checkout -b feature/xxx`)
+3. 提交更改 (`git commit -am 'Add feature'`)
+4. 推送分支 (`git push origin feature/xxx`)
+5. 创建 Pull Request
+
+---
+
+## 📞 联系方式
+
+- 📧 邮箱：liyangmoney@example.com
+- 🐛 Issue：[GitHub Issues](https://github.com/liyangmoney/MyIOS/issues)
+- 💬 讨论：[GitHub Discussions](https://github.com/liyangmoney/MyIOS/discussions)
+
+---
+
+<p align="center">
+  <b>MyIOS - 让质量管理更简单</b>
+</p>
