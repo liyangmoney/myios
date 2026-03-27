@@ -897,6 +897,14 @@ export const updateQualityEvent = async (req, res) => {
     
     // 构建详细的操作日志内容
     const logNewValue = { ...updateData }
+    let actionDetail = 'UPDATE'
+    
+    // 检测是否是描述补充（只更新了description字段）
+    const updatedFields = Object.keys(updateData)
+    if (updatedFields.length === 1 && updatedFields[0] === 'description') {
+      actionDetail = 'SUPPLEMENT_DESCRIPTION'
+      logNewValue.actionDetail = '对事件描述进行了补充'
+    }
     
     // A阶段（进入CLOSED状态）添加详细信息
     if (updateData.status === 'CLOSED' && oldEvent.status === 'ACT') {
@@ -912,8 +920,8 @@ export const updateQualityEvent = async (req, res) => {
     // 记录操作日志
     await query(`
       INSERT INTO quality_event_log (event_id, user_id, user_name, action, old_value, new_value)
-      VALUES (?, ?, ?, 'UPDATE', ?, ?)
-    `, [id, userId, userName, JSON.stringify(oldEvent), JSON.stringify(logNewValue)])
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [id, userId, userName, actionDetail, JSON.stringify(oldEvent), JSON.stringify(logNewValue)])
     
     res.json({ code: 200, message: '质量事件更新成功' })
   } catch (error) {

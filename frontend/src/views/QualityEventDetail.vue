@@ -579,6 +579,23 @@
                   {{ log.new_value }}
                 </template>
               </template>
+              <!-- 描述补充 -->
+              <template v-else-if="log.action === 'SUPPLEMENT_DESCRIPTION' && log.new_value && isJson(log.new_value)">
+                <template v-for="(data, idx) in [JSON.parse(log.new_value)]" :key="idx">
+                  <div>{{ data.actionDetail || '对事件描述进行了补充' }}</div>
+                  <!-- 描述补充附件 -->
+                  <template v-if="data.descriptionFiles?.length > 0">
+                    <div>上传了 {{ data.descriptionFiles.length }} 个附件:</div>
+                    <div class="log-attachments">
+                      <div v-for="(file, fidx) in data.descriptionFiles" :key="fidx" class="log-attachment-item">
+                        <el-link @click="handleFileClick(getFileUrl(file.url), file.name)" type="primary">
+                          <el-icon><Document /></el-icon> {{ file.name }}
+                        </el-link>
+                      </div>
+                    </div>
+                  </template>
+                </template>
+              </template>
               <!-- PDCA阶段附件上传（检测planFiles/doFiles/checkFiles/actFiles） -->
               <template v-else-if="log.action === 'UPDATE' && log.new_value && isJson(log.new_value)">
                 <template v-for="(data, idx) in [JSON.parse(log.new_value)]" :key="idx">
@@ -1901,7 +1918,8 @@ const getStatusType = (status) => {
 const getActionLabel = (action) => {
   const labels = {
     CREATE: '创建', UPDATE: '更新', DELETE: '删除',
-    STATUS_CHANGE: '状态变更', COMMENT: '评论'
+    STATUS_CHANGE: '状态变更', COMMENT: '评论',
+    SUPPLEMENT_DESCRIPTION: '补充描述'
   }
   return labels[action] || action
 }
