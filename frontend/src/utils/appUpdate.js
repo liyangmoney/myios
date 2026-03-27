@@ -3,9 +3,9 @@ import { Capacitor } from '@capacitor/core'
 import { Dialog } from '@capacitor/dialog'
 import { Toast } from '@capacitor/toast'
 import { Filesystem, Directory } from '@capacitor/filesystem'
-import { version } from '../../backend/config/version.js'
+import { version } from '@/config/version.js'
 
-// 当前版本号（从 backend/config/version.js 读取）
+// 当前版本号（从 frontend/src/config/version.js 读取）
 const CURRENT_VERSION = version
 const UPDATE_SERVER_URL = 'http://myjghy.myds.me:9090'
 
