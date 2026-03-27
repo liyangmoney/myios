@@ -189,6 +189,178 @@ const handleMulterError = (err, req, res, next) => {
 
 router.post('/:id/upload', handleBase64Upload, upload.array('files', 5), handleMulterError, uploadFiles)
 
+// 分片上传接口（安卓端使用）
+// 存储分片上传任务
+const chunkUploadTasks = new Map()
+
+// 初始化分片上传
+router.post('/:id/upload/init', authMiddleware, async (req, res) => {
+  try {
+    const { filename, type, size, totalChunks, uploadId } = req.body
+    const eventId = req.params.id
+    
+    console.log('[ChunkUpload] Init:', { eventId, filename, size, totalChunks, uploadId })
+    
+    // 生成服务器端 uploadId
+    const serverUploadId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    
+    // 创建临时分片目录
+    const chunkDir = path.join(tempUploadDir, serverUploadId)
+    if (!fs.existsSync(chunkDir)) {
+      fs.mkdirSync(chunkDir, { recursive: true })
+    }
+    
+    // 存储上传任务信息
+    chunkUploadTasks.set(serverUploadId, {
+      eventId,
+      filename,
+      type,
+      size,
+      totalChunks,
+      uploadedChunks: [],
+      chunkDir,
+      createdAt: Date.now()
+    })
+    
+    res.json({ 
+      code: 200, 
+      data: { uploadId: serverUploadId },
+      message: '初始化成功'
+    })
+  } catch (error) {
+    console.error('[ChunkUpload] Init failed:', error)
+    res.status(500).json({ code: 500, message: '初始化失败：' + error.message })
+  }
+})
+
+// 上传分片
+router.post('/:id/upload/chunk', authMiddleware, async (req, res) => {
+  try {
+    const { uploadId, chunkIndex, totalChunks } = req.query
+    
+    if (!uploadId || chunkIndex === undefined || !totalChunks) {
+      return res.status(400).json({ code: 400, message: '缺少必要参数' })
+    }
+    
+    const task = chunkUploadTasks.get(uploadId)
+    if (!task) {
+      return res.status(404).json({ code: 404, message: '上传任务不存在或已过期' })
+    }
+    
+    // 保存分片
+    const chunkPath = path.join(task.chunkDir, `chunk-${chunkIndex}`)
+    
+    // 获取请求体的原始数据
+    const chunks = []
+    req.on('data', chunk => chunks.push(chunk))
+    req.on('end', () => {
+      const buffer = Buffer.concat(chunks)
+      fs.writeFileSync(chunkPath, buffer)
+      
+      // 更新已上传分片列表
+      if (!task.uploadedChunks.includes(parseInt(chunkIndex))) {
+        task.uploadedChunks.push(parseInt(chunkIndex))
+      }
+      
+      console.log(`[ChunkUpload] Chunk ${chunkIndex}/${totalChunks} saved, size: ${buffer.length}`)
+      
+      res.json({ 
+        code: 200, 
+        data: { chunkIndex, status: 'success' },
+        message: `分片 ${chunkIndex} 上传成功`
+      })
+    })
+    
+  } catch (error) {
+    console.error('[ChunkUpload] Chunk upload failed:', error)
+    res.status(500).json({ code: 500, message: '分片上传失败：' + error.message })
+  }
+})
+
+// 合并分片
+router.post('/:id/upload/merge', authMiddleware, async (req, res) => {
+  try {
+    const { uploadId } = req.query
+    const { filename, type, size, totalChunks } = req.body
+    const eventId = req.params.id
+    
+    console.log('[ChunkUpload] Merge:', { uploadId, filename, totalChunks })
+    
+    const task = chunkUploadTasks.get(uploadId)
+    if (!task) {
+      return res.status(404).json({ code: 404, message: '上传任务不存在或已过期' })
+    }
+    
+    // 检查是否所有分片都已上传
+    if (task.uploadedChunks.length !== parseInt(totalChunks)) {
+      return res.status(400).json({ 
+        code: 400, 
+        message: `分片不完整：已上传 ${task.uploadedChunks.length}/${totalChunks}` 
+      })
+    }
+    
+    // 获取事件编号
+    let eventDir
+    if (eventId === 'temp') {
+      eventDir = path.join(uploadDir, 'temp')
+    } else {
+      const events = await query('SELECT event_no FROM quality_event WHERE id = ?', [eventId])
+      const eventNo = events.length > 0 ? events[0].event_no : 'unknown'
+      eventDir = path.join(uploadDir, eventNo)
+    }
+    
+    if (!fs.existsSync(eventDir)) {
+      fs.mkdirSync(eventDir, { recursive: true })
+    }
+    
+    // 生成最终文件名
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    const ext = path.extname(filename)
+    const safeName = filename.replace(/[^\w\u4e00-\u9fa5.-]/g, '_')
+    const finalFilename = `${uniqueSuffix}_${safeName}`
+    const finalPath = path.join(eventDir, finalFilename)
+    
+    // 合并分片
+    const writeStream = fs.createWriteStream(finalPath)
+    for (let i = 0; i < parseInt(totalChunks); i++) {
+      const chunkPath = path.join(task.chunkDir, `chunk-${i}`)
+      const chunkBuffer = fs.readFileSync(chunkPath)
+      writeStream.write(chunkBuffer)
+    }
+    writeStream.end()
+    
+    // 等待写入完成
+    await new Promise((resolve, reject) => {
+      writeStream.on('finish', resolve)
+      writeStream.on('error', reject)
+    })
+    
+    // 清理分片文件
+    fs.rmSync(task.chunkDir, { recursive: true, force: true })
+    chunkUploadTasks.delete(uploadId)
+    
+    // 生成文件 URL
+    const eventNo = eventId === 'temp' ? 'temp' : (await query('SELECT event_no FROM quality_event WHERE id = ?', [eventId]))[0]?.event_no || 'unknown'
+    const fileUrl = `/uploads/quality-events/${eventNo}/${finalFilename}`
+    
+    console.log('[ChunkUpload] Merge complete:', finalPath)
+    
+    res.json({
+      code: 200,
+      data: [{
+        name: filename,
+        url: fileUrl,
+        size: parseInt(size),
+        type: type
+      }],
+      message: '文件合并成功'
+    })
+  } catch (error) {
+    console.error('[ChunkUpload] Merge failed:', error)
+    res.status(500).json({ code: 500, message: '合并失败：' + error.message })
+  }
+})
+
 // 删除临时文件
 router.delete('/temp/file/:filename', authMiddleware, async (req, res) => {
   try {
