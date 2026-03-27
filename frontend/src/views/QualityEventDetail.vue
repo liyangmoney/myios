@@ -1199,6 +1199,18 @@
             placeholder="请输入补充内容，将追加到原描述后面..."
           />
         </el-form-item>
+        <!-- 附件上传 -->
+        <el-form-item label="附件">
+          <FileList
+            :files="supplementFiles"
+            :event-id="event?.id"
+            :event-no="event?.event_no"
+            stage="description"
+            :can-upload="true"
+            @upload-success="(res, file) => handleSupplementFileSuccess(res, file)"
+            @update:files="(files) => supplementFiles = files"
+          />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="supplementDialogVisible = false">取消</el-button>
@@ -1329,6 +1341,22 @@ const supplementForm = ref({
 })
 const supplementFormRef = ref(null)
 const submittingSupplement = ref(false)
+const supplementFiles = ref([])
+
+// 处理补充描述附件上传成功
+const handleSupplementFileSuccess = (res, file) => {
+  console.log('补充描述附件上传成功:', res)
+  if (res.code === 200) {
+    supplementFiles.value.push({
+      name: file.name,
+      url: res.data.url,
+      stage: 'description'
+    })
+    ElMessage.success('附件上传成功')
+  } else {
+    ElMessage.error(res.message || '上传失败')
+  }
+}
 
 const editDialogTitle = computed(() => {
   const titles = {
@@ -1641,6 +1669,8 @@ const submitSupplement = async () => {
 
     ElMessage.success('补充成功')
     supplementDialogVisible.value = false
+    // 清空附件列表
+    supplementFiles.value = []
     // 刷新事件详情
     await fetchEventDetail()
   } catch (error) {
