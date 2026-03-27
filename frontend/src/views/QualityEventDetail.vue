@@ -498,6 +498,7 @@
             :multiple="true"
             :limit="5"
             :auto-upload="true"
+            :show-file-list="false"
             accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4"
             :on-success="(res, file) => handleCommentFileSuccess(res, file)"
             :on-remove="(file) => handleCommentFileRemove(file)"
