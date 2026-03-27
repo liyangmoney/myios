@@ -1687,7 +1687,8 @@ const submitSupplement = async () => {
       : `[${timeStr}] 补充：\n${supplementForm.value.content}`
 
     await qualityEventApi.update(event.value.id, {
-      description: newDescription
+      description: newDescription,
+      descriptionFiles: supplementFiles.value
     })
 
     ElMessage.success('补充成功')

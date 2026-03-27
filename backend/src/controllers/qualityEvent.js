@@ -750,6 +750,11 @@ export const updateQualityEvent = async (req, res) => {
       fields.push('notify_users = ?')
       values.push(JSON.stringify(updateData.notifyUsers))
     }
+    // 处理描述附件（补充描述时）
+    if (updateData.descriptionFiles !== undefined) {
+      fields.push('description_files = ?')
+      values.push(JSON.stringify(updateData.descriptionFiles))
+    }
     // 处理各阶段附件
     if (updateData.planFiles !== undefined) {
       fields.push('plan_files = ?')
