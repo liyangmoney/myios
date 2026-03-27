@@ -1521,8 +1521,12 @@ const truncateFileName = (name, maxLength = 20) => {
 
 // 权限判断
 // P阶段：只有创建人可以编辑
+// P阶段：创建人或责任人可以编辑
 const canEditPlan = computed(() => {
-  return event.value?.reporter_id === currentUserId.value && 
+  const isCreator = event.value?.reporter_id === currentUserId.value
+  const responsibleIds = parseJsonArray(event.value?.responsible_ids)
+  const isResponsible = responsibleIds.includes(currentUserId.value)
+  return (isCreator || isResponsible) && 
          (event.value?.status === 'NEW' || event.value?.status === 'PLAN')
 })
 

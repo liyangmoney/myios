@@ -742,7 +742,8 @@ const productTypeOptions = [
 const problemTypeOptions = [
   { label: '软件算法', value: '软件算法' },
   { label: '嵌入式硬件', value: '嵌入式硬件' },
-  { label: '机械电器', value: '机械电器' }
+  { label: '机械', value: '机械' },
+  { label: '电器', value: '电器' }
 ]
 
 const severityOptions = [
@@ -777,7 +778,10 @@ const relatedPartsOptions = [
   { label: '工作站', value: '工作站' },
   { label: '采集软件', value: '采集软件' },
   { label: '分析软件', value: '分析软件' },
-  { label: '工装', value: '工装' }
+  { label: '工装', value: '工装' },
+  { label: '钣金', value: '钣金' },
+  { label: '机加件', value: '机加件' },
+  { label: '焊接件', value: '焊接件' }
 ]
 
 const discoveryFormOptions = [
