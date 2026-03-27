@@ -1219,11 +1219,13 @@
         <!-- 附件上传 -->
         <el-form-item label="附件">
           <FileList
+            ref="supplementUploadRef"
             :files="supplementFiles"
             :event-id="event?.id"
             :event-no="event?.event_no"
             stage="description"
             :can-upload="true"
+            :can-delete="true"
             @upload-success="(res, file) => handleSupplementFileSuccess(res, file)"
             @update:files="(files) => supplementFiles = files"
           />
@@ -1359,17 +1361,21 @@ const supplementForm = ref({
 const supplementFormRef = ref(null)
 const submittingSupplement = ref(false)
 const supplementFiles = ref([])
+const supplementUploadRef = ref(null)
 
 // 处理补充描述附件上传成功
 const handleSupplementFileSuccess = (res, file) => {
   console.log('补充描述附件上传成功:', res)
-  if (res.code === 200) {
-    supplementFiles.value.push({
+  if (res.code === 200 && res.data && res.data.length > 0) {
+    const fileData = {
       name: file.name,
-      url: res.data.url,
-      stage: 'description'
-    })
-    ElMessage.success('附件上传成功')
+      url: res.data[0].url,
+      type: file.raw?.type || '',
+      size: file.size
+    }
+    supplementFiles.value.push(fileData)
+    // 清除上传组件内部文件列表，避免重复提示
+    supplementUploadRef.value?.clearFiles?.()
   } else {
     ElMessage.error(res.message || '上传失败')
   }
