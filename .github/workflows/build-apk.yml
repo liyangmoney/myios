@@ -100,6 +100,16 @@ jobs:
         # 更新前端代码中的版本号
         sed -i "s/const CURRENT_VERSION = '.*'/const CURRENT_VERSION = '$BACKEND_VERSION'/" src/utils/appUpdate.js
         
+        # 更新 android/app/build.gradle 中的版本号
+        # versionName "x.x.x"
+        sed -i "s/versionName \".*\"/versionName \"$BACKEND_VERSION\"/" android/app/build.gradle
+        # versionCode 计算：去掉小数点，如 1.7.8 -> 10708
+        VERSION_CODE=$(echo $BACKEND_VERSION | awk -F. '{printf "%d%02d%02d", $1, $2, $3}')
+        sed -i "s/versionCode .*/versionCode $VERSION_CODE/" android/app/build.gradle
+        
+        echo "Updated build.gradle:"
+        grep -E "versionCode|versionName" android/app/build.gradle
+        
         # 验证更新
         FRONTEND_VERSION=$(grep "const CURRENT_VERSION" src/utils/appUpdate.js | sed "s/.*'\(.*\)'.*/\1/")
         echo "Frontend version: $FRONTEND_VERSION"

@@ -916,10 +916,8 @@ export const updateQualityEvent = async (req, res) => {
       logNewValue.actionDetail = `对事件描述进行了补充`
       logNewValue.supplementTime = supplementTime
       logNewValue.supplementContent = updateData.description?.substring(oldEvent.description?.length || 0) || ''
-      logNewValue.fileCount = updateData.descriptionFiles?.length || 0
-      if (logNewValue.fileCount > 0) {
-        logNewValue.fileNames = updateData.descriptionFiles.map(f => f.name).join(', ')
-      }
+      // 不记录附件信息到操作日志，避免显示混乱
+      // 附件信息已在文件列表中显示
     }
     
     // A阶段（进入CLOSED状态）添加详细信息
