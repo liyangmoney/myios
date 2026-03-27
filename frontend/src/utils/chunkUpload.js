@@ -20,12 +20,14 @@ const getApiUrl = (path) => {
     return `${DEFAULT_SERVER_URL}${baseURL}${path}`
   }
   
-  // 浏览器环境：使用完整服务器地址，避免跨域和代理问题
+  // 浏览器环境
   if (baseURL.startsWith('http')) {
     return `${baseURL}${path}`
   }
-  // 拼接完整URL，使用后端服务器地址
-  return `${DEFAULT_SERVER_URL}${baseURL}${path}`
+  if (baseURL.startsWith('/')) {
+    return `${window.location.origin}${baseURL}${path}`
+  }
+  return `${baseURL}${path}`
 }
 
 // 判断是否为原生平台
@@ -85,132 +87,84 @@ const arrayBufferToBase64 = (buffer) => {
 }
 
 /**
- * 原生平台分片上传
- * 将文件分成小块，逐块上传，支持真实进度
+ * 统一的上传函数（浏览器和原生平台通用）
  */
-const nativeChunkUpload = async (url, file, onProgress) => {
+const unifiedUpload = async (url, file, onProgress) => {
   const token = getToken()
-  const chunkSize = 2 * 1024 * 1024 // 2MB 每块，适合移动端
-  const totalChunks = Math.ceil(file.size / chunkSize)
-  const uploadId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  console.log('[unifiedUpload] URL:', url)
+  console.log('[unifiedUpload] Token exists:', !!token)
   
-  console.log('[NativeChunkUpload] File:', file.name, 'Size:', file.size, 'Chunks:', totalChunks)
-  
-  // 先初始化分片上传
-  const initUrl = url.replace('/upload?', '/upload/init?')
-  const initRes = await fetch(initUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      filename: file.name,
-      type: file.type || 'application/octet-stream',
-      size: file.size,
-      totalChunks: totalChunks,
-      uploadId: uploadId
-    })
-  })
-  
-  if (!initRes.ok) {
-    throw new Error('初始化上传失败')
-  }
-  
-  const { uploadId: serverUploadId } = await initRes.json()
-  
-  // 逐块上传
-  const uploadedChunks = []
-  for (let i = 0; i < totalChunks; i++) {
-    const start = i * chunkSize
-    const end = Math.min(start + chunkSize, file.size)
-    const chunk = file.slice(start, end)
-    
-    // 读取块为 ArrayBuffer
-    const arrayBuffer = await chunk.arrayBuffer()
-    
-    // 使用 XMLHttpRequest 上传块，支持进度
-    await new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest()
-      const chunkUrl = url.replace('/upload?', `/upload/chunk?uploadId=${serverUploadId}&chunkIndex=${i}&totalChunks=${totalChunks}`)
-      
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable && onProgress) {
-          // 计算总体进度：已完成的块 + 当前块进度
-          const chunkProgress = event.loaded / event.total
-          const totalProgress = Math.round(((i + chunkProgress) / totalChunks) * 100)
-          onProgress(totalProgress)
-        }
-      }
-      
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve()
-        } else {
-          reject(new Error(`块 ${i} 上传失败: ${xhr.status}`))
-        }
-      }
-      
-      xhr.onerror = () => reject(new Error(`块 ${i} 网络错误`))
-      xhr.ontimeout = () => reject(new Error(`块 ${i} 超时`))
-      
-      xhr.open('POST', chunkUrl, true)
-      xhr.setRequestHeader('Authorization', `Bearer ${token}`)
-      xhr.setRequestHeader('Content-Type', 'application/octet-stream')
-      xhr.send(arrayBuffer)
-    })
-    
-    uploadedChunks.push(i)
-    console.log(`[NativeChunkUpload] Chunk ${i + 1}/${totalChunks} uploaded`)
-  }
-  
-  // 合并分片
-  const mergeUrl = url.replace('/upload?', `/upload/merge?uploadId=${serverUploadId}`)
-  const mergeRes = await fetch(mergeUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      filename: file.name,
-      type: file.type || 'application/octet-stream',
-      size: file.size,
-      totalChunks: totalChunks
-    })
-  })
-  
-  if (!mergeRes.ok) {
-    throw new Error('合并分片失败')
-  }
-  
-  return await mergeRes.json()
-}
-
-/**
- * 直接上传小文件
- */
-const directUpload = async (file, eventId, stage, onProgress) => {
-  const url = getApiUrl(`/quality-events/${eventId}/upload?stage=${stage}`)
-  console.log('[Upload] URL:', url)
-  console.log('[Upload] isNative:', isNativePlatform())
-  
-  // 原生平台使用分片上传，获得真实进度
+  // 原生平台：使用 base64 + fetch
   if (isNativePlatform()) {
-    const result = await nativeChunkUpload(url, file, onProgress)
-    return result.data || result
+    console.log('[unifiedUpload] Native platform, using base64')
+    
+    // 先测试连接
+    const isConnected = await testServerConnection(url)
+    if (!isConnected) {
+      throw new Error('无法连接到服务器，请检查网络或服务器地址')
+    }
+    
+    try {
+      const arrayBuffer = await file.arrayBuffer()
+      console.log('[unifiedUpload] File read, size:', arrayBuffer.byteLength)
+      
+      const base64Data = arrayBufferToBase64(arrayBuffer)
+      console.log('[unifiedUpload] Base64 encoded, length:', base64Data.length)
+      
+      const body = JSON.stringify({
+        filename: file.name,
+        type: file.type || 'application/octet-stream',
+        size: file.size,
+        data: base64Data,
+        isBase64: true
+      })
+      console.log('[unifiedUpload] Request body size:', body.length)
+      
+      console.log('[unifiedUpload] Sending request with progress...')
+      
+      // 使用 XMLHttpRequest 以支持上传进度
+      const result = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        
+        // 上传进度监听
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable && onProgress) {
+            const percent = Math.round((event.loaded / event.total) * 100)
+            console.log(`[Upload] Progress: ${percent}%`)
+            onProgress(percent)
+          }
+        }
+        
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              resolve(JSON.parse(xhr.responseText))
+            } catch (e) {
+              reject(new Error('Invalid response'))
+            }
+          } else {
+            reject(new Error(`Upload failed: ${xhr.status}`))
+          }
+        }
+        
+        xhr.onerror = () => reject(new Error('Network error'))
+        xhr.ontimeout = () => reject(new Error('Request timeout'))
+        
+        xhr.open('POST', url, true)
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+        xhr.setRequestHeader('Content-Type', 'application/json')
+        xhr.send(body)
+      })
+      
+      console.log('[unifiedUpload] Success:', result)
+      return result
+    } catch (error) {
+      console.error('[unifiedUpload] Error:', error)
+      throw error
+    }
   }
   
-  // 浏览器保持原有方式
-  const result = await browserUpload(url, file, onProgress)
-  return result.data || result
-}
-
-/**
- * 浏览器上传（FormData + XMLHttpRequest）
- */
-const browserUpload = async (url, file, onProgress) => {
-  const token = getToken()
+  // 浏览器：使用 FormData + fetch
   const formData = new FormData()
   const isVideo = file.name.toLowerCase().endsWith('.mp4')
   if (isVideo) {
@@ -250,6 +204,18 @@ const browserUpload = async (url, file, onProgress) => {
 }
 
 /**
+ * 直接上传小文件
+ */
+const directUpload = async (file, eventId, stage, onProgress) => {
+  const url = getApiUrl(`/quality-events/${eventId}/upload?stage=${stage}`)
+  console.log('[Upload] URL:', url)
+  console.log('[Upload] isNative:', isNativePlatform())
+  
+  const result = await unifiedUpload(url, file, onProgress)
+  return result.data || result
+}
+
+/**
  * 智能上传（小文件直接上传，大文件提示用 PC 端）
  */
 export const smartUpload = async (file, eventId, eventNo, stage, onProgress) => {
@@ -259,7 +225,7 @@ export const smartUpload = async (file, eventId, eventNo, stage, onProgress) => 
   const NATIVE_MAX_SIZE = 200 * 1024 * 1024
   
   if (isNativePlatform() && file.size > NATIVE_MAX_SIZE) {
-    throw new Error(`文件过大(${Math.round(file.size/1024/1024)}MB)，移动端暂不支持超过200MB的文件，请使用PC端上传`)
+    throw new Error(`文件过大(${Math.round(file.size/1024/1024)}MB)，安卓端暂不支持超过100MB的文件，请使用PC端上传`)
   }
   
   // 浏览器端限制 500MB
