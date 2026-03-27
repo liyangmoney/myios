@@ -1205,7 +1205,8 @@
     >
       <el-form 
         ref="supplementFormRef" 
-        :model="supplementForm" 
+        :model="supplementForm"
+        :rules="{ content: [{ required: true, message: '请输入补充内容', trigger: 'blur' }] }"
         label-position="top"
       >
         <el-form-item label="补充内容" prop="content">
@@ -1665,10 +1666,8 @@ const openSupplementDialog = () => {
 
 // 提交补充描述
 const submitSupplement = async () => {
-  if (!supplementForm.value.content.trim()) {
-    ElMessage.warning('请输入补充内容')
-    return
-  }
+  const valid = await supplementFormRef.value?.validate().catch(() => false)
+  if (!valid) return
 
   submittingSupplement.value = true
   try {

@@ -44,7 +44,9 @@
       <el-button type="primary" :icon="Upload" :loading="uploading">上传文件</el-button>
       <template #tip>
         <div class="upload-tip">
-          支持图片、PDF、Word、Excel、MP4，单个文件不超过500MB，最多5个文件
+          {{ typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.() 
+            ? '支持图片、PDF、Word、Excel、MP4，单个文件不超过200MB' 
+            : '支持图片、PDF、Word、Excel、MP4，单个文件不超过500MB' }}
         </div>
       </template>
     </el-upload>
