@@ -17,6 +17,7 @@ export const getUsers = async (req, res) => {
     let sql = `
       SELECT u.id, u.username, u.user_name, u.email, u.phone, 
              u.department, u.role, u.status, u.created_at, u.remark,
+             u.is_dept_leader, u.job_title,
              creator.user_name as created_by_name
       FROM sys_user u
       LEFT JOIN sys_user creator ON u.created_by = creator.id
@@ -109,7 +110,7 @@ export const getUserDetail = async (req, res) => {
 // 创建用户
 export const createUser = async (req, res) => {
   try {
-    const { username, userName, password, email, phone, department, role = 'user', remark } = req.body
+    const { username, userName, password, email, phone, department, role = 'user', remark, isDeptLeader, jobTitle } = req.body
     const createdBy = req.userId
     
     // 校验必填项
@@ -142,14 +143,19 @@ export const createUser = async (req, res) => {
       return res.status(400).json({ code: 400, message: '邮箱已被使用' })
     }
     
+    // 如果勾选为部门领导，职称必填
+    if (isDeptLeader && !jobTitle) {
+      return res.status(400).json({ code: 400, message: '部门领导必须填写职称' })
+    }
+    
     // 加密密码
     const hashedPassword = await bcrypt.hash(password, 10)
     
     // 插入用户
     const result = await query(`
-      INSERT INTO sys_user (username, password, user_name, email, phone, department, role, status, created_by, remark)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
-    `, [username, hashedPassword, userName, email, phone || null, department || null, role, createdBy, remark || null])
+      INSERT INTO sys_user (username, password, user_name, email, phone, department, role, status, created_by, remark, is_dept_leader, job_title)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
+    `, [username, hashedPassword, userName, email, phone || null, department || null, role, createdBy, remark || null, isDeptLeader ? 1 : 0, jobTitle || null])
     
     const newUserId = result.insertId
     
@@ -185,7 +191,7 @@ export const createUser = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params
-    const { userName, email, phone, department, role, status, remark } = req.body
+    const { userName, email, phone, department, role, status, remark, isDeptLeader, jobTitle } = req.body
     
     // 检查用户是否存在
     const user = await query('SELECT id FROM sys_user WHERE id = ? AND deleted_at IS NULL', [id])
@@ -204,6 +210,11 @@ export const updateUser = async (req, res) => {
       }
     }
     
+    // 如果勾选为部门领导，职称必填
+    if (isDeptLeader && !jobTitle) {
+      return res.status(400).json({ code: 400, message: '部门领导必须填写职称' })
+    }
+    
     await query(`
       UPDATE sys_user SET
         user_name = ?,
@@ -213,9 +224,11 @@ export const updateUser = async (req, res) => {
         role = ?,
         status = ?,
         remark = ?,
+        is_dept_leader = ?,
+        job_title = ?,
         updated_at = NOW()
       WHERE id = ?
-    `, [userName, email, phone, department, role, status, remark, id])
+    `, [userName, email, phone, department, role, status, remark, isDeptLeader ? 1 : 0, jobTitle || null, id])
     
     res.json({ code: 200, message: '用户更新成功' })
   } catch (error) {

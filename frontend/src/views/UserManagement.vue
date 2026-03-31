@@ -66,6 +66,13 @@
           </template>
         </el-table-column>
         
+        <el-table-column label="部门领导" width="100">
+          <template #default="{ row }">
+            <el-tag v-if="row.is_dept_leader" type="success">{{ row.job_title }}</el-tag>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        
         <el-table-column prop="role" label="角色" width="100">
           <template #default="{ row }">
             <el-tag :type="row.role === 'admin' ? 'danger' : 'info'">
@@ -162,6 +169,19 @@
               :value="dept.dept_name"
             />
           </el-select>
+        </el-form-item>
+        
+        <el-form-item label="部门领导">
+          <el-checkbox v-model="formData.isDeptLeader">是部门领导</el-checkbox>
+        </el-form-item>
+        
+        <el-form-item 
+          v-if="formData.isDeptLeader" 
+          label="职称" 
+          prop="jobTitle"
+          :rules="{ required: true, message: '请输入职称', trigger: 'blur' }"
+        >
+          <el-input v-model="formData.jobTitle" placeholder="请输入职称" />
         </el-form-item>
         
         <el-form-item label="角色">
@@ -296,7 +316,9 @@ const formData = reactive({
   department: '',
   role: 'user',
   status: 1,
-  remark: ''
+  remark: '',
+  isDeptLeader: false,
+  jobTitle: ''
 })
 
 // 表单校验规则
@@ -428,6 +450,8 @@ const showCreateDialog = () => {
   formData.role = 'user'
   formData.status = 1
   formData.remark = ''
+  formData.isDeptLeader = false
+  formData.jobTitle = ''
   dialogVisible.value = true
 }
 
@@ -443,6 +467,8 @@ const showEditDialog = (row) => {
   formData.role = row.role
   formData.status = row.status
   formData.remark = row.remark || ''
+  formData.isDeptLeader = row.is_dept_leader === 1
+  formData.jobTitle = row.job_title || ''
   dialogVisible.value = true
 }
 
@@ -462,7 +488,9 @@ const handleSubmit = async () => {
         department: formData.department,
         role: formData.role,
         status: formData.status,
-        remark: formData.remark
+        remark: formData.remark,
+        isDeptLeader: formData.isDeptLeader,
+        jobTitle: formData.jobTitle
       })
       if (res.code === 200) {
         ElMessage.success('用户更新成功')
@@ -479,7 +507,9 @@ const handleSubmit = async () => {
         phone: formData.phone,
         department: formData.department,
         role: formData.role,
-        remark: formData.remark
+        remark: formData.remark,
+        isDeptLeader: formData.isDeptLeader,
+        jobTitle: formData.jobTitle
       })
       if (res.code === 200) {
         ElMessage.success('用户创建成功')
