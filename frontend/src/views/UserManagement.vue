@@ -66,7 +66,7 @@
           </template>
         </el-table-column>
         
-        <el-table-column label="部门领导" width="100">
+        <el-table-column label="部门领导" width="150">
           <template #default="{ row }">
             <el-tag v-if="row.is_dept_leader" type="success">{{ row.job_title }}</el-tag>
             <span v-else>-</span>
