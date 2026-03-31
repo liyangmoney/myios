@@ -1812,6 +1812,11 @@ const canEditDueDate = computed(() => {
   return (isDeptLeader || isCreator) && event.value?.status !== 'CLOSED'
 })
 
+// 补充描述权限：只有创建人可以补充
+const canSupplementDescription = computed(() => {
+  return event.value?.reporter_id === currentUserId.value
+})
+
 // D阶段：任何责任人都可以编辑
 const canEditDo = computed(() => {
   const responsibleIds = parseJsonArray(event.value?.responsible_ids)
@@ -2145,16 +2150,21 @@ const getActionLabel = (action, logData, oldLogData) => {
       
       // 检查状态变更 - 根据旧状态判断完成哪个阶段
       if (data.status && data.status !== oldData.status) {
-        const statusLabels = {
-          'ASSIGN': '完成指派',      // 从指派进入计划
-          'PLAN': '完成计划',        // 从计划进入执行
-          'DO': '完成执行',          // 从执行进入检查
-          'CHECK': '完成检查',       // 从检查进入处理
-          'ACT': '完成处理',         // 从处理进入关闭
-          'CLOSED': '关闭事件'       // 事件关闭
+        // 根据旧状态判断完成了哪个阶段（旧状态→新状态，完成旧阶段）
+        const oldStatusLabels = {
+          'ASSIGN': '完成指派',      // 从指派→计划，完成指派
+          'PLAN': '完成计划',        // 从计划→执行，完成计划
+          'DO': '完成执行',          // 从执行→检查，完成执行
+          'CHECK': '完成检查',       // 从检查→处理，完成检查
+          'ACT': '完成处理'          // 从处理→关闭，完成处理
         }
-        // 根据新状态判断完成的是哪个阶段
-        return statusLabels[data.status] || '更新'
+        // 根据旧状态判断完成的是哪个阶段
+        if (oldData.status && oldStatusLabels[oldData.status]) {
+          return oldStatusLabels[oldData.status]
+        }
+        // 如果没有旧状态或特殊情况下，用新状态判断
+        if (data.status === 'CLOSED') return '关闭事件'
+        return '更新'
       }
       // 检查附件上传
       if (data.planFiles?.length) return 'Plan附件上传'
