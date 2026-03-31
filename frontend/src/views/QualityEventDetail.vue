@@ -567,7 +567,7 @@
           <div v-if="uploadedCommentFiles.length > 0" class="uploaded-files">
             <div v-for="(file, idx) in uploadedCommentFiles" :key="idx" class="uploaded-file-item">
               <el-icon><Document /></el-icon>
-              <span class="file-name" @click="handleFileClick(file.url, file.name)" style="cursor: pointer; color: #409EFF; text-decoration: underline;">{{ file.name }}</span>
+              <el-link type="primary" @click="handleCommentFilePreview(file)">{{ file.name }}</el-link>
               <el-button link type="danger" size="small" @click="removeUploadedCommentFile(idx)">删除</el-button>
             </div>
           </div>
@@ -2414,6 +2414,36 @@ const removeUploadedCommentFile = async (idx) => {
   }
 
   uploadedCommentFiles.value.splice(idx, 1)
+}
+
+// 评论附件预览（未发表评论前）
+const handleCommentFilePreview = (file) => {
+  if (!file || !file.url) {
+    ElMessage.warning('文件链接无效')
+    return
+  }
+  
+  const fullUrl = file.url.startsWith('http') ? file.url : getFullBaseURL().replace('/api', '') + file.url
+  
+  // 判断文件类型
+  const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name || file.url)
+  const isPDF = /\.pdf$/i.test(file.name || file.url)
+  const isVideo = /\.(mp4|mov|avi)$/i.test(file.name || file.url)
+  
+  if (isImage) {
+    // 图片预览
+    previewImageUrl.value = fullUrl
+    previewImageVisible.value = true
+  } else if (isPDF || isVideo) {
+    // PDF/视频在新窗口打开
+    window.open(fullUrl, '_blank')
+  } else {
+    // 其他文件下载
+    const link = document.createElement('a')
+    link.href = fullUrl
+    link.download = file.name
+    link.click()
+  }
 }
 
 // 各阶段附件上传成功
