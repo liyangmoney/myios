@@ -2133,7 +2133,8 @@ const getActionLabel = (action) => {
     PLAN: '完成计划',
     DO: '完成执行',
     CHECK: '完成检查',
-    ACT: '完成处理'
+    ACT: '完成处理',
+    CLOSED: '关闭事件'
   }
   return labels[action] || action
 }
