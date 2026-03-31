@@ -42,6 +42,15 @@ const storage = multer.diskStorage({
       // 从 URL 参数获取事件ID
       const eventId = req.params.id
       
+      // 如果是临时上传（创建事件前），直接存到 temp 目录
+      if (eventId === 'temp') {
+        const tempDir = path.join(uploadDir, 'temp')
+        if (!fs.existsSync(tempDir)) {
+          fs.mkdirSync(tempDir, { recursive: true })
+        }
+        return cb(null, tempDir)
+      }
+      
       // 查询事件编号
       const events = await query('SELECT event_no FROM quality_event WHERE id = ?', [eventId])
       const eventNo = events.length > 0 ? events[0].event_no : 'unknown'
