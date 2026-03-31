@@ -2423,26 +2423,19 @@ const handleCommentFilePreview = (file) => {
     return
   }
   
-  const fullUrl = file.url.startsWith('http') ? file.url : getFullBaseURL().replace('/api', '') + file.url
+  // 使用 getFileUrl 获取完整URL（复用问题描述附件的逻辑）
+  const fullUrl = getFileUrl(file.url)
   
   // 判断文件类型
   const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name || file.url)
-  const isPDF = /\.pdf$/i.test(file.name || file.url)
-  const isVideo = /\.(mp4|mov|avi)$/i.test(file.name || file.url)
   
   if (isImage) {
     // 图片预览
     previewImageUrl.value = fullUrl
     previewImageVisible.value = true
-  } else if (isPDF || isVideo) {
-    // PDF/视频在新窗口打开
-    window.open(fullUrl, '_blank')
   } else {
-    // 其他文件下载
-    const link = document.createElement('a')
-    link.href = fullUrl
-    link.download = file.name
-    link.click()
+    // 其他文件在新窗口打开或下载
+    window.open(fullUrl, '_blank')
   }
 }
 
@@ -2650,10 +2643,10 @@ const getFileUrl = (url) => {
   if (!url) return ''
   if (url.startsWith('http')) return url
   
-  // 提取事件编号/文件名路径，使用下载接口
-  // URL格式: /uploads/quality-events/QE-xxx/filename.ext
+  // 提取路径部分，使用下载接口
+  // URL格式: /uploads/quality-events/temp/filename.ext 或 /uploads/quality-events/QE-xxx/filename.ext
   const parts = url.split('/')
-  const eventNo = parts[parts.length - 2] // 倒数第二是事件编号
+  const eventNo = parts[parts.length - 2] // 倒数第二是事件编号或temp
   const filename = parts[parts.length - 1] // 最后是文件名
   const downloadPath = `/api/download?filename=${encodeURIComponent(`${eventNo}/${filename}`)}`
   
