@@ -902,7 +902,7 @@ const handleDeptChange = async (departments) => {
     const res = await userApi.getList({ department: departments.join(','), isDeptLeader: 1 })
     if (res.code === 200) {
       deptLeaderOptions.value = res.data.list.map(user => ({
-        label: `${user.user_name} (${user.department})`,
+        label: `${user.user_name} (${user.job_title})`,
         value: user.id
       }))
     }
