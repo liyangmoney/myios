@@ -918,18 +918,14 @@ export const updateQualityEvent = async (req, res) => {
       logNewValue.supplementContent = updateData.description?.substring(oldEvent.description?.length || 0) || ''
     }
     
-    // PDCA 各阶段完成
-    if (updateData.status && updateData.status !== oldEvent.status) {
-      const statusActionMap = {
-        'PLAN': 'PLAN',
-        'DO': 'DO',
-        'CHECK': 'CHECK',
-        'ACT': 'ACT',
-        'CLOSED': 'CLOSED'
+    // A阶段（进入CLOSED状态）添加详细信息
+    if (updateData.status === 'CLOSED' && oldEvent.status === 'ACT') {
+      logNewValue.actionDetail = '确认关闭事件'
+      if (updateData.causeType) {
+        logNewValue.causeTypeDetail = `原因类型: ${Array.isArray(updateData.causeType) ? updateData.causeType.join(', ') : updateData.causeType}`
       }
-      if (statusActionMap[updateData.status]) {
-        actionDetail = statusActionMap[updateData.status]
-        logNewValue.actionDetail = `完成${updateData.status}阶段，进入下一阶段`
+      if (updateData.standardization) {
+        logNewValue.standardizationDetail = `标准化措施: ${updateData.standardization}`
       }
     }
     

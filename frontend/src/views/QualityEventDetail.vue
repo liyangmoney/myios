@@ -604,7 +604,7 @@
           <div class="log-item">
             <div class="log-header">
               <span class="log-user">{{ log.user_name }}</span>
-              <el-tag size="small">{{ getActionLabel(log.action) }}</el-tag>
+              <el-tag size="small">{{ getActionLabel(log.action, log.new_value) }}</el-tag>
             </div>
             <!-- 操作日志内容 -->
             <div class="log-detail">
@@ -648,8 +648,8 @@
                   <!-- 描述补充的附件不再在操作日志中显示，避免重复 -->
                 </template>
               </template>
-              <!-- 指派、截止时间变更、PDCA各阶段完成 - 直接显示文本，不解析JSON -->
-              <template v-else-if="['ASSIGN', 'UPDATE_DUE_DATE', 'PLAN', 'DO', 'CHECK', 'ACT', 'CLOSED'].includes(log.action)">
+              <!-- 指派、截止时间变更 - 直接显示文本，不解析JSON -->
+              <template v-else-if="['ASSIGN', 'UPDATE_DUE_DATE'].includes(log.action)">
                 {{ log.new_value }}
               </template>
               <!-- PDCA阶段附件上传（检测planFiles/doFiles/checkFiles/actFiles） -->
@@ -2124,23 +2124,43 @@ const getStatusType = (status) => {
   return types[status] || ''
 }
 
-const getActionLabel = (action) => {
-  const labels = {
+const getActionLabel = (action, logData) => {
+  // 特殊动作直接返回
+  const specialLabels = {
     CREATE: '创建',
-    UPDATE: '更新',
     DELETE: '删除',
     STATUS_CHANGE: '状态变更',
     COMMENT: '评论',
     SUPPLEMENT_DESCRIPTION: '补充描述',
     ASSIGN: '完成指派',
-    UPDATE_DUE_DATE: '截止日期变更',
-    PLAN: '完成计划',
-    DO: '完成执行',
-    CHECK: '完成检查',
-    ACT: '完成处理',
-    CLOSED: '关闭事件'
+    UPDATE_DUE_DATE: '截止日期变更'
   }
-  return labels[action] || action
+  if (specialLabels[action]) return specialLabels[action]
+  
+  // UPDATE 动作根据内容判断阶段
+  if (action === 'UPDATE' && logData) {
+    try {
+      const data = typeof logData === 'string' ? JSON.parse(logData) : logData
+      // 检查状态变更
+      if (data.status) {
+        const statusLabels = {
+          'PLAN': '完成计划',
+          'DO': '完成执行',
+          'CHECK': '完成检查',
+          'ACT': '完成处理',
+          'CLOSED': '关闭事件'
+        }
+        return statusLabels[data.status] || '更新'
+      }
+      // 检查附件上传
+      if (data.planFiles?.length) return 'Plan附件上传'
+      if (data.doFiles?.length) return 'Do附件上传'
+      if (data.checkFiles?.length) return 'Check附件上传'
+      if (data.actFiles?.length) return 'Act附件上传'
+    } catch {}
+  }
+  
+  return '更新'
 }
 
 // 解析日志内容为中文描述
