@@ -1050,6 +1050,7 @@ const getSeverityType = (severity) => {
 const getStatusLabel = (status) => {
   const labels = {
     NEW: '新建',
+    ASSIGN: '指派中',
     PLAN: '计划中',
     DO: '执行中',
     CHECK: '验证中',
@@ -1064,6 +1065,7 @@ const getStatusLabel = (status) => {
 const getStatusType = (status) => {
   const types = {
     NEW: 'danger',
+    ASSIGN: 'warning',
     PLAN: 'warning',
     DO: 'primary',
     CHECK: 'info',
