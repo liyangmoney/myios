@@ -1555,7 +1555,14 @@ export const updateDueDate = async (req, res) => {
 
     const oldDueDate = event.due_date
     
-    // 格式化日期（只保留年月日）
+    // 格式化新截止日期为 YYYY-MM-DD
+    let formattedNewDueDate = newDueDate
+    if (newDueDate && newDueDate.includes('T')) {
+      // ISO 格式，提取日期部分
+      formattedNewDueDate = newDueDate.split('T')[0]
+    }
+    
+    // 格式化日期（只保留年月日）用于日志
     const formatDateOnly = (dateStr) => {
       if (!dateStr) return '无'
       const date = new Date(dateStr)
@@ -1569,10 +1576,10 @@ export const updateDueDate = async (req, res) => {
         due_date = ?,
         updated_at = NOW()
       WHERE id = ?
-    `, [newDueDate, id])
+    `, [formattedNewDueDate, id])
 
     // 记录操作日志（只显示日期，不显示时间）
-    const logDetail = `修改截止时间：从【${formatDateOnly(oldDueDate)}】改为【${formatDateOnly(newDueDate)}】，原因：${reason}`
+    const logDetail = `修改截止时间：从【${formatDateOnly(oldDueDate)}】改为【${formatDateOnly(formattedNewDueDate)}】，原因：${reason}`
     await query(`
       INSERT INTO quality_event_log (event_id, user_id, user_name, action, new_value)
       VALUES (?, ?, ?, 'UPDATE_DUE_DATE', ?)
