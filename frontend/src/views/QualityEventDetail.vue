@@ -231,6 +231,26 @@
         </div>
         <div class="mobile-info-grid">
           <div class="mobile-info-item">
+            <span class="mobile-info-label">责任部门</span>
+            <div v-if="parseJsonArray(event.responsible_departments).length > 0">
+              <el-tag v-for="(dept, idx) in parseJsonArray(event.responsible_departments)" :key="idx" size="small" class="mr-2" type="info">
+                {{ dept }}
+              </el-tag>
+            </div>
+            <span v-else class="text-gray">-</span>
+          </div>
+          <div class="mobile-info-item">
+            <span class="mobile-info-label">部门负责人</span>
+            <div v-if="parseJsonArray(event.dept_leader_names).length > 0">
+              <el-tag v-for="(name, idx) in parseJsonArray(event.dept_leader_names)" :key="idx" size="small" class="mr-2">
+                {{ name }}
+              </el-tag>
+            </div>
+            <span v-else class="text-gray">-</span>
+          </div>
+        </div>
+        <div class="mobile-info-grid">
+          <div class="mobile-info-item">
             <span class="mobile-info-label">创建人</span>
             <span class="mobile-info-value">{{ event.reporter_name }}</span>
           </div>
@@ -255,6 +275,16 @@
             <el-tag v-if="event.due_date && event.status !== 'CLOSED'" :type="getDueDateTagType(event.due_date)" size="small">
               {{ getDueDateText(event.due_date) }}
             </el-tag>
+            <el-button 
+              v-if="canEditDueDate"
+              link 
+              type="primary" 
+              size="small"
+              @click="openDueDateDialog"
+              style="margin-left: 5px;"
+            >
+              修改
+            </el-button>
           </div>
         </div>
         <div class="mobile-info-grid">
