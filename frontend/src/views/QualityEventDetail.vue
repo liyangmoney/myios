@@ -122,6 +122,16 @@
                       class="due-date-tag">
                 {{ getDueDateText(event.due_date) }}
               </el-tag>
+              <el-button 
+                v-if="canEditDueDate"
+                link 
+                type="primary" 
+                size="small"
+                @click="openDueDateDialog"
+                style="margin-left: 10px;"
+              >
+                修改
+              </el-button>
             </div>
           </el-descriptions-item>
           <el-descriptions-item label="创建时间">
@@ -1305,6 +1315,43 @@
         <el-button type="primary" @click="submitSupplement" :loading="submittingSupplement">确认补充</el-button>
       </template>
     </el-dialog>
+
+    <!-- 修改截止时间对话框 -->
+    <el-dialog
+      v-model="dueDateDialogVisible"
+      title="修改截止时间"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <el-form
+        ref="dueDateFormRef"
+        :model="dueDateForm"
+        :rules="dueDateFormRules"
+        label-width="100px"
+      >
+        <el-form-item label="新截止时间" prop="newDueDate">
+          <el-date-picker
+            v-model="dueDateForm.newDueDate"
+            type="date"
+            placeholder="选择日期"
+            style="width: 100%"
+            value-format="YYYY-MM-DD"
+          />
+        </el-form-item>
+        <el-form-item label="修改原因" prop="reason">
+          <el-input
+            v-model="dueDateForm.reason"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入修改原因"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dueDateDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitDueDateChange" :loading="submittingDueDate">确认修改</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -1355,6 +1402,51 @@ const changeDescUploadRef = ref(null)  // 变更事件附件上传ref
 // 变更事件附件上传进度
 const changeDescUploading = ref(false)
 const changeDescUploadProgress = ref(0)
+
+// 截止时间修改相关
+const dueDateDialogVisible = ref(false)
+const dueDateForm = ref({
+  newDueDate: '',
+  reason: ''
+})
+const dueDateFormRef = ref(null)
+const submittingDueDate = ref(false)
+
+const dueDateFormRules = {
+  newDueDate: [{ required: true, message: '请选择新截止时间', trigger: 'change' }],
+  reason: [{ required: true, message: '请输入修改原因', trigger: 'blur' }]
+}
+
+// 打开截止时间修改对话框
+const openDueDateDialog = () => {
+  dueDateForm.value.newDueDate = event.value.due_date
+  dueDateForm.value.reason = ''
+  dueDateDialogVisible.value = true
+}
+
+// 提交截止时间修改
+const submitDueDateChange = async () => {
+  const valid = await dueDateFormRef.value?.validate().catch(() => false)
+  if (!valid) return
+
+  submittingDueDate.value = true
+  try {
+    const res = await qualityEventApi.updateDueDate(event.value.id, {
+      newDueDate: dueDateForm.value.newDueDate,
+      reason: dueDateForm.value.reason
+    })
+    if (res.code === 200) {
+      ElMessage.success('截止时间修改成功')
+      dueDateDialogVisible.value = false
+      fetchEventDetail()
+    }
+  } catch (error) {
+    console.error('修改截止时间失败:', error)
+    ElMessage.error(error.response?.data?.message || '修改失败')
+  } finally {
+    submittingDueDate.value = false
+  }
+}
 const changeDescUploadingFileName = ref('')
 
 // 图片预览
@@ -1708,9 +1800,12 @@ const canEditPlan = computed(() => {
   return (isCreator || isResponsible || isDeptLeader) && event.value?.status === 'PLAN'
 })
 
-// 补充描述权限：只有创建人可以补充
-const canSupplementDescription = computed(() => {
-  return event.value?.reporter_id === currentUserId.value
+// 截止时间修改权限：部门负责人或创建人
+const canEditDueDate = computed(() => {
+  const deptLeaderIds = parseJsonArray(event.value?.dept_leader_ids)
+  const isDeptLeader = deptLeaderIds.includes(currentUserId.value)
+  const isCreator = event.value?.reporter_id === currentUserId.value
+  return (isDeptLeader || isCreator) && event.value?.status !== 'CLOSED'
 })
 
 // D阶段：任何责任人都可以编辑

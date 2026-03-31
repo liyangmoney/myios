@@ -1519,3 +1519,118 @@ export const assignEvent = async (req, res) => {
     res.status(500).json({ code: 500, message: '指派事件失败：' + error.message })
   }
 }
+
+// 修改截止时间
+export const updateDueDate = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { newDueDate, reason } = req.body
+    const userId = req.userId
+    const userName = req.userName
+
+    // 校验参数
+    if (!newDueDate) {
+      return res.status(400).json({ code: 400, message: '新截止时间不能为空' })
+    }
+    if (!reason || reason.trim().length === 0) {
+      return res.status(400).json({ code: 400, message: '修改原因不能为空' })
+    }
+
+    // 查询事件
+    const events = await query(
+      'SELECT * FROM quality_event WHERE id = ? AND deleted_at IS NULL',
+      [id]
+    )
+    if (events.length === 0) {
+      return res.status(404).json({ code: 404, message: '事件不存在' })
+    }
+    const event = events[0]
+
+    // 权限检查：只有部门负责人或创建人可以修改
+    const deptLeaderIds = JSON.parse(event.dept_leader_ids || '[]')
+    const isDeptLeader = deptLeaderIds.includes(userId)
+    const isCreator = event.reporter_id === userId
+    
+    if (!isDeptLeader && !isCreator) {
+      return res.status(403).json({ code: 403, message: '只有部门负责人或创建人可以修改截止时间' })
+    }
+
+    const oldDueDate = event.current_due_date || event.due_date
+
+    // 开启事务
+    const connection = await query.getConnection?.() || { beginTransaction: () => {}, commit: () => {}, rollback: () => {} }
+    try {
+      if (query.getConnection) {
+        await connection.beginTransaction()
+      }
+
+      // 1. 记录修改历史
+      await query(`
+        INSERT INTO quality_event_due_date_history 
+        (event_id, old_due_date, new_due_date, reason, modified_by, modified_by_name)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `, [id, oldDueDate, newDueDate, reason, userId, userName])
+
+      // 2. 更新当前截止时间
+      await query(`
+        UPDATE quality_event SET 
+          current_due_date = ?,
+          due_date = ?,
+          updated_at = NOW()
+        WHERE id = ?
+      `, [newDueDate, newDueDate, id])
+
+      if (query.getConnection) {
+        await connection.commit()
+      }
+
+      // 3. 记录操作日志
+      const logDetail = `修改截止时间：从【${oldDueDate}】改为【${newDueDate}】，原因：${reason}`
+      await query(`
+        INSERT INTO quality_event_log (event_id, user_id, user_name, action, new_value)
+        VALUES (?, ?, ?, 'UPDATE_DUE_DATE', ?)
+      `, [id, userId, userName, logDetail])
+
+      res.json({
+        code: 200,
+        message: '截止时间修改成功',
+        data: {
+          oldDueDate,
+          newDueDate,
+          reason
+        }
+      })
+    } catch (error) {
+      if (query.getConnection) {
+        await connection.rollback()
+      }
+      throw error
+    }
+  } catch (error) {
+    console.error('修改截止时间失败:', error)
+    res.status(500).json({ code: 500, message: '修改截止时间失败：' + error.message })
+  }
+}
+
+// 获取截止时间修改历史
+export const getDueDateHistory = async (req, res) => {
+  try {
+    const { id } = req.params
+    
+    const history = await query(`
+      SELECT h.*, u.user_name as modified_by_name
+      FROM quality_event_due_date_history h
+      LEFT JOIN sys_user u ON h.modified_by = u.id
+      WHERE h.event_id = ?
+      ORDER BY h.created_at DESC
+    `, [id])
+
+    res.json({
+      code: 200,
+      data: history
+    })
+  } catch (error) {
+    console.error('获取截止时间历史失败:', error)
+    res.status(500).json({ code: 500, message: '获取截止时间历史失败' })
+  }
+}
