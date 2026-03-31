@@ -885,7 +885,7 @@
                 <el-select v-model="changeForm.problemType" placeholder="请选择" style="width: 100%">
                   <el-option label="软件算法" value="软件算法" />
                   <el-option label="嵌入式硬件" value="嵌入式硬件" />
-                  <el-option label="机械电器" value="机械电器" />
+                  <el-option label="机械电气" value="机械电气" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -1035,7 +1035,7 @@
             <el-select v-model="changeForm.problemType" placeholder="请选择" style="width: 100%">
               <el-option label="软件算法" value="软件算法" />
               <el-option label="嵌入式硬件" value="嵌入式硬件" />
-              <el-option label="机械电器" value="机械电器" />
+              <el-option label="机械电气" value="机械电气" />
             </el-select>
           </el-form-item>
 

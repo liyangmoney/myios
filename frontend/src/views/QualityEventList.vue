@@ -743,7 +743,7 @@ const problemTypeOptions = [
   { label: '软件算法', value: '软件算法' },
   { label: '嵌入式硬件', value: '嵌入式硬件' },
   { label: '机械', value: '机械' },
-  { label: '电器', value: '电器' }
+  { label: '电气', value: '电气' }
 ]
 
 const severityOptions = [
