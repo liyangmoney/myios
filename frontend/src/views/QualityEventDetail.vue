@@ -277,6 +277,41 @@
         <span>PDCA 处理流程</span>
       </template>
 
+      <!-- Assign 指派阶段 -->
+      <div class="pdca-section" v-if="event.status === 'ASSIGN' || event.responsible_ids">
+        <div class="pdca-header">
+          <div class="pdca-title">
+            <span class="pdca-badge assign">A</span>
+            指派
+          </div>
+          <el-button
+            v-if="canEditAssign"
+            link
+            type="primary"
+            @click="editAssign"
+          >
+            指派责任人
+          </el-button>
+        </div>
+
+        <div class="pdca-content">
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="责任部门">
+              {{ event.responsible_departments ? JSON.parse(event.responsible_departments).join('、') : '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="部门负责人">
+              {{ event.dept_leader_names ? JSON.parse(event.dept_leader_names).join('、') : '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="责任人">
+              {{ event.responsible_name || '待指派' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="监督/确认人">
+              {{ event.supervisor_name || '待指派' }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+      </div>
+
       <!-- Plan -->
       <div class="pdca-section">
         <div class="pdca-header">
@@ -651,6 +686,32 @@
     <!-- PDCA 编辑对话框 -->
     <el-dialog v-model="editDialogVisible" :title="editDialogTitle" width="600px" :close-on-click-modal="false">
       <el-form ref="editFormRef" :model="editForm" :rules="editFormRules" label-position="top">
+        <!-- 指派阶段 -->
+        <template v-if="editType === 'ASSIGN'">
+          <el-form-item label="责任人" prop="responsibleIds">
+            <el-select-v2
+              v-model="editForm.responsibleIds"
+              :options="userOptions"
+              placeholder="请选择责任人（可多选）"
+              style="width: 100%"
+              multiple
+              clearable
+              filterable
+            />
+          </el-form-item>
+
+          <el-form-item label="监督/确认人" prop="supervisorId">
+            <el-select-v2
+              v-model="editForm.supervisorId"
+              :options="userOptions"
+              placeholder="请选择监督/确认人"
+              style="width: 100%"
+              clearable
+              filterable
+            />
+          </el-form-item>
+        </template>
+
         <template v-if="editType === 'PLAN'">
           <el-form-item label="根本原因" prop="rootCause">
             <el-input
@@ -1375,6 +1436,7 @@ const handleSupplementFileSuccess = (res, file) => {
 
 const editDialogTitle = computed(() => {
   const titles = {
+    ASSIGN: '指派事件',
     PLAN: '编辑 Plan（计划）',
     DO: '编辑 Do（执行）',
     CHECK: '编辑 Check（检查）',
@@ -1385,6 +1447,8 @@ const editDialogTitle = computed(() => {
 
 // 表单验证规则
 const editFormRules = {
+  responsibleIds: [{ required: true, message: '请选择责任人', trigger: 'change', type: 'array' }],
+  supervisorId: [{ required: true, message: '请选择监督/确认人', trigger: 'change' }],
   rootCause: [{ required: true, message: '请输入根本原因', trigger: 'blur' }],
   correctiveAction: [{ required: true, message: '请输入纠正措施', trigger: 'blur' }],
   nextHandlerId: [{ required: true, message: '请选择下一步处理人', trigger: 'change' }],
@@ -1395,6 +1459,8 @@ const editFormRules = {
 }
 
 const editForm = ref({
+  responsibleIds: [],
+  supervisorId: null,
   rootCause: '',
   correctiveAction: '',
   implementation: '',
@@ -1610,13 +1676,20 @@ const truncateFileName = (name, maxLength = 20) => {
 }
 
 // 权限判断
-// P阶段：创建人或责任人可以编辑
+// 指派阶段：部门负责人可以编辑
+const canEditAssign = computed(() => {
+  const deptLeaderIds = parseJsonArray(event.value?.dept_leader_ids)
+  return deptLeaderIds.includes(currentUserId.value) && event.value?.status === 'ASSIGN'
+})
+
+// P阶段：创建人或责任人或部门负责人可以编辑
 const canEditPlan = computed(() => {
   const isCreator = event.value?.reporter_id === currentUserId.value
   const responsibleIds = parseJsonArray(event.value?.responsible_ids)
   const isResponsible = responsibleIds.includes(currentUserId.value)
-  return (isCreator || isResponsible) && 
-         (event.value?.status === 'NEW' || event.value?.status === 'PLAN')
+  const deptLeaderIds = parseJsonArray(event.value?.dept_leader_ids)
+  const isDeptLeader = deptLeaderIds.includes(currentUserId.value)
+  return (isCreator || isResponsible || isDeptLeader) && event.value?.status === 'PLAN'
 })
 
 // 补充描述权限：只有创建人可以补充
@@ -1735,14 +1808,22 @@ const fetchUserList = async () => {
 }
 
 // 编辑 PDCA
+const editAssign = () => {
+  editType.value = 'ASSIGN'
+  editForm.value = {
+    responsibleIds: parseJsonArray(event.value.responsible_ids),
+    supervisorId: event.value.supervisor_id
+  }
+  editDialogVisible.value = true
+}
+
 const editPlan = () => {
   editType.value = 'PLAN'
   editForm.value = {
     rootCause: event.value.root_cause || '',
     correctiveAction: event.value.corrective_action || '',
-    needsChange: false  // 初始化为未勾选
+    needsChange: false
   }
-  // 加载已有附件
   planFiles.value = parseFiles(event.value.plan_files)
   editDialogVisible.value = true
 }
@@ -1787,6 +1868,18 @@ const savePDCA = async () => {
 
   saving.value = true
   try {
+    // 指派阶段单独处理
+    if (editType.value === 'ASSIGN') {
+      await qualityEventApi.assign(event.value.id, {
+        responsibleIds: editForm.value.responsibleIds,
+        supervisorId: editForm.value.supervisorId
+      })
+      ElMessage.success('指派成功')
+      editDialogVisible.value = false
+      fetchEventDetail()
+      return
+    }
+
     const data = {}
 
     if (editType.value === 'PLAN') {
@@ -1902,16 +1995,16 @@ const getSeverityType = (severity) => {
 
 const getStatusLabel = (status) => {
   const labels = {
-    NEW: '新建', PLAN: '计划中', DO: '执行中',
-    CHECK: '验证中', CLOSED: '已关闭', REJECTED: '已驳回'
+    NEW: '新建', ASSIGN: '待指派', PLAN: '计划中', DO: '执行中',
+    CHECK: '验证中', ACT: '处理中', CLOSED: '已关闭', REJECTED: '已驳回'
   }
   return labels[status] || status
 }
 
 const getStatusType = (status) => {
   const types = {
-    NEW: 'danger', PLAN: 'warning', DO: 'primary',
-    CHECK: 'info', CLOSED: 'success', REJECTED: 'info'
+    NEW: 'danger', ASSIGN: 'warning', PLAN: 'warning', DO: 'primary',
+    CHECK: 'info', ACT: 'warning', CLOSED: 'success', REJECTED: 'info'
   }
   return types[status] || ''
 }

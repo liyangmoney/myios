@@ -134,6 +134,7 @@ export const qualityEventApi = {
   create: (data) => post('/quality-events', data),
   update: (id, data) => put(`/quality-events/${id}`, data),
   delete: (id) => del(`/quality-events/${id}`),
+  assign: (id, data) => post(`/quality-events/${id}/assign`, data),
   addComment: (id, data) => post(`/quality-events/${id}/comments`, data),
   getStatistics: () => get('/quality-events/statistics'),
   uploadFiles: (id, formData) => post(`/quality-events/${id}/upload`, formData, { 'Content-Type': 'multipart/form-data' }),
