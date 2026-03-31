@@ -916,18 +916,20 @@ export const updateQualityEvent = async (req, res) => {
       logNewValue.actionDetail = `对事件描述进行了补充`
       logNewValue.supplementTime = supplementTime
       logNewValue.supplementContent = updateData.description?.substring(oldEvent.description?.length || 0) || ''
-      // 不记录附件信息到操作日志，避免显示混乱
-      // 附件信息已在文件列表中显示
     }
     
-    // A阶段（进入CLOSED状态）添加详细信息
-    if (updateData.status === 'CLOSED' && oldEvent.status === 'ACT') {
-      logNewValue.actionDetail = 'A阶段确认关闭'
-      if (updateData.causeType) {
-        logNewValue.causeTypeDetail = `原因类型: ${Array.isArray(updateData.causeType) ? updateData.causeType.join(', ') : updateData.causeType}`
+    // PDCA 各阶段完成
+    if (updateData.status && updateData.status !== oldEvent.status) {
+      const statusActionMap = {
+        'PLAN': 'PLAN',
+        'DO': 'DO',
+        'CHECK': 'CHECK',
+        'ACT': 'ACT',
+        'CLOSED': 'CLOSED'
       }
-      if (updateData.standardization) {
-        logNewValue.standardizationDetail = `标准化措施: ${updateData.standardization}`
+      if (statusActionMap[updateData.status]) {
+        actionDetail = statusActionMap[updateData.status]
+        logNewValue.actionDetail = `完成${updateData.status}阶段，进入下一阶段`
       }
     }
     

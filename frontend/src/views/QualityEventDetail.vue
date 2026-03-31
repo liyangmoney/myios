@@ -2122,9 +2122,18 @@ const getStatusType = (status) => {
 
 const getActionLabel = (action) => {
   const labels = {
-    CREATE: '创建', UPDATE: '更新', DELETE: '删除',
-    STATUS_CHANGE: '状态变更', COMMENT: '评论',
-    SUPPLEMENT_DESCRIPTION: '补充描述'
+    CREATE: '创建',
+    UPDATE: '更新',
+    DELETE: '删除',
+    STATUS_CHANGE: '状态变更',
+    COMMENT: '评论',
+    SUPPLEMENT_DESCRIPTION: '补充描述',
+    ASSIGN: '完成指派',
+    UPDATE_DUE_DATE: '截止日期变更',
+    PLAN: '完成计划',
+    DO: '完成执行',
+    CHECK: '完成检查',
+    ACT: '完成处理'
   }
   return labels[action] || action
 }
