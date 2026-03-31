@@ -1484,16 +1484,13 @@ export const assignEvent = async (req, res) => {
       id
     ])
 
-    // 记录操作日志
+    // 记录操作日志 - 详细描述
+    const assignLogDetail = `指派事件：责任人【${responsibleNamesList.join('、')}】，监督/确认人【${supervisorName}】，事件进入计划中阶段`
+    
     await query(`
       INSERT INTO quality_event_log (event_id, user_id, user_name, action, new_value)
       VALUES (?, ?, ?, 'ASSIGN', ?)
-    `, [id, userId, userName, JSON.stringify({
-      responsibleIds: parsedResponsibleIds,
-      responsibleNames: responsibleNamesList,
-      supervisorId,
-      supervisorName
-    })])
+    `, [id, userId, userName, assignLogDetail])
 
     // 发送通知给责任人和监督人
     const notifyIds = [...new Set([...parsedResponsibleIds, supervisorId, event.reporter_id])]

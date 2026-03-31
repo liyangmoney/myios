@@ -72,8 +72,24 @@
             </div>
             <span v-else class="text-gray">-</span>
           </el-descriptions-item>
+          <el-descriptions-item label="责任部门" :span="2">
+            <div v-if="parseJsonArray(event.responsible_departments).length > 0">
+              <el-tag v-for="(dept, idx) in parseJsonArray(event.responsible_departments)" :key="idx" size="small" class="mr-2" type="info">
+                {{ dept }}
+              </el-tag>
+            </div>
+            <span v-else class="text-gray">-</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="部门负责人" :span="1">
+            <div v-if="parseJsonArray(event.dept_leader_names).length > 0">
+              <el-tag v-for="(name, idx) in parseJsonArray(event.dept_leader_names)" :key="idx" size="small" class="mr-2">
+                {{ name }}
+              </el-tag>
+            </div>
+            <span v-else class="text-gray">-</span>
+          </el-descriptions-item>
           <el-descriptions-item label="监督/确认人">
-            {{ event.supervisor_name || '-' }}
+            {{ event.supervisor_name || '未分配' }}
           </el-descriptions-item>
           <el-descriptions-item label="责任人">
             <div v-if="parseJsonArray(event.responsible_ids).length > 0">
@@ -191,7 +207,7 @@
         <div class="mobile-info-grid">
           <div class="mobile-info-item">
             <span class="mobile-info-label">监督/确认人</span>
-            <span class="mobile-info-value">{{ event.supervisor_name || '-' }}</span>
+            <span class="mobile-info-value">{{ event.supervisor_name || '未分配' }}</span>
           </div>
           <div class="mobile-info-item">
             <span class="mobile-info-label">责任人</span>
@@ -551,7 +567,7 @@
           <div v-if="uploadedCommentFiles.length > 0" class="uploaded-files">
             <div v-for="(file, idx) in uploadedCommentFiles" :key="idx" class="uploaded-file-item">
               <el-icon><Document /></el-icon>
-              <span class="file-name">{{ file.name }}</span>
+              <span class="file-name" @click="handleFileClick(file.url, file.name)" style="cursor: pointer; color: #409EFF; text-decoration: underline;">{{ file.name }}</span>
               <el-button link type="danger" size="small" @click="removeUploadedCommentFile(idx)">删除</el-button>
             </div>
           </div>
@@ -1995,7 +2011,7 @@ const getSeverityType = (severity) => {
 
 const getStatusLabel = (status) => {
   const labels = {
-    NEW: '新建', ASSIGN: '待指派', PLAN: '计划中', DO: '执行中',
+    NEW: '新建', ASSIGN: '指派中', PLAN: '计划中', DO: '执行中',
     CHECK: '验证中', ACT: '处理中', CLOSED: '已关闭', REJECTED: '已驳回'
   }
   return labels[status] || status

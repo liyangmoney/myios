@@ -68,7 +68,7 @@
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="searchForm.status" placeholder="全部" clearable multiple collapse-tags style="width: 200px">
-            <el-option label="待指派" value="ASSIGN" />
+            <el-option label="指派中" value="ASSIGN" />
             <el-option label="计划中" value="PLAN" />
             <el-option label="执行中" value="DO" />
             <el-option label="验证中" value="CHECK" />
@@ -108,7 +108,7 @@
 
         <div class="mobile-filter-row">
           <el-select v-model="searchForm.status" placeholder="状态" clearable multiple collapse-tags size="small" style="width: 140px">
-            <el-option label="待指派" value="ASSIGN" />
+            <el-option label="指派中" value="ASSIGN" />
             <el-option label="计划中" value="PLAN" />
             <el-option label="执行中" value="DO" />
             <el-option label="验证中" value="CHECK" />
