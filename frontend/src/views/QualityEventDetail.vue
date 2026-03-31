@@ -1185,26 +1185,29 @@
             </el-select>
           </el-form-item>
 
-          <el-form-item label="责任人" prop="responsibleIds">
+          <!-- 移动端：责任部门和部门负责人 -->
+          <el-form-item label="责任部门" prop="responsibleDepartments">
+            <el-select 
+              v-model="changeForm.responsibleDepartments" 
+              multiple 
+              placeholder="请选择责任部门（可多选）" 
+              style="width: 100%"
+              @change="handleChangeDeptChange"
+            >
+              <el-option v-for="opt in departmentList" :key="opt.dept_name" :label="opt.dept_name" :value="opt.dept_name" />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="部门负责人" prop="deptLeaderIds">
             <el-select-v2
-              v-model="changeForm.responsibleIds"
-              :options="userOptions"
-              placeholder="请选择责任人（可多选）"
+              v-model="changeForm.deptLeaderIds"
+              :options="deptLeaderOptions"
+              placeholder="请先选择责任部门"
               style="width: 100%"
               multiple
               clearable
               filterable
-            />
-          </el-form-item>
-
-          <el-form-item label="监督/确认人" prop="supervisorId">
-            <el-select-v2
-              v-model="changeForm.supervisorId"
-              :options="userOptions"
-              placeholder="请选择监督/确认人"
-              style="width: 100%"
-              clearable
-              filterable
+              :disabled="changeForm.responsibleDepartments.length === 0"
             />
           </el-form-item>
 
@@ -1379,6 +1382,24 @@ const comments = ref([])
 const logs = ref([])
 const newComment = ref('')
 const userOptions = ref([])
+const deptLeaderOptions = ref([])  // 部门负责人选项
+
+// 部门列表（13个部门）
+const departmentList = ref([
+  { id: 1, dept_name: '品控中心' },
+  { id: 2, dept_name: '轨道技术研究院' },
+  { id: 3, dept_name: '生产中心' },
+  { id: 4, dept_name: '销售部' },
+  { id: 5, dept_name: '技术支持中心' },
+  { id: 6, dept_name: '采购中心' },
+  { id: 7, dept_name: '财务部' },
+  { id: 8, dept_name: '创新技术研究院' },
+  { id: 9, dept_name: '软件中心' },
+  { id: 10, dept_name: '人力资源中心' },
+  { id: 11, dept_name: '综合行政部' },
+  { id: 12, dept_name: '总经办' },
+  { id: 13, dept_name: '科技管理部' }
+])
 
 // 变更相关
 const changeDialogVisible = ref(false)
@@ -1393,8 +1414,8 @@ const changeForm = ref({
   severity: [],
   relatedParts: [],
   discoveryForm: [],
-  responsibleIds: [],
-  supervisorId: null,
+  responsibleDepartments: [],  // 责任部门
+  deptLeaderIds: [],           // 部门负责人
   dueDate: '',
   description: '',
   descriptionFiles: [],  // 问题描述附件
@@ -1598,8 +1619,8 @@ const changeFormRules = {
   severity: [{ required: true, message: '请选择故障严重程度', trigger: 'change' }],
   relatedParts: [{ required: true, message: '请选择涉及相关部件', trigger: 'change' }],
   discoveryForm: [{ required: true, message: '请选择问题发现形式', trigger: 'change' }],
-  responsibleIds: [{ required: true, message: '请选择责任人', trigger: 'change' }],
-  supervisorId: [{ required: true, message: '请选择监督/确认人', trigger: 'change' }],
+  responsibleDepartments: [{ required: true, message: '请选择责任部门', trigger: 'change' }],
+  deptLeaderIds: [{ required: true, message: '请选择部门负责人', trigger: 'change' }],
   dueDate: [{ required: true, message: '请选择截止日期', trigger: 'change' }],
   description: [{ required: true, message: '请输入问题描述', trigger: 'blur' }]
 }
@@ -1643,6 +1664,28 @@ const handleChangeCancel = () => {
   changeDialogVisible.value = false
 }
 
+// 变更事件部门改变时加载部门负责人
+const handleChangeDeptChange = async (departments) => {
+  if (!departments || departments.length === 0) {
+    deptLeaderOptions.value = []
+    changeForm.value.deptLeaderIds = []
+    return
+  }
+  
+  try {
+    // 根据选择的部门加载部门负责人
+    const res = await userApi.getList({ department: departments.join(','), isDeptLeader: 1 })
+    if (res.code === 200) {
+      deptLeaderOptions.value = res.data.list.map(user => ({
+        label: `${user.user_name} (${user.job_title})`,
+        value: user.id
+      }))
+    }
+  } catch (error) {
+    console.error('获取部门负责人失败:', error)
+  }
+}
+
 // 提交变更事件
 const submitChangeEvent = async () => {
   const valid = await changeFormRef.value?.validate().catch(() => false)
@@ -1661,8 +1704,9 @@ const submitChangeEvent = async () => {
       severity: Array.isArray(changeForm.value.severity) ? changeForm.value.severity.join(',') : changeForm.value.severity,
       relatedParts: changeForm.value.relatedParts.join(','),
       discoveryForm: changeForm.value.discoveryForm.join(','),
-      responsibleIds: changeForm.value.responsibleIds.join(','),
-      supervisorId: changeForm.value.supervisorId,
+      // 责任部门和部门负责人
+      responsibleDepartments: changeForm.value.responsibleDepartments,
+      deptLeaderIds: changeForm.value.deptLeaderIds,
       dueDate: changeForm.value.dueDate,
       description: changeForm.value.description,
       descriptionFiles: changeForm.value.descriptionFiles,  // 附件列表
