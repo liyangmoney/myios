@@ -5,7 +5,7 @@ import { sendNewUserEmail } from '../utils/mail.js'
 // 获取用户列表
 export const getUsers = async (req, res) => {
   try {
-    const { keyword, department, role, page = 1, pageSize = 10 } = req.query
+    const { keyword, department, role, isDeptLeader, page = 1, pageSize = 10 } = req.query
     
     // 确保分页参数是有效数字 - 强制转换为整数
     const pageNum = Math.max(1, parseInt(page, 10) || 1)
@@ -30,14 +30,25 @@ export const getUsers = async (req, res) => {
       params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
     }
     
+    // 支持多部门筛选（逗号分隔）
     if (department) {
-      sql += ' AND u.department = ?'
-      params.push(department)
+      const depts = department.split(',').filter(Boolean)
+      if (depts.length > 0) {
+        const placeholders = depts.map(() => '?').join(',')
+        sql += ` AND u.department IN (${placeholders})`
+        params.push(...depts)
+      }
     }
     
     if (role) {
       sql += ' AND u.role = ?'
       params.push(role)
+    }
+    
+    // 部门领导筛选
+    if (isDeptLeader !== undefined) {
+      sql += ' AND u.is_dept_leader = ?'
+      params.push(parseInt(isDeptLeader) || 0)
     }
     
     sql += ' ORDER BY u.created_at DESC'
@@ -59,13 +70,22 @@ export const getUsers = async (req, res) => {
       countSql += ' AND (username LIKE ? OR user_name LIKE ? OR email LIKE ?)'
       countParams.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
     }
+    // 支持多部门筛选
     if (department) {
-      countSql += ' AND department = ?'
-      countParams.push(department)
+      const depts = department.split(',').filter(Boolean)
+      if (depts.length > 0) {
+        const placeholders = depts.map(() => '?').join(',')
+        countSql += ` AND department IN (${placeholders})`
+        countParams.push(...depts)
+      }
     }
     if (role) {
       countSql += ' AND role = ?'
       countParams.push(role)
+    }
+    if (isDeptLeader !== undefined) {
+      countSql += ' AND is_dept_leader = ?'
+      countParams.push(parseInt(isDeptLeader) || 0)
     }
     
     const countResult = await query(countSql, countParams)

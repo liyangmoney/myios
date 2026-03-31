@@ -382,33 +382,35 @@
             </el-select>
           </el-form-item>
 
-          <!-- 第七行：责任人（多选）- 占满整行 -->
-          <el-form-item label="责任人" prop="responsibleIds" class="full-width-item">
+          <!-- 第七行：责任部门（多选）- 占满整行 -->
+          <el-form-item label="责任部门" prop="responsibleDepartments" class="full-width-item">
+            <el-select 
+              v-model="formData.responsibleDepartments" 
+              multiple 
+              placeholder="请选择责任部门（可多选）" 
+              style="width: 100%"
+              @change="handleDeptChange"
+            >
+              <el-option v-for="opt in departmentList" :key="opt.dept_name" :label="opt.dept_name" :value="opt.dept_name" />
+            </el-select>
+          </el-form-item>
+
+          <!-- 第八行：部门负责人（多选）- 占满整行 -->
+          <el-form-item label="部门负责人" prop="deptLeaderIds" class="full-width-item">
             <el-select-v2
-              v-model="formData.responsibleIds"
-              :options="userOptions"
-              placeholder="请选择责任人（可多选）"
+              v-model="formData.deptLeaderIds"
+              :options="deptLeaderOptions"
+              placeholder="请先选择责任部门"
               style="width: 100%"
               multiple
               clearable
               filterable
+              :disabled="formData.responsibleDepartments.length === 0"
             />
           </el-form-item>
 
-          <!-- 第八行：监督/确认人 + 截止日期 -->
+          <!-- 第九行：截止日期 -->
           <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="监督/确认人" prop="supervisorId">
-                <el-select-v2
-                  v-model="formData.supervisorId"
-                  :options="userOptions"
-                  placeholder="请选择监督/确认人"
-                  style="width: 100%"
-                  clearable
-                  filterable
-                />
-              </el-form-item>
-            </el-col>
             <el-col :span="12">
               <el-form-item label="截止日期" prop="dueDate">
                 <el-date-picker
@@ -651,12 +653,30 @@ const searchForm = reactive({
 // 事件列表
 const eventList = ref([])
 const userOptions = ref([])
+const deptLeaderOptions = ref([])  // 部门负责人选项
 const loading = ref(false)
 const pagination = reactive({
   page: 1,
   pageSize: 10,
   total: 0
 })
+
+// 部门列表（13个部门）
+const departmentList = ref([
+  { id: 1, dept_name: '品控中心' },
+  { id: 2, dept_name: '轨道技术研究院' },
+  { id: 3, dept_name: '生产中心' },
+  { id: 4, dept_name: '销售部' },
+  { id: 5, dept_name: '技术支持中心' },
+  { id: 6, dept_name: '采购中心' },
+  { id: 7, dept_name: '财务部' },
+  { id: 8, dept_name: '创新技术研究院' },
+  { id: 9, dept_name: '软件中心' },
+  { id: 10, dept_name: '人力资源中心' },
+  { id: 11, dept_name: '综合行政部' },
+  { id: 12, dept_name: '总经办' },
+  { id: 13, dept_name: '科技管理部' }
+])
 
 // 对话框
 const dialogVisible = ref(false)
@@ -676,8 +696,8 @@ const formData = reactive({
   severity: '',            // 严重程度（改为多选，逗号分隔）
   relatedParts: [],        // 涉及相关部件（多选）
   discoveryForm: [],       // 问题发现形式（多选）
-  responsibleIds: [],      // 责任人（多选）
-  supervisorId: null,      // 监督/确认人
+  responsibleDepartments: [], // 责任部门（多选）- 新增
+  deptLeaderIds: [],       // 部门负责人（多选）- 新增
   dueDate: '',
   description: '',
   descriptionFiles: [],    // 问题描述附件
@@ -715,8 +735,8 @@ const formRules = {
   severity: [{ required: true, message: '请选择故障严重程度', trigger: 'change' }],
   relatedParts: [{ required: true, message: '请选择涉及相关部件', trigger: 'change' }],
   discoveryForm: [{ required: true, message: '请选择问题发现形式', trigger: 'change' }],
-  responsibleIds: [{ required: true, message: '请选择责任人', trigger: 'change' }],
-  supervisorId: [{ required: true, message: '请选择监督/确认人', trigger: 'change' }],
+  responsibleDepartments: [{ required: true, message: '请选择责任部门', trigger: 'change' }],
+  deptLeaderIds: [{ required: true, message: '请选择部门负责人', trigger: 'change' }],
   dueDate: [{ required: true, message: '请选择截止日期', trigger: 'change' }],
   description: [{ required: true, message: '请输入问题描述', trigger: 'blur' }]
 }
@@ -867,6 +887,28 @@ const handleSearch = () => {
   fetchEventList()
 }
 
+// 责任部门改变时，加载部门负责人
+const handleDeptChange = async (departments) => {
+  if (!departments || departments.length === 0) {
+    deptLeaderOptions.value = []
+    formData.deptLeaderIds = []
+    return
+  }
+  
+  try {
+    // 根据选择的部门加载部门负责人
+    const res = await userApi.getList({ department: departments.join(','), isDeptLeader: 1 })
+    if (res.code === 200) {
+      deptLeaderOptions.value = res.data.list.map(user => ({
+        label: `${user.user_name} (${user.department})`,
+        value: user.id
+      }))
+    }
+  } catch (error) {
+    console.error('获取部门负责人失败:', error)
+  }
+}
+
 // 重置搜索
 const resetSearch = () => {
   searchForm.keyword = ''
@@ -903,12 +945,13 @@ const showCreateDialog = () => {
   formData.severity = []
   formData.relatedParts = []
   formData.discoveryForm = []
-  formData.responsibleIds = []
-  formData.supervisorId = null
+  formData.responsibleDepartments = []  // 责任部门
+  formData.deptLeaderIds = []           // 部门负责人
   formData.dueDate = ''
   formData.description = ''
   formData.descriptionFiles = []
   formData.notifyUsers = []
+  deptLeaderOptions.value = []  // 清空部门负责人选项
   dialogVisible.value = true
 }
 
@@ -932,8 +975,9 @@ const handleSubmit = async () => {
       severity: Array.isArray(formData.severity) ? formData.severity.join(',') : formData.severity,
       relatedParts: formData.relatedParts.join(','),
       discoveryForm: formData.discoveryForm.join(','),
-      responsibleIds: formData.responsibleIds.join(','),
-      supervisorId: formData.supervisorId,
+      // 责任部门和部门负责人
+      responsibleDepartments: formData.responsibleDepartments,
+      deptLeaderIds: formData.deptLeaderIds,
       dueDate: formData.dueDate,
       description: formData.description,
       descriptionFiles: formData.descriptionFiles,

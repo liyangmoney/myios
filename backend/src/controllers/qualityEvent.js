@@ -446,8 +446,8 @@ export const createQualityEvent = async (req, res) => {
       severity,
       relatedParts,
       discoveryForm,
-      responsibleIds,
-      supervisorId,
+      responsibleDepartments,  // 责任部门（多选）
+      deptLeaderIds,           // 部门负责人（多选）
       dueDate,
       notifyUsers,
       descriptionFiles,
@@ -460,8 +460,12 @@ export const createQualityEvent = async (req, res) => {
       return res.status(400).json({ code: 400, message: '标题和描述不能为空' })
     }
     
-    if (!responsibleIds || responsibleIds.length === 0) {
-      return res.status(400).json({ code: 400, message: '责任人不能为空' })
+    if (!responsibleDepartments || responsibleDepartments.length === 0) {
+      return res.status(400).json({ code: 400, message: '责任部门不能为空' })
+    }
+    
+    if (!deptLeaderIds || deptLeaderIds.length === 0) {
+      return res.status(400).json({ code: 400, message: '部门负责人不能为空' })
     }
     
     if (!dueDate) {
@@ -475,39 +479,28 @@ export const createQualityEvent = async (req, res) => {
     const reporterId = req.userId
     const reporterName = req.userName
     
-    // 获取责任人姓名列表
-    let responsibleName = null
-    let responsibleId = null
-    
-    // 解析责任人IDs
-    let parsedResponsibleIds = []
-    if (typeof responsibleIds === 'string') {
-      parsedResponsibleIds = responsibleIds.split(',').filter(Boolean).map(id => parseInt(id.trim())).filter(id => !isNaN(id))
-    } else if (Array.isArray(responsibleIds)) {
-      parsedResponsibleIds = responsibleIds.map(id => typeof id === 'string' ? parseInt(id) : id).filter(id => !isNaN(id))
+    // 解析部门负责人IDs
+    let parsedDeptLeaderIds = []
+    if (typeof deptLeaderIds === 'string') {
+      parsedDeptLeaderIds = deptLeaderIds.split(',').filter(Boolean).map(id => parseInt(id.trim())).filter(id => !isNaN(id))
+    } else if (Array.isArray(deptLeaderIds)) {
+      parsedDeptLeaderIds = deptLeaderIds.map(id => typeof id === 'string' ? parseInt(id) : id).filter(id => !isNaN(id))
     }
     
-    // 查询所有责任人姓名
-    let responsibleNamesList = []
-    if (parsedResponsibleIds.length > 0) {
-      responsibleId = parsedResponsibleIds[0] // 取第一个作为主责任人（兼容旧字段）
-      const placeholders = parsedResponsibleIds.map(() => '?').join(',')
-      const users = await query(`SELECT user_name FROM sys_user WHERE id IN (${placeholders})`, parsedResponsibleIds)
-      responsibleNamesList = users.map(u => u.user_name)
-      responsibleName = responsibleNamesList.join(', ') // 所有责任人姓名，用逗号分隔
+    // 查询部门负责人姓名
+    let deptLeaderNamesList = []
+    if (parsedDeptLeaderIds.length > 0) {
+      const placeholders = parsedDeptLeaderIds.map(() => '?').join(',')
+      const users = await query(`SELECT user_name FROM sys_user WHERE id IN (${placeholders})`, parsedDeptLeaderIds)
+      deptLeaderNamesList = users.map(u => u.user_name)
     }
     
-    // 获取监督人姓名
-    let supervisorName = null
-    if (supervisorId) {
-      const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [supervisorId])
-      if (users.length > 0) {
-        supervisorName = users[0].user_name
-      }
-    }
+    // 当前处理人设为第一个部门负责人（ASSIGN阶段）
+    const currentHandlerId = parsedDeptLeaderIds[0]
+    const currentHandlerName = deptLeaderNamesList[0] || ''
     
     // 调试日志
-    console.log(`[DEBUG] 创建事件: reporterId=${reporterId}, reporterName=${reporterName}, current_handler_id=${reporterId}, current_handler_name=${reporterName}`)
+    console.log(`[DEBUG] 创建事件: reporterId=${reporterId}, reporterName=${reporterName}, current_handler_id=${currentHandlerId}, current_handler_name=${currentHandlerName}`)
     
     const result = await query(`
       INSERT INTO quality_event 
@@ -515,10 +508,10 @@ export const createQualityEvent = async (req, res) => {
        product_stage, product_type, project_no, customer, keywords, problem_type,
        severity, related_parts, discovery_form,
        reporter_id, reporter_name,
-       responsible_ids, responsible_name, supervisor_id, supervisor_name,
+       responsible_departments, dept_leader_ids, dept_leader_names,
        current_handler_id, current_handler_name, due_date, notify_users, status,
        description_files, is_changed, change_source_id, change_source_no)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'NEW', ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ASSIGN', ?, ?, ?, ?)
     `, [
       eventNo, title, description,
       productStage, productType, projectNo, customer, keywords, problemType,
@@ -527,11 +520,18 @@ export const createQualityEvent = async (req, res) => {
       relatedParts ? JSON.stringify(relatedParts.split(',').filter(Boolean)) : '[]',
       discoveryForm ? JSON.stringify(discoveryForm.split(',').filter(Boolean)) : '[]',
       reporterId, reporterName,
-      // 责任人可能是逗号分隔字符串或数组
-      JSON.stringify(parsedResponsibleIds), responsibleName, supervisorId, supervisorName,
-      // 当前处理人设为创建人（P阶段由创建人编写）
-      reporterId, reporterName, formattedDueDate, JSON.stringify(notifyUsers || []),
-      JSON.stringify(descriptionFiles || []), isChanged || 0, changeSourceId || null, changeSourceNo || null
+      // 责任部门和部门负责人
+      JSON.stringify(responsibleDepartments), 
+      JSON.stringify(parsedDeptLeaderIds), 
+      JSON.stringify(deptLeaderNamesList),
+      // 当前处理人设为第一个部门负责人
+      currentHandlerId, currentHandlerName, 
+      formattedDueDate, 
+      JSON.stringify(notifyUsers || []),
+      JSON.stringify(descriptionFiles || []), 
+      isChanged || 0, 
+      changeSourceId || null, 
+      changeSourceNo || null
     ])
     
     const eventId = result.insertId
@@ -592,19 +592,18 @@ export const createQualityEvent = async (req, res) => {
       title,
       description,
       severity,
-      status: 'NEW',
-      responsible_name: responsibleName
+      status: 'ASSIGN',
+      responsible_name: null
     }
     
-    // 新逻辑：通知所有责任人 + 监督/确认人 + 通知人列表
+    // 新逻辑：通知部门负责人 + 通知人列表
     const allNotifyIds = [...new Set([
-      ...parsedResponsibleIds,
-      ...(supervisorId ? [supervisorId] : []),
+      ...parsedDeptLeaderIds,
       ...(notifyUsers || [])
     ])]
     
     // 发送通知邮件
-    await sendNotificationEmail(event, allNotifyIds, '新建质量事件')
+    await sendNotificationEmail(event, allNotifyIds, '新建质量事件（待指派）')
     
     // 记录操作日志
     const logEntry = {
@@ -1398,5 +1397,127 @@ const sendOverdue30DaysEmail = async (event, notifyUserIds, daysOverdue) => {
     }
   } catch (error) {
     console.error('发送超期30天提醒邮件失败:', error)
+  }
+}
+
+// 指派事件 - 部门负责人指派责任人和监督/确认人
+export const assignEvent = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { responsibleIds, supervisorId } = req.body
+    const userId = req.userId
+    const userName = req.userName
+
+    // 检查事件是否存在
+    const events = await query(
+      'SELECT * FROM quality_event WHERE id = ? AND deleted_at IS NULL',
+      [id]
+    )
+
+    if (events.length === 0) {
+      return res.status(404).json({ code: 404, message: '事件不存在' })
+    }
+
+    const event = events[0]
+
+    // 检查状态是否为ASSIGN
+    if (event.status !== 'ASSIGN') {
+      return res.status(400).json({ code: 400, message: '事件不在指派阶段' })
+    }
+
+    // 检查当前用户是否是部门负责人之一
+    const deptLeaderIds = JSON.parse(event.dept_leader_ids || '[]')
+    if (!deptLeaderIds.includes(userId)) {
+      return res.status(403).json({ code: 403, message: '只有部门负责人可以指派' })
+    }
+
+    // 验证责任人和监督人
+    if (!responsibleIds || responsibleIds.length === 0) {
+      return res.status(400).json({ code: 400, message: '责任人不能为空' })
+    }
+
+    if (!supervisorId) {
+      return res.status(400).json({ code: 400, message: '监督/确认人不能为空' })
+    }
+
+    // 解析责任人IDs
+    let parsedResponsibleIds = []
+    if (typeof responsibleIds === 'string') {
+      parsedResponsibleIds = responsibleIds.split(',').filter(Boolean).map(id => parseInt(id.trim())).filter(id => !isNaN(id))
+    } else if (Array.isArray(responsibleIds)) {
+      parsedResponsibleIds = responsibleIds.map(id => typeof id === 'string' ? parseInt(id) : id).filter(id => !isNaN(id))
+    }
+
+    // 查询责任人姓名
+    let responsibleNamesList = []
+    if (parsedResponsibleIds.length > 0) {
+      const placeholders = parsedResponsibleIds.map(() => '?').join(',')
+      const users = await query(`SELECT user_name FROM sys_user WHERE id IN (${placeholders})`, parsedResponsibleIds)
+      responsibleNamesList = users.map(u => u.user_name)
+    }
+
+    // 查询监督人姓名
+    let supervisorName = null
+    const supervisorUsers = await query('SELECT user_name FROM sys_user WHERE id = ?', [supervisorId])
+    if (supervisorUsers.length > 0) {
+      supervisorName = supervisorUsers[0].user_name
+    }
+
+    // 更新事件 - 进入PLAN阶段，当前处理人设为创建人
+    await query(`
+      UPDATE quality_event SET
+        responsible_ids = ?,
+        responsible_name = ?,
+        supervisor_id = ?,
+        supervisor_name = ?,
+        current_handler_id = reporter_id,
+        current_handler_name = reporter_name,
+        status = 'PLAN',
+        updated_at = NOW()
+      WHERE id = ?
+    `, [
+      JSON.stringify(parsedResponsibleIds),
+      responsibleNamesList.join(', '),
+      supervisorId,
+      supervisorName,
+      id
+    ])
+
+    // 记录操作日志
+    await query(`
+      INSERT INTO quality_event_log (event_id, user_id, user_name, action, new_value)
+      VALUES (?, ?, ?, 'ASSIGN', ?)
+    `, [id, userId, userName, JSON.stringify({
+      responsibleIds: parsedResponsibleIds,
+      responsibleNames: responsibleNamesList,
+      supervisorId,
+      supervisorName
+    })])
+
+    // 发送通知给责任人和监督人
+    const notifyIds = [...new Set([...parsedResponsibleIds, supervisorId, event.reporter_id])]
+    await sendNotificationEmail({
+      id: event.id,
+      event_no: event.event_no,
+      title: event.title,
+      description: event.description,
+      severity: event.severity,
+      status: 'PLAN',
+      responsible_name: responsibleNamesList.join(', ')
+    }, notifyIds, '事件已指派')
+
+    res.json({
+      code: 200,
+      message: '指派成功',
+      data: {
+        responsibleIds: parsedResponsibleIds,
+        responsibleNames: responsibleNamesList,
+        supervisorId,
+        supervisorName
+      }
+    })
+  } catch (error) {
+    console.error('指派事件失败:', error)
+    res.status(500).json({ code: 500, message: '指派事件失败：' + error.message })
   }
 }

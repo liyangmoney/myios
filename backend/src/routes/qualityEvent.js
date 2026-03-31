@@ -16,7 +16,8 @@ import {
   getStatistics,
   uploadFiles,
   checkDueDateReminders,
-  checkOverdueEvents
+  checkOverdueEvents,
+  assignEvent
 } from '../controllers/qualityEvent.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -157,6 +158,7 @@ router.get('/statistics', getStatistics)
 router.get('/:id', getQualityEventDetail)
 router.post('/', operationLogMiddleware('质量事件', 'CREATE', '创建质量事件'), createQualityEvent)
 router.put('/:id', operationLogMiddleware('质量事件', 'UPDATE', '更新质量事件'), updateQualityEvent)
+router.post('/:id/assign', operationLogMiddleware('质量事件', 'ASSIGN', '指派事件'), assignEvent)
 router.delete('/:id', operationLogMiddleware('质量事件', 'DELETE', '删除质量事件'), deleteQualityEvent)
 router.post('/:id/comments', operationLogMiddleware('质量事件', 'COMMENT', '添加评论'), addComment)
 
