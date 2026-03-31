@@ -744,7 +744,12 @@ export const updateQualityEvent = async (req, res) => {
     }
     if (updateData.dueDate !== undefined) {
       fields.push('due_date = ?')
-      values.push(updateData.dueDate)
+      // 格式化日期为 YYYY-MM-DD
+      let formattedDate = updateData.dueDate
+      if (formattedDate && formattedDate.includes('T')) {
+        formattedDate = formattedDate.split('T')[0]
+      }
+      values.push(formattedDate)
     }
     if (updateData.notifyUsers !== undefined) {
       fields.push('notify_users = ?')
