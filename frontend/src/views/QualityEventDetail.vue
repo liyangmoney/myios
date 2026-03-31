@@ -604,7 +604,7 @@
           <div class="log-item">
             <div class="log-header">
               <span class="log-user">{{ log.user_name }}</span>
-              <el-tag size="small">{{ getActionLabel(log.action, log.new_value) }}</el-tag>
+              <el-tag size="small">{{ getActionLabel(log.action, log.new_value, log.old_value) }}</el-tag>
             </div>
             <!-- 操作日志内容 -->
             <div class="log-detail">
@@ -2124,7 +2124,7 @@ const getStatusType = (status) => {
   return types[status] || ''
 }
 
-const getActionLabel = (action, logData) => {
+const getActionLabel = (action, logData, oldLogData) => {
   // 特殊动作直接返回
   const specialLabels = {
     CREATE: '创建',
@@ -2141,15 +2141,19 @@ const getActionLabel = (action, logData) => {
   if (action === 'UPDATE' && logData) {
     try {
       const data = typeof logData === 'string' ? JSON.parse(logData) : logData
-      // 检查状态变更
-      if (data.status) {
+      const oldData = oldLogData ? (typeof oldLogData === 'string' ? JSON.parse(oldLogData) : oldLogData) : {}
+      
+      // 检查状态变更 - 根据旧状态判断完成哪个阶段
+      if (data.status && data.status !== oldData.status) {
         const statusLabels = {
-          'PLAN': '完成计划',
-          'DO': '完成执行',
-          'CHECK': '完成检查',
-          'ACT': '完成处理',
-          'CLOSED': '关闭事件'
+          'ASSIGN': '完成指派',      // 从指派进入计划
+          'PLAN': '完成计划',        // 从计划进入执行
+          'DO': '完成执行',          // 从执行进入检查
+          'CHECK': '完成检查',       // 从检查进入处理
+          'ACT': '完成处理',         // 从处理进入关闭
+          'CLOSED': '关闭事件'       // 事件关闭
         }
+        // 根据新状态判断完成的是哪个阶段
         return statusLabels[data.status] || '更新'
       }
       // 检查附件上传
