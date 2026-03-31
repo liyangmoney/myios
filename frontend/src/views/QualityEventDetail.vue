@@ -648,6 +648,10 @@
                   <!-- 描述补充的附件不再在操作日志中显示，避免重复 -->
                 </template>
               </template>
+              <!-- 指派、截止时间变更、PDCA各阶段完成 - 直接显示文本，不解析JSON -->
+              <template v-else-if="['ASSIGN', 'UPDATE_DUE_DATE', 'PLAN', 'DO', 'CHECK', 'ACT', 'CLOSED'].includes(log.action)">
+                {{ log.new_value }}
+              </template>
               <!-- PDCA阶段附件上传（检测planFiles/doFiles/checkFiles/actFiles） -->
               <template v-else-if="log.action === 'UPDATE' && log.new_value && isJson(log.new_value)">
                 <template v-for="(data, idx) in [JSON.parse(log.new_value)]" :key="idx">
