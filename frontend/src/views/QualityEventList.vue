@@ -477,26 +477,29 @@
             </el-select>
           </el-form-item>
 
-          <el-form-item label="责任人" prop="responsibleIds">
+          <!-- 移动端：责任部门和部门负责人 -->
+          <el-form-item label="责任部门" prop="responsibleDepartments">
+            <el-select 
+              v-model="formData.responsibleDepartments" 
+              multiple 
+              placeholder="请选择责任部门（可多选）" 
+              style="width: 100%"
+              @change="handleDeptChange"
+            >
+              <el-option v-for="opt in departmentList" :key="opt.dept_name" :label="opt.dept_name" :value="opt.dept_name" />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="部门负责人" prop="deptLeaderIds">
             <el-select-v2
-              v-model="formData.responsibleIds"
-              :options="userOptions"
-              placeholder="请选择责任人（可多选）"
+              v-model="formData.deptLeaderIds"
+              :options="deptLeaderOptions"
+              placeholder="请先选择责任部门"
               style="width: 100%"
               multiple
               clearable
               filterable
-            />
-          </el-form-item>
-
-          <el-form-item label="监督/确认人" prop="supervisorId">
-            <el-select-v2
-              v-model="formData.supervisorId"
-              :options="userOptions"
-              placeholder="请选择监督/确认人"
-              style="width: 100%"
-              clearable
-              filterable
+              :disabled="formData.responsibleDepartments.length === 0"
             />
           </el-form-item>
 
