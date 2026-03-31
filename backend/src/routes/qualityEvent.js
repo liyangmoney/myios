@@ -114,8 +114,43 @@ const handleBase64Upload = async (req, res, next) => {
       // base64 解码
       const buffer = Buffer.from(data, 'base64')
       
-      // 获取事件编号，直接保存到正确的目录（和PC端一致）
+      // 获取事件编号
       const eventId = req.params.id
+      
+      // 如果是临时上传（创建事件前），直接存到 temp 目录
+      if (eventId === 'temp') {
+        const tempDir = path.join(uploadDir, 'temp')
+        if (!fs.existsSync(tempDir)) {
+          fs.mkdirSync(tempDir, { recursive: true })
+        }
+        
+        // 生成文件名
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+        const originalName = filename || 'upload'
+        const safeName = originalName.replace(/[^\w\u4e00-\u9fa5.-]/g, '_')
+        const finalFilename = `${uniqueSuffix}_${safeName}`
+        const finalPath = path.join(tempDir, finalFilename)
+        
+        // 直接写入文件
+        fs.writeFileSync(finalPath, buffer)
+        console.log('[handleBase64Upload] 已保存到 temp:', finalPath)
+        
+        // 模拟 multer req.files 格式
+        req.files = [{
+          fieldname: 'files',
+          originalname: originalName,
+          encoding: '7bit',
+          mimetype: type || 'application/octet-stream',
+          destination: tempDir,
+          filename: finalFilename,
+          path: finalPath,
+          size: buffer.length
+        }]
+        
+        return next()
+      }
+      
+      // 查询事件编号
       const events = await query('SELECT event_no FROM quality_event WHERE id = ?', [eventId])
       const eventNo = events.length > 0 ? events[0].event_no : 'unknown'
       
