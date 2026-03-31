@@ -511,7 +511,7 @@ export const createQualityEvent = async (req, res) => {
        responsible_departments, dept_leader_ids, dept_leader_names,
        current_handler_id, current_handler_name, due_date, notify_users, status,
        description_files, is_changed, change_source_id, change_source_no)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ASSIGN', ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       eventNo, title, description,
       productStage, productType, projectNo, customer, keywords, problemType,
@@ -528,6 +528,7 @@ export const createQualityEvent = async (req, res) => {
       currentHandlerId, currentHandlerName, 
       formattedDueDate, 
       JSON.stringify(notifyUsers || []),
+      'ASSIGN', // status
       JSON.stringify(descriptionFiles || []), 
       isChanged || 0, 
       changeSourceId || null, 
