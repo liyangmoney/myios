@@ -1233,20 +1233,14 @@ export const checkDueDateReminders = async () => {
   try {
     console.log('[' + new Date().toISOString() + '] 检查质量事件到期提醒...')
     
-    // 查找未关闭且即将在72小时内到期或已超期但不超过7天的事件
+    // 查找未关闭且due_date在72小时内（包括已超期的）的事件
     const events = await query(`
       SELECT * FROM quality_event
       WHERE deleted_at IS NULL
         AND status != 'CLOSED'
         AND status != 'REJECTED'
         AND due_date IS NOT NULL
-        AND (
-          -- 72小时内即将到期
-          (due_date >= CURDATE() AND due_date <= DATE_ADD(CURDATE(), INTERVAL 3 DAY))
-          OR
-          -- 已超期但不超过7天
-          (due_date < CURDATE() AND due_date >= DATE_SUB(NOW(), INTERVAL 7 DAY))
-        )
+        AND due_date <= DATE_ADD(NOW(), INTERVAL 72 HOUR)
     `)
     
     console.log(`找到 ${events.length} 个即将到期的事件`)
