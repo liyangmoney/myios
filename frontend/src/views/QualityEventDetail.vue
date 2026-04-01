@@ -1883,23 +1883,6 @@ const truncateFileName = (name, maxLength = 20) => {
   return base.substring(0, keepLength) + '...' + ext
 }
 
-// 权限判断
-// 指派阶段：部门负责人可以编辑
-const canEditAssign = computed(() => {
-  const deptLeaderIds = parseJsonArray(event.value?.dept_leader_ids)
-  return deptLeaderIds.includes(currentUserId.value) && event.value?.status === 'ASSIGN'
-})
-
-// P阶段：创建人或责任人或部门负责人可以编辑
-const canEditPlan = computed(() => {
-  const isCreator = event.value?.reporter_id === currentUserId.value
-  const responsibleIds = parseJsonArray(event.value?.responsible_ids)
-  const isResponsible = responsibleIds.includes(currentUserId.value)
-  const deptLeaderIds = parseJsonArray(event.value?.dept_leader_ids)
-  const isDeptLeader = deptLeaderIds.includes(currentUserId.value)
-  return (isCreator || isResponsible || isDeptLeader) && event.value?.status === 'PLAN'
-})
-
 // 截止时间修改权限：部门负责人或创建人
 const canEditDueDate = computed(() => {
   const deptLeaderIds = parseJsonArray(event.value?.dept_leader_ids)
