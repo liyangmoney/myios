@@ -1,7 +1,15 @@
 -- ============================================
 -- MyIOS 完整数据库初始化脚本
 -- 版本: v1.8.2
--- 执行方式: mysql -u root -p pis_system < database/init.sql
+-- 
+-- 执行方式（二选一）：
+-- 方式1：在 MySQL 客户端中直接执行此脚本
+--   mysql -u root -p
+--   source database/init.sql
+-- 
+-- 方式2：先创建数据库，再导入
+--   mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS pis_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+--   mysql -u root -p pis_system < database/init.sql
 -- ============================================
 
 SET NAMES utf8mb4;

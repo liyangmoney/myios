@@ -129,12 +129,15 @@ NOTIFICATION_ENABLED=true
 ### 3. 初始化数据库
 
 ```bash
-# 登录 MySQL
-mysql -u root -p
+# 方式1：分步执行（推荐）
+# 第一步：创建数据库
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS pis_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
-# 创建数据库（脚本会自动创建）
-# 执行初始化脚本
+# 第二步：执行初始化脚本
 mysql -u root -p pis_system < database/init.sql
+
+# 方式2：直接复制SQL内容到MySQL客户端执行
+# 打开 MySQL 客户端，粘贴 database/init.sql 的内容执行
 ```
 
 ### 4. 安装后端依赖
