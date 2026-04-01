@@ -946,12 +946,34 @@ export const updateQualityEvent = async (req, res) => {
                                updatedFields.includes('description') && 
                                updatedFields.includes('descriptionFiles')
     
+    // 检测是否是ASSIGN阶段修改（只更新了responsibleIds或supervisorId）
+    const isAssignUpdate = updatedFields.every(field => 
+      ['responsibleIds', 'supervisorId'].includes(field)
+    )
+    
     if (isDescriptionOnly) {
       actionDetail = 'SUPPLEMENT_DESCRIPTION'
       const supplementTime = new Date().toLocaleString('zh-CN')
       logNewValue.actionDetail = `对事件描述进行了补充`
       logNewValue.supplementTime = supplementTime
       logNewValue.supplementContent = updateData.description?.substring(oldEvent.description?.length || 0) || ''
+    } else if (isAssignUpdate) {
+      // ASSIGN阶段修改责任人和监督人
+      actionDetail = 'ASSIGN_UPDATE'
+      logNewValue.actionDetail = '修改指派信息'
+      if (updateData.responsibleIds) {
+        const oldResponsibleIds = JSON.parse(oldEvent.responsible_ids || '[]')
+        logNewValue.responsibleChange = {
+          old: oldResponsibleIds,
+          new: updateData.responsibleIds
+        }
+      }
+      if (updateData.supervisorId !== undefined) {
+        logNewValue.supervisorChange = {
+          old: oldEvent.supervisor_id,
+          new: updateData.supervisorId
+        }
+      }
     }
     
     // A阶段（进入CLOSED状态）添加详细信息
