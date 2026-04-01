@@ -1233,15 +1233,20 @@ export const checkDueDateReminders = async () => {
   try {
     console.log('[' + new Date().toISOString() + '] 检查质量事件到期提醒...')
     
-    // 查找未关闭且即将在72小时内到期的事件
+    // 查找未关闭且即将在72小时内到期或已超期但不超过7天的事件
     const events = await query(`
       SELECT * FROM quality_event
       WHERE deleted_at IS NULL
         AND status != 'CLOSED'
         AND status != 'REJECTED'
         AND due_date IS NOT NULL
-        AND due_date >= CURDATE()
-        AND due_date <= DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+        AND (
+          -- 72小时内即将到期
+          (due_date >= CURDATE() AND due_date <= DATE_ADD(CURDATE(), INTERVAL 3 DAY))
+          OR
+          -- 已超期但不超过7天
+          (due_date < CURDATE() AND due_date >= DATE_SUB(NOW(), INTERVAL 7 DAY))
+        )
     `)
     
     console.log(`找到 ${events.length} 个即将到期的事件`)
@@ -1325,16 +1330,26 @@ export const checkOverdueEvents = async () => {
         continue
       }
       
-      // 新逻辑：过期提醒通知通知人列表
+      // 新逻辑：过期提醒通知通知人列表 + 部门负责人
       let notifyUserIds = []
+      
+      // 1. 添加通知人列表
       if (event.notify_users) {
         try {
           notifyUserIds = JSON.parse(event.notify_users)
         } catch {}
       }
       
+      // 2. 添加部门负责人
+      if (event.dept_leader_ids) {
+        try {
+          const deptLeaderIds = JSON.parse(event.dept_leader_ids)
+          notifyUserIds = [...new Set([...notifyUserIds, ...deptLeaderIds])]
+        } catch {}
+      }
+      
       if (notifyUserIds.length === 0) {
-        console.log(`事件 ${event.event_no} 没有通知人，跳过`)
+        console.log(`事件 ${event.event_no} 没有通知人和部门负责人，跳过`)
         continue
       }
       
