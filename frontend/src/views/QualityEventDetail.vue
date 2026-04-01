@@ -1080,30 +1080,34 @@
             </el-select>
           </el-form-item>
 
-          <!-- 第七行：责任人（多选）- 占满整行 -->
-          <el-form-item label="责任人" prop="responsibleIds">
-            <el-select-v2
-              v-model="changeForm.responsibleIds"
-              :options="userOptions"
-              placeholder="请选择责任人（可多选）"
+          <!-- 第七行：责任部门（多选）- 占满整行 -->
+          <el-form-item label="责任部门" prop="responsibleDepartments">
+            <el-select
+              v-model="changeForm.responsibleDepartments"
+              placeholder="请选择责任部门"
               style="width: 100%"
               multiple
               clearable
               filterable
-            />
+              @change="handleChangeDeptChange"
+            >
+              <el-option v-for="opt in departmentList" :key="opt.dept_name" :label="opt.dept_name" :value="opt.dept_name" />
+            </el-select>
           </el-form-item>
 
-          <!-- 第八行：监督/确认人 + 截止日期 -->
+          <!-- 第八行：部门负责人 + 截止日期 -->
           <el-row :gutter="20">
             <el-col :span="12">
-              <el-form-item label="监督/确认人" prop="supervisorId">
+              <el-form-item label="部门负责人" prop="deptLeaderIds">
                 <el-select-v2
-                  v-model="changeForm.supervisorId"
-                  :options="userOptions"
-                  placeholder="请选择监督/确认人"
+                  v-model="changeForm.deptLeaderIds"
+                  :options="deptLeaderOptions"
+                  placeholder="请选择部门负责人"
                   style="width: 100%"
+                  multiple
                   clearable
                   filterable
+                  :disabled="changeForm.responsibleDepartments.length === 0"
                 />
               </el-form-item>
             </el-col>
