@@ -813,12 +813,6 @@
             />
           </el-form-item>
 
-          <!-- 需要变更 -->
-          <el-form-item>
-            <el-checkbox v-model="editForm.needsChange" @change="handleNeedsChangeChange">
-              此事件需要变更
-            </el-checkbox>
-          </el-form-item>
           <!-- P阶段不提供指派下一步 -->
         </template>
 
@@ -1648,8 +1642,7 @@ const editForm = ref({
   causeType: [],
   standardization: '',
   status: 'CLOSED',
-  nextHandlerId: null,
-  needsChange: false
+  nextHandlerId: null
 })
 
 const saving = ref(false)
@@ -2047,8 +2040,7 @@ const editPlan = () => {
   editType.value = 'PLAN'
   editForm.value = {
     rootCause: event.value.root_cause || '',
-    correctiveAction: event.value.corrective_action || '',
-    needsChange: false
+    correctiveAction: event.value.corrective_action || ''
   }
   planFiles.value = parseFiles(event.value.plan_files)
   editDialogVisible.value = true
