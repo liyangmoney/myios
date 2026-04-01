@@ -36,11 +36,12 @@ const envConfig = getEnvConfig()
 console.log('[API Config] Stored config:', storedConfig)
 console.log('[API Config] Env config:', envConfig)
 
-// 合并配置：默认配置 + 本地存储配置 + 环境变量配置（优先级最高）
+// 合并配置：默认配置 + 环境变量配置 + 本地存储配置（优先级最高）
+// 本地存储配置优先级最高，允许用户覆盖环境变量配置
 const finalConfig = {
   ...defaultConfig,
-  ...storedConfig,
-  ...envConfig
+  ...envConfig,
+  ...storedConfig
 }
 
 console.log('[API Config] Final baseURL:', finalConfig.baseURL)
