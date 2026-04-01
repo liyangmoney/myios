@@ -1677,12 +1677,18 @@ const openChangeDialog = () => {
     severity: parseMultiSelect(event.value.severity),
     relatedParts: parseJsonArray(event.value.related_parts),
     discoveryForm: parseJsonArray(event.value.discovery_form),
-    responsibleIds: parseJsonArray(event.value.responsible_ids),
-    supervisorId: event.value.supervisor_id || null,
+    // 使用责任部门和部门负责人（新指派阶段）
+    responsibleDepartments: parseJsonArray(event.value.responsible_departments),
+    deptLeaderIds: parseJsonArray(event.value.dept_leader_ids),
     dueDate: event.value.due_date || '',
     description: `此事件由${event.value.event_no}事件变更而来\n\n${event.value.description || ''}`,
     descriptionFiles: [],  // 清空附件列表
     notifyUsers: event.value.notify_users || []
+  }
+  
+  // 如果有部门负责人，加载对应的选项
+  if (changeForm.value.deptLeaderIds.length > 0) {
+    handleChangeDeptChange(changeForm.value.responsibleDepartments)
   }
   
   changeDialogVisible.value = true
