@@ -709,6 +709,35 @@ export const updateQualityEvent = async (req, res) => {
         }
       }
     }
+    // 支持批量更新责任人（ASSIGN阶段修改）
+    if (updateData.responsibleIds !== undefined) {
+      fields.push('responsible_ids = ?')
+      const responsibleIdsJson = JSON.stringify(updateData.responsibleIds || [])
+      values.push(responsibleIdsJson)
+      // 更新责任人姓名列表
+      if (updateData.responsibleIds && updateData.responsibleIds.length > 0) {
+        const placeholders = updateData.responsibleIds.map(() => '?').join(',')
+        const users = await query(`SELECT id, user_name FROM sys_user WHERE id IN (${placeholders})`, updateData.responsibleIds)
+        const userNames = users.map(u => u.user_name)
+        fields.push('responsible_name = ?')
+        values.push(userNames.join(','))
+      }
+    }
+    // 支持更新监督/确认人
+    if (updateData.supervisorId !== undefined) {
+      fields.push('supervisor_id = ?')
+      values.push(updateData.supervisorId)
+      // 更新监督/确认人姓名
+      if (updateData.supervisorId) {
+        const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [updateData.supervisorId])
+        if (users.length > 0) {
+          fields.push('supervisor_name = ?')
+          values.push(users[0].user_name)
+        }
+      } else {
+        fields.push('supervisor_name = NULL')
+      }
+    }
     if (updateData.nextHandlerId !== undefined) {
       fields.push('next_handler_id = ?')
       values.push(updateData.nextHandlerId)

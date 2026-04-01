@@ -878,13 +878,20 @@
             />
           </el-form-item>
 
-          <el-form-item label="是否通过">
+          <el-form-item label="验证结论">
             <el-radio-group v-model="editForm.passed">
-              <el-radio :label="true">通过，可以关闭</el-radio>
-              <el-radio :label="false">不通过，需要重新处理</el-radio>
+              <el-radio :label="true">通过</el-radio>
+              <el-radio :label="false">不通过</el-radio>
             </el-radio-group>
           </el-form-item>
-          <!-- C阶段不提供指派下一步 -->
+
+          <!-- 不通过时选择回退阶段 -->
+          <el-form-item v-if="editForm.passed === false" label="回退到">
+            <el-radio-group v-model="editForm.nextStep">
+              <el-radio label="PLAN">Plan（重新制定计划）</el-radio>
+              <el-radio label="DO">Do（重新执行）</el-radio>
+            </el-radio-group>
+          </el-form-item>
         </template>
 
         <template v-if="editType === 'ACT'">
@@ -1637,6 +1644,7 @@ const editForm = ref({
   implementation: '',
   verificationResult: '',
   passed: true,
+  nextStep: 'DO', // C阶段不通过时的回退阶段（PLAN或DO）
   causeType: [],
   standardization: '',
   status: 'CLOSED',
@@ -1909,25 +1917,43 @@ const canCreateChangeEvent = computed(() => {
   return (isDeptLeader || isResponsible) && event.value?.status !== 'CLOSED'
 })
 
-// 补充描述权限：只有创建人可以补充
+// 补充描述权限：所有人均可补充（除了已关闭的事件）
 const canSupplementDescription = computed(() => {
-  return event.value?.reporter_id === currentUserId.value
+  return event.value?.status !== 'CLOSED'
 })
 
-// D阶段：任何责任人都可以编辑
+// ASSIGN阶段：部门负责人可以修改（关闭前）
+const canEditAssign = computed(() => {
+  const deptLeaderIds = parseJsonArray(event.value?.dept_leader_ids)
+  const isDeptLeader = deptLeaderIds.includes(currentUserId.value)
+  return isDeptLeader && event.value?.status !== 'CLOSED'
+})
+
+// PLAN阶段：责任人可以修改（关闭前），修改后回到DO
+const canEditPlan = computed(() => {
+  const responsibleIds = parseJsonArray(event.value?.responsible_ids)
+  const isResponsible = responsibleIds.includes(currentUserId.value)
+  return isResponsible && event.value?.status !== 'CLOSED'
+})
+
+// DO阶段：责任人可以编辑（首次填写时状态为DO，修改时状态为CHECK）
 const canEditDo = computed(() => {
   const responsibleIds = parseJsonArray(event.value?.responsible_ids)
-  return responsibleIds.includes(currentUserId.value) && event.value?.status === 'DO'
+  const isResponsible = responsibleIds.includes(currentUserId.value)
+  // 首次填写：状态为DO
+  // 修改：状态为CHECK（从CHECK阶段回退后修改）
+  return isResponsible && (event.value?.status === 'DO' || event.value?.status === 'CHECK')
 })
 
-// C阶段：当前处理人（C阶段指定人）可以编辑
+// CHECK阶段：当前处理人（验证人）可以修改（刚编辑完，未流转前）
 const canEditCheck = computed(() => {
-  return event.value?.current_handler_id === currentUserId.value && event.value?.status === 'CHECK'
+  return event.value?.current_handler_id === currentUserId.value && 
+         event.value?.status === 'CHECK'
 })
 
-// A阶段：监督/确认人可以编辑
+// ACT阶段：不可修改
 const canEditAct = computed(() => {
-  return event.value?.supervisor_id === currentUserId.value && event.value?.status === 'ACT'
+  return false
 })
 
 // 是否可以评论（所有人都可以评论）
@@ -2048,7 +2074,8 @@ const editPlan = () => {
 const editDo = () => {
   editType.value = 'DO'
   editForm.value = {
-    implementation: event.value.implementation || ''
+    implementation: event.value.implementation || '',
+    nextHandlerId: event.value.current_handler_id // C阶段指定人
   }
   // 加载已有附件
   doFiles.value = parseFiles(event.value.implementation_files)
@@ -2059,7 +2086,8 @@ const editCheck = () => {
   editType.value = 'CHECK'
   editForm.value = {
     verificationResult: event.value.verification_result || '',
-    passed: true
+    passed: true,
+    nextStep: 'DO' // 默认回退到DO
   }
   // 加载已有附件
   checkFiles.value = parseFiles(event.value.check_files)
@@ -2085,13 +2113,13 @@ const savePDCA = async () => {
 
   saving.value = true
   try {
-    // 指派阶段单独处理
+    // 指派阶段：使用update API，只更新责任人和监督人，不改变阶段
     if (editType.value === 'ASSIGN') {
-      await qualityEventApi.assign(event.value.id, {
+      await qualityEventApi.update(event.value.id, {
         responsibleIds: editForm.value.responsibleIds,
         supervisorId: editForm.value.supervisorId
       })
-      ElMessage.success('指派成功')
+      ElMessage.success('指派信息更新成功')
       editDialogVisible.value = false
       fetchEventDetail()
       return
@@ -2103,16 +2131,18 @@ const savePDCA = async () => {
       data.rootCause = editForm.value.rootCause
       data.correctiveAction = editForm.value.correctiveAction
       data.planFiles = planFiles.value
-      data.status = 'DO' // Plan填写完成，进入DO阶段
-      // P阶段不指定下一步人，D阶段任何责任人都可以处理
-      data.currentHandlerId = null
+      // PLAN阶段修改后，状态变为DO（重新执行）
+      data.status = 'DO'
+      // 当前处理人设为责任人
+      const responsibleIds = parseJsonArray(event.value.responsible_ids)
+      data.currentHandlerId = responsibleIds[0] || null
       data.nextHandlerId = null
       data.nextStep = 'DO'
     } else if (editType.value === 'DO') {
       data.implementation = editForm.value.implementation
       data.doFiles = doFiles.value
-      data.status = 'CHECK' // Do填写完成，进入CHECK阶段
-      // D阶段需要指定C阶段处理人
+      // DO阶段保存后进入CHECK（首次填写）或保持CHECK（修改）
+      data.status = 'CHECK'
       data.currentHandlerId = editForm.value.nextHandlerId
       data.nextHandlerId = editForm.value.nextHandlerId
       data.nextStep = 'CHECK'
@@ -2121,16 +2151,24 @@ const savePDCA = async () => {
       data.checkFiles = checkFiles.value
       if (editForm.value.passed) {
         data.status = 'ACT' // 验证通过，进入ACT阶段
-        // C阶段不指定下一步人，A阶段由监督/确认人处理
         data.currentHandlerId = event.value.supervisor_id
         data.nextHandlerId = null
         data.nextStep = 'ACT'
       } else {
-        data.status = 'DO' // 不通过，回到DO阶段
-        // 返回D阶段，任何责任人都可以处理
-        data.currentHandlerId = null
+        // 不通过，根据选择回退到P或D阶段
+        if (editForm.value.nextStep === 'PLAN') {
+          data.status = 'PLAN' // 回退到PLAN阶段
+          // 当前处理人设为责任人（P阶段处理人）
+          const responsibleIds = parseJsonArray(event.value.responsible_ids)
+          data.currentHandlerId = responsibleIds[0] || null
+        } else {
+          data.status = 'DO' // 回退到DO阶段
+          // 当前处理人设为责任人（D阶段处理人）
+          const responsibleIds = parseJsonArray(event.value.responsible_ids)
+          data.currentHandlerId = responsibleIds[0] || null
+        }
         data.nextHandlerId = null
-        data.nextStep = 'DO'
+        data.nextStep = editForm.value.nextStep
       }
     } else if (editType.value === 'ACT') {
       data.standardization = editForm.value.standardization
