@@ -502,6 +502,29 @@ export const createQualityEvent = async (req, res) => {
     // 调试日志
     console.log(`[DEBUG] 创建事件: reporterId=${reporterId}, reporterName=${reporterName}, current_handler_id=${currentHandlerId}, current_handler_name=${currentHandlerName}`)
     
+    // 调试所有参数
+    const sqlParams = [
+      eventNo, title, description,
+      productStage, productType, projectNo, customer, keywords, problemType,
+      severity, 
+      relatedParts ? JSON.stringify(relatedParts.split(',').filter(Boolean)) : '[]',
+      discoveryForm ? JSON.stringify(discoveryForm.split(',').filter(Boolean)) : '[]',
+      reporterId, reporterName,
+      JSON.stringify(responsibleDepartments), 
+      JSON.stringify(parsedDeptLeaderIds), 
+      JSON.stringify(deptLeaderNamesList),
+      currentHandlerId, currentHandlerName, 
+      formattedDueDate, 
+      JSON.stringify(notifyUsers || []),
+      'ASSIGN',
+      JSON.stringify(descriptionFiles || []), 
+      isChanged || 0, 
+      changeSourceId || null, 
+      changeSourceNo || null
+    ]
+    console.log('[DEBUG] SQL参数数量:', sqlParams.length)
+    console.log('[DEBUG] SQL参数:', sqlParams.map((p, i) => `${i+1}: ${typeof p}=${JSON.stringify(p).substring(0, 50)}`).join('\n'))
+    
     const result = await query(`
       INSERT INTO quality_event 
       (event_no, title, description, 
@@ -512,28 +535,7 @@ export const createQualityEvent = async (req, res) => {
        current_handler_id, current_handler_name, due_date, notify_users, status,
        description_files, is_changed, change_source_id, change_source_no)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      eventNo, title, description,
-      productStage, productType, projectNo, customer, keywords, problemType,
-      severity, 
-      // 将逗号分隔字符串转为JSON数组
-      relatedParts ? JSON.stringify(relatedParts.split(',').filter(Boolean)) : '[]',
-      discoveryForm ? JSON.stringify(discoveryForm.split(',').filter(Boolean)) : '[]',
-      reporterId, reporterName,
-      // 责任部门和部门负责人
-      JSON.stringify(responsibleDepartments), 
-      JSON.stringify(parsedDeptLeaderIds), 
-      JSON.stringify(deptLeaderNamesList),
-      // 当前处理人设为第一个部门负责人
-      currentHandlerId, currentHandlerName, 
-      formattedDueDate, 
-      JSON.stringify(notifyUsers || []),
-      'ASSIGN', // status
-      JSON.stringify(descriptionFiles || []), 
-      isChanged || 0, 
-      changeSourceId || null, 
-      changeSourceNo || null
-    ])
+    `, sqlParams)
     
     const eventId = result.insertId
     
