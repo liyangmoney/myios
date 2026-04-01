@@ -10,6 +10,10 @@ export default defineConfig({
       '@': resolve(__dirname, 'src')
     }
   },
+  optimizeDeps: {
+    include: ['element-plus'],
+    exclude: []
+  },
   server: {
     port: 13000,
     host: true,
