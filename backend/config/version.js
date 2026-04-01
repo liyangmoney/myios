@@ -10,3 +10,7 @@ export const updateLog = `1. 新增指派阶段 - 创建事件选择责任部门
 5. 修复安卓端附件上传到 unknown 的问题
 6. 修复移动端表单和详情页功能
 7. 通知逻辑优化 - 到期提醒每6小时，超期7天额外通知部门负责人`
+
+export const forceUpdate = false
+
+export const minVersion = '1.0.0'
