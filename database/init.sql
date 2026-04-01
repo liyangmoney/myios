@@ -90,7 +90,7 @@ CREATE TABLE quality_event (
     implementation TEXT COMMENT '实施过程记录 (Do)',
     verification_result TEXT COMMENT '验证结果 (Check)',
     standardization TEXT COMMENT '标准化措施 (Act)',
-    cause_type TEXT COMMENT '原因类型 JSON数组：设计考虑不周/培训不足/人员能力不足/流程不全',
+    cause_type TEXT COMMENT '原因类型 JSON数组：设计考虑不周/培训不足/人员能力不足/流程不全/供方物料原因/偶发事件/验证不足',
     
     -- PDCA 各阶段附件
     plan_files TEXT COMMENT 'Plan阶段附件 JSON数组',

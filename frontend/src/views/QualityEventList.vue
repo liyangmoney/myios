@@ -554,11 +554,11 @@
           </div>
         </el-form-item>
 
-        <el-form-item label="通知人">
+        <el-form-item label="超期通知人">
           <el-select-v2
             v-model="formData.notifyUsers"
             :options="userOptions"
-            placeholder="选择通知人（可多选）"
+            placeholder="选择超期通知人（可多选）"
             style="width: 100%"
             multiple
             clearable

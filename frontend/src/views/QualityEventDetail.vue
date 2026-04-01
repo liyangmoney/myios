@@ -23,7 +23,17 @@
     <!-- 基本信息 -->
     <el-card class="info-card">
       <template #header>
-        <span>基本信息</span>
+        <div class="basic-info-header">
+          <span>基本信息</span>
+          <el-button
+            v-if="canCreateChangeEvent"
+            type="warning"
+            size="small"
+            @click="openChangeDialog"
+          >
+            事件变更
+          </el-button>
+        </div>
       </template>
 
       <!-- PC端表格 -->
@@ -140,7 +150,7 @@
           <el-descriptions-item label="更新时间" :span="2">
             {{ formatDateTime(event.updated_at) }}
           </el-descriptions-item>
-          <el-descriptions-item label="通知人" :span="3">
+          <el-descriptions-item label="超期通知人" :span="3">
             <div v-if="event.notify_user_names && event.notify_user_names.length > 0">
               <el-tag v-for="(name, idx) in event.notify_user_names" :key="idx" size="small" class="mr-2" type="info">
                 {{ name }}
@@ -808,15 +818,6 @@
             <el-checkbox v-model="editForm.needsChange" @change="handleNeedsChangeChange">
               此事件需要变更
             </el-checkbox>
-            <el-button
-              v-if="editForm.needsChange"
-              type="warning"
-              size="small"
-              @click="openChangeDialog"
-              style="margin-left: 10px;"
-            >
-              创建变更事件
-            </el-button>
           </el-form-item>
           <!-- P阶段不提供指派下一步 -->
         </template>
@@ -894,6 +895,9 @@
               <el-option label="培训不足" value="培训不足" />
               <el-option label="人员能力不足" value="人员能力不足" />
               <el-option label="流程不全" value="流程不全" />
+              <el-option label="供方物料原因" value="供方物料原因" />
+              <el-option label="偶发事件" value="偶发事件" />
+              <el-option label="验证不足" value="验证不足" />
             </el-select>
           </el-form-item>
 
@@ -1296,11 +1300,11 @@
           </div>
         </el-form-item>
 
-        <el-form-item label="通知人">
+        <el-form-item label="超期通知人">
           <el-select-v2
             v-model="changeForm.notifyUsers"
             :options="userOptions"
-            placeholder="选择通知人（可多选）"
+            placeholder="选择超期通知人（可多选）"
             style="width: 100%"
             multiple
             clearable
@@ -1894,6 +1898,15 @@ const canEditDueDate = computed(() => {
   const isDeptLeader = deptLeaderIds.includes(currentUserId.value)
   const isCreator = event.value?.reporter_id === currentUserId.value
   return (isDeptLeader || isCreator) && event.value?.status !== 'CLOSED'
+})
+
+// 是否可以创建变更事件：部门负责人或责任人
+const canCreateChangeEvent = computed(() => {
+  const deptLeaderIds = parseJsonArray(event.value?.dept_leader_ids)
+  const responsibleIds = parseJsonArray(event.value?.responsible_ids)
+  const isDeptLeader = deptLeaderIds.includes(currentUserId.value)
+  const isResponsible = responsibleIds.includes(currentUserId.value)
+  return (isDeptLeader || isResponsible) && event.value?.status !== 'CLOSED'
 })
 
 // 补充描述权限：只有创建人可以补充
@@ -3060,6 +3073,12 @@ onMounted(() => {
   padding: 12px 16px;
   border-radius: 4px;
   margin-bottom: 10px;
+}
+
+.basic-info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .description-content p {
