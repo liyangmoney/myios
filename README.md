@@ -17,18 +17,21 @@
 ### 🔄 质量事件管理（PDCA闭环）
 - **多维度事件创建** - 内部/外部不符合、审核发现、过程异常、指标异常
 - **完整PDCA工作流** - Plan → Do → Check → Act 闭环跟踪
+- **新增指派阶段** - 部门负责人指派责任人和监督人
 - **智能变更管理** - P阶段支持事件变更，自动关联源事件
 - **根因分析工具** - A阶段支持原因类型多选分析
+- **截止时间多次修改** - 部门负责人和创建人可修改，需填写原因
 - **附件全生命周期** - 各阶段支持文件上传和评论关联
 
 ### 📊 数据统计分析
 - **多维度筛选** - 按状态、严重度、类型、部门筛选
 - **趋势分析** - 月度事件趋势图表
 - **责任追踪** - 个人/部门事件统计
-- ** overdue提醒** - 超期未关闭事件自动提醒
+- **超期提醒** - 到期前72小时每6小时提醒，超期7天每天额外通知部门负责人
 
 ### 👥 用户与权限管理
 - **JWT认证** - 安全的身份验证机制
+- **部门领导** - 支持设置部门领导和职称
 - **角色分级** - 管理员、质量人员、普通用户
 - **邮件通知** - 事件流转自动邮件提醒
 - **完整审计日志** - 操作全程可追溯
@@ -42,11 +45,12 @@
 |------|------|------|
 | Vue | 3.x | 渐进式框架 |
 | Vite | 5.x | 构建工具 |
-| Element Plus | 2.x | UI组件库 |
+| Element Plus | 2.5.0 | UI组件库（锁定版本） |
 | Pinia | 2.x | 状态管理 |
 | Vue Router | 4.x | 路由管理 |
 | Axios | 1.x | HTTP客户端 |
 | ECharts | 5.x | 数据可视化 |
+| Capacitor | 8.x | 移动端打包 |
 
 ### 后端技术栈
 | 技术 | 版本 | 用途 |
@@ -61,141 +65,42 @@
 
 ---
 
-## 🚀 快速开始
+## 🚀 Windows 开发环境部署
 
-### 方式一：Docker 部署（推荐）
+### 前置要求
+- Windows 10/11
+- Git
+- Node.js 18+ 
+- MySQL 8.0
+- VS Code（推荐）
 
-#### 环境要求
-- Docker 20.10+
-- Docker Compose 2.0+
+### 1. 克隆项目
 
-#### 1. 克隆项目
 ```bash
 git clone https://github.com/liyangmoney/MyIOS.git
 cd MyIOS
 ```
 
-#### 2. 配置环境
+### 2. 配置后端环境
+
 ```bash
-# 复制环境变量模板
-cp backend/.env.example backend/.env
-
-# 编辑配置
-vim backend/.env
-```
-
-#### 3. 启动服务
-```bash
-docker-compose up -d
-
-# 等待30秒让MySQL初始化
-docker-compose logs -f mysql
-```
-
-#### 4. 初始化数据库
-```bash
-# 首次运行需要导入表结构
-docker-compose exec -T mysql mysql -uroot -proot pis_system < database/schema.sql
-
-# 执行迁移（如有更新）
-docker-compose exec -T mysql mysql -uroot -proot pis_system < database/migrations/20250323_add_event_fields.sql
-```
-
-#### 5. 访问系统
-- 🌐 前端：http://localhost:13000
-- 🔌 API：http://localhost:9090
-- 👤 默认账号：`admin` / `admin123`
-
----
-
-### 方式二：手动部署
-
-#### 环境要求
-- Node.js 18+
-- MySQL 8.0+
-
-#### 1. 数据库准备
-```bash
-# 创建数据库
-mysql -u root -p -e "CREATE DATABASE pis_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-
-# 导入表结构
-mysql -u root -p pis_system < database/schema.sql
-
-# 执行迁移
-mysql -u root -p pis_system < database/migrations/20250323_add_event_fields.sql
-```
-
-#### 2. 后端启动
-```bash
+# 进入后端目录
 cd backend
 
-# 安装依赖
-npm install
+# 复制环境变量模板
+copy .env.example .env
 
-# 配置环境变量
-cp .env.example .env
-# 编辑 .env
-
-# 启动开发服务器
-npm run dev
-
-# 或生产模式
-npm start
+# 编辑 .env 文件，配置数据库连接
+notepad .env
 ```
 
-#### 3. 前端启动
-```bash
-cd frontend
+**`.env` 配置示例：**
 
-# 安装依赖
-npm install
-
-# 开发模式
-npm run dev
-
-# 生产构建
-npm run build
-```
-
----
-
-## 📁 项目结构
-
-```
-MyIOS/
-├── 📁 .github/           # GitHub Actions CI/CD
-├── 📁 backend/            # Node.js 后端
-│   ├── src/
-│   │   ├── controllers/   # 控制器
-│   │   ├── routes/        # 路由
-│   │   ├── middleware/    # 中间件
-│   │   └── utils/         # 工具函数
-│   ├── uploads/           # 上传文件存储
-│   ├── .env.example       # 环境变量模板
-│   └── package.json
-├── 📁 frontend/           # Vue3 前端
-│   ├── src/
-│   │   ├── api/           # API接口
-│   │   ├── components/    # 公共组件
-│   │   ├── router/        # 路由配置
-│   │   ├── store/         # Pinia状态
-│   │   └── views/         # 页面视图
-│   └── package.json
-├── 📁 database/           # 数据库脚本
-│   ├── schema.sql         # 完整表结构
-│   └── migrations/        # 迁移脚本
-├── 📁 docs/               # 项目文档
-├── 📄 docker-compose.yml  # Docker配置
-└── 📄 README.md           # 项目说明
-```
-
----
-
-## ⚙️ 配置说明
-
-### 后端 .env 配置
 ```env
+# 服务器配置
+PORT=9090
+NODE_ENV=development
+
 # 数据库配置
 DB_HOST=localhost
 DB_PORT=3306
@@ -204,191 +109,218 @@ DB_PASSWORD=your_password
 DB_NAME=pis_system
 
 # JWT配置
-JWT_SECRET=your_secret_key_here
-JWT_EXPIRE=24h
+JWT_SECRET=your_jwt_secret_key_here
+JWT_EXPIRES_IN=24h
 
-# 邮件服务（用于通知）
-EMAIL_HOST=smtp.163.com
-EMAIL_PORT=465
-EMAIL_SECURE=true
-EMAIL_USER=your_email@163.com
-EMAIL_PASS=your_auth_code
-SYSTEM_URL=http://localhost:13000
+# 文件上传配置
+UPLOAD_DIR=uploads
+MAX_FILE_SIZE=524288000
 
-# 服务端口
-PORT=9090
+# 邮件配置（可选）
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your_email@example.com
+SMTP_PASS=your_email_password
+
+# 通知配置
+NOTIFICATION_ENABLED=true
 ```
 
-### 前端配置
-前端配置位于 `frontend/.env`：
-```env
-VITE_API_BASE_URL=http://localhost:9090
-```
+### 3. 初始化数据库
 
----
-
-## 📈 核心功能模块
-
-### 1️⃣ 程序文件管理
-| 功能 | 说明 |
-|------|------|
-| 文件分类 | C(顾客相关)/M(管理)/S(支持) 三大类 |
-| 人员分配 | 编写人、审核人、批准人三级审批 |
-| 记录归档 | 上传PDF、Word、Excel等附件 |
-| 年份归档 | 按年份查看历史版本 |
-
-### 2️⃣ 质量事件管理
-| 阶段 | 功能 |
-|------|------|
-| **Plan** | 问题描述、根因分析、纠正措施、变更管理 |
-| **Do** | 措施执行、责任人分配、期限设定 |
-| **Check** | 效果验证、监督检查 |
-| **Act** | 标准化、预防措施、原因类型分析 |
-
-### 3️⃣ 用户权限
-| 角色 | 权限 |
-|------|------|
-| 管理员 | 用户管理、系统配置、数据导出 |
-| 质量人员 | 事件创建、编辑、审核、统计分析 |
-| 普通用户 | 查看事件、上传附件、执行措施 |
-
----
-
-## 🔧 常用命令
-
-### Docker 命令
 ```bash
-# 查看日志
-docker-compose logs -f backend
-docker-compose logs -f frontend
-docker-compose logs -f mysql
+# 登录 MySQL
+mysql -u root -p
 
-# 重启服务
-docker-compose restart
-
-# 停止服务
-docker-compose down
-
-# 重新构建
-docker-compose up -d --build
-
-# 进入容器
-docker-compose exec backend sh
-docker-compose exec mysql mysql -uroot -proot pis_system
+# 创建数据库（脚本会自动创建）
+# 执行初始化脚本
+mysql -u root -p pis_system < database/init.sql
 ```
 
-### 数据库命令
+### 4. 安装后端依赖
+
 ```bash
-# 备份数据
-mysqldump -u root -p pis_system > backup_$(date +%Y%m%d).sql
-
-# 恢复数据
-mysql -u root -p pis_system < backup_20250101.sql
-
-# 查看迁移状态
-ls -la database/migrations/
-```
-
----
-
-## 🐛 常见问题
-
-### 1. 数据库连接失败
-```bash
-# 检查MySQL状态
-docker-compose ps mysql
-docker-compose logs mysql
-
-# 检查端口占用
-netstat -tlnp | grep 3306
-```
-
-### 2. 文件上传失败
-```bash
-# 检查目录权限
-docker-compose exec backend ls -la uploads/
-docker-compose exec backend chmod 755 uploads/
-```
-
-### 3. 邮件发送失败
-- 确认使用的是邮箱授权码（不是登录密码）
-- 检查邮箱SMTP设置是否正确
-- 查看后端日志：`docker-compose logs backend | grep email`
-
-### 4. 前端页面空白
-```bash
-# 清除缓存并重建
-cd frontend
-rm -rf node_modules dist
+cd backend
 npm install
+
+# 启动开发服务器
+npm run dev
+```
+
+后端服务将运行在 `http://localhost:9090`
+
+### 5. 安装前端依赖
+
+**注意：element-plus 必须锁定在 2.5.0 版本，否则 Windows 构建会失败**
+
+```bash
+cd frontend
+
+# 确保使用项目自带的 package-lock.json
+npm ci
+
+# 或者如果 package-lock.json 不存在
+npm install
+```
+
+### 6. 配置前端代理
+
+编辑 `frontend/vite.config.js`，确保代理配置正确：
+
+```javascript
+server: {
+  port: 13000,
+  host: true,
+  proxy: {
+    '/api': {
+      target: 'http://localhost:9090',
+      changeOrigin: true
+    }
+  }
+}
+```
+
+### 7. 启动前端开发服务器
+
+```bash
+cd frontend
+npm run dev
+```
+
+前端将运行在 `http://localhost:13000`
+
+### 8. 访问系统
+
+打开浏览器访问：`http://localhost:13000`
+
+默认管理员账号：
+- 用户名：`admin`
+- 密码：`admin123`
+
+---
+
+## 📱 移动端打包（Android）
+
+### 前置要求
+- Android Studio
+- JDK 17
+- Android SDK
+
+### 打包步骤
+
+```bash
+cd frontend
+
+# 构建生产版本
 npm run build
+
+# 同步到 Android 项目
+npx cap sync android
+
+# 打开 Android Studio
+cd android
+./gradlew assembleRelease
+```
+
+APK 输出路径：`android/app/build/outputs/apk/release/app-release.apk`
+
+---
+
+## 🔧 常见问题
+
+### 1. 前端启动报错 `Could not resolve '../../../utils/numbers.mjs'`
+
+**原因：** element-plus 2.13.6 版本有 ESM 路径 bug
+
+**解决：** 确保 package.json 中 element-plus 版本锁定为 `2.5.0`（不带 `^`）
+
+```bash
+cd frontend
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### 2. 创建变更事件报 400 错误
+
+**原因：** SQL 参数数量不匹配
+
+**解决：** 检查后端 `createQualityEvent` 函数中的 SQL 字段数和 `?` 数量是否一致
+
+### 3. 后端启动报错 `forceUpdate` 未导出
+
+**原因：** version.js 缺少导出
+
+**解决：** 确保 `backend/config/version.js` 包含：
+
+```javascript
+export const version = '1.8.2'
+export const forceUpdate = false
+export const minVersion = '1.0.0'
+```
+
+### 4. 数据库连接失败
+
+**检查：**
+- MySQL 服务是否启动
+- `.env` 中的数据库配置是否正确
+- 数据库 `pis_system` 是否已创建
+
+---
+
+## 📁 项目结构
+
+```
+MyIOS/
+├── backend/                 # 后端代码
+│   ├── src/
+│   │   ├── controllers/     # 控制器
+│   │   ├── routes/          # 路由
+│   │   ├── middleware/      # 中间件
+│   │   └── utils/           # 工具函数
+│   ├── config/              # 配置文件
+│   ├── uploads/             # 上传文件目录
+│   └── .env                 # 环境变量
+├── frontend/                # 前端代码
+│   ├── src/
+│   │   ├── views/           # 页面组件
+│   │   ├── components/      # 公共组件
+│   │   ├── api/             # API 接口
+│   │   └── stores/          # Pinia 状态
+│   ├── android/             # Android 项目
+│   └── dist/                # 构建输出
+├── database/
+│   └── init.sql             # 完整数据库初始化脚本
+└── README.md
 ```
 
 ---
 
-## 📝 API 文档
+## 📝 版本历史
 
-启动后端服务后访问 Swagger UI：
-- 📘 http://localhost:9090/api-docs
+### v1.8.2 (当前版本)
+- 新增指派阶段 - 创建事件选择责任部门和部门负责人
+- 截止时间多次修改 - 部门负责人和创建人可修改，需填写原因
+- 操作日志优化 - 显示"完成指派"、"完成计划"等中文标签
+- 部门负责人显示职称
+- 修复安卓端附件上传到 unknown 的问题
+- 修复移动端表单和详情页功能
+- 通知逻辑优化 - 到期提醒每6小时，超期7天额外通知部门负责人
+- 锁定 element-plus 2.5.0 版本
 
----
+### v1.8.1
+- 基础功能版（指派阶段、截止时间修改、操作日志优化）
 
-## 🔄 版本历史
-
-### v1.2.0 (2025-03-27)
-- ✅ PDCA附件功能完善
-- ✅ 事件详情页新字段显示
-- ✅ 数据库表结构升级
-- ✅ 质量事件P阶段变更功能
-- ✅ A阶段原因类型多选
-
-### v1.1.0 (2025-03-20)
-- ✅ 程序文件管理模块
-- ✅ 用户权限分级
-- ✅ 操作日志系统
-
-### v1.0.0 (2025-03-01)
-- ✅ 质量事件管理基础版
-- ✅ PDCA工作流
-- ✅ JWT认证
+### v1.7.9
+- 稳定版本参考
 
 ---
 
-## 📋 待办事项
+## 🤝 贡献
 
-- [ ] 移动端适配
-- [ ] 数据大屏可视化
-- [ ] AI智能分析建议
-- [ ] 多语言支持
+欢迎提交 Issue 和 Pull Request
 
 ---
 
 ## 📄 许可证
 
-MIT License © 2025 MyIOS Team
-
----
-
-## 🤝 贡献指南
-
-欢迎提交 Issue 和 Pull Request！
-
-1. Fork 本项目
-2. 创建分支 (`git checkout -b feature/xxx`)
-3. 提交更改 (`git commit -am 'Add feature'`)
-4. 推送分支 (`git push origin feature/xxx`)
-5. 创建 Pull Request
-
----
-
-## 📞 联系方式
-
-- 📧 邮箱：liyangmoney@example.com
-- 🐛 Issue：[GitHub Issues](https://github.com/liyangmoney/MyIOS/issues)
-- 💬 讨论：[GitHub Discussions](https://github.com/liyangmoney/MyIOS/discussions)
-
----
-
-<p align="center">
-  <b>MyIOS - 让质量管理更简单</b>
-</p>
+MIT License
