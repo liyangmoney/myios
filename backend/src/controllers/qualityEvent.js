@@ -952,19 +952,22 @@ export const updateQualityEvent = async (req, res) => {
     )
     
     // 检测PLAN阶段修改（更新了P阶段字段，但不伴随状态变更）
-    const isPlanUpdate = updatedFields.some(field => 
-      ['rootCause', 'correctiveAction', 'planFiles'].includes(field)
-    ) && !updateData.status
+    const isPlanUpdate = (updateData.rootCause !== undefined || 
+                          updateData.correctiveAction !== undefined || 
+                          updateData.planFiles !== undefined) && 
+                         !updateData.status
     
     // 检测DO阶段修改（不伴随状态变更）
-    const isDoUpdate = updatedFields.some(field => 
-      ['implementation', 'doFiles'].includes(field)
-    ) && !updateData.status
+    const isDoUpdate = (updateData.implementation !== undefined || 
+                        updateData.doFiles !== undefined ||
+                        updateData.currentHandlerId !== undefined) && 
+                       !updateData.status
     
     // 检测CHECK阶段修改（不伴随状态变更）
-    const isCheckUpdate = updatedFields.some(field => 
-      ['verificationResult', 'checkFiles', 'passed'].includes(field)
-    ) && !updateData.status
+    const isCheckUpdate = (updateData.verificationResult !== undefined || 
+                           updateData.checkFiles !== undefined || 
+                           updateData.passed !== undefined) && 
+                          !updateData.status
     
     if (isDescriptionOnly) {
       actionDetail = 'SUPPLEMENT_DESCRIPTION'
