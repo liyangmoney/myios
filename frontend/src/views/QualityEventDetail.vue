@@ -2287,6 +2287,9 @@ const getActionLabel = (action, logData, oldLogData) => {
           return newStatusToOld[data.status]
         }
         if (data.status === 'CLOSED') return '关闭事件'
+        // 如果有status但不匹配任何已知状态，返回更新
+        return '更新'
+      }
       }
       // 检查附件上传
       if (data.planFiles?.length) return 'Plan附件上传'
