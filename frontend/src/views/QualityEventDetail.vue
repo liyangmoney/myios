@@ -2249,6 +2249,9 @@ const getActionLabel = (action, logData, oldLogData) => {
     SUPPLEMENT_DESCRIPTION: '补充描述',
     ASSIGN: '完成指派',
     ASSIGN_UPDATE: '修改指派',
+    PLAN_UPDATE: '修改计划',
+    DO_UPDATE: '修改执行',
+    CHECK_UPDATE: '修改检查',
     UPDATE_DUE_DATE: '截止日期变更'
   }
   if (specialLabels[action]) return specialLabels[action]
@@ -2305,6 +2308,15 @@ const parseLogContent = (log) => {
       case 'ASSIGN_UPDATE':
         // ASSIGN阶段修改责任人和监督人
         return data.actionDetail || '修改了指派信息'
+
+      case 'PLAN_UPDATE':
+        return data.actionDetail || '修改了计划'
+
+      case 'DO_UPDATE':
+        return data.actionDetail || '修改了执行'
+
+      case 'CHECK_UPDATE':
+        return data.actionDetail || '修改了检查'
 
       case 'UPDATE': {
         // 判断更新了哪些字段

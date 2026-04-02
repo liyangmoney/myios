@@ -951,6 +951,19 @@ export const updateQualityEvent = async (req, res) => {
       ['responsibleIds', 'supervisorId'].includes(field)
     )
     
+    // 检测各阶段修改
+    const isPlanUpdate = updatedFields.some(field => 
+      ['rootCause', 'correctiveAction', 'planFiles'].includes(field)
+    ) && !updateData.status
+    
+    const isDoUpdate = updatedFields.some(field => 
+      ['implementation', 'doFiles'].includes(field)
+    ) && !updateData.status
+    
+    const isCheckUpdate = updatedFields.some(field => 
+      ['verificationResult', 'checkFiles', 'passed'].includes(field)
+    ) && !updateData.status
+    
     if (isDescriptionOnly) {
       actionDetail = 'SUPPLEMENT_DESCRIPTION'
       const supplementTime = new Date().toLocaleString('zh-CN')
@@ -1005,6 +1018,30 @@ export const updateQualityEvent = async (req, res) => {
       }
       
       logNewValue.actionDetail = changes.join('；')
+    } else if (isPlanUpdate) {
+      // PLAN阶段修改
+      actionDetail = 'PLAN_UPDATE'
+      const changes = []
+      if (updateData.rootCause !== undefined) changes.push('根本原因')
+      if (updateData.correctiveAction !== undefined) changes.push('纠正措施')
+      if (updateData.planFiles !== undefined) changes.push('附件')
+      logNewValue.actionDetail = changes.length > 0 ? `修改了${changes.join('、')}` : '修改了计划'
+    } else if (isDoUpdate) {
+      // DO阶段修改
+      actionDetail = 'DO_UPDATE'
+      const changes = []
+      if (updateData.implementation !== undefined) changes.push('实施记录')
+      if (updateData.doFiles !== undefined) changes.push('附件')
+      if (updateData.currentHandlerId !== undefined) changes.push('C阶段验证人')
+      logNewValue.actionDetail = changes.length > 0 ? `修改了${changes.join('、')}` : '修改了执行'
+    } else if (isCheckUpdate) {
+      // CHECK阶段修改
+      actionDetail = 'CHECK_UPDATE'
+      const changes = []
+      if (updateData.verificationResult !== undefined) changes.push('验证结果')
+      if (updateData.checkFiles !== undefined) changes.push('附件')
+      if (updateData.passed !== undefined) changes.push('验证结论')
+      logNewValue.actionDetail = changes.length > 0 ? `修改了${changes.join('、')}` : '修改了检查'
     }
     
     // A阶段（进入CLOSED状态）添加详细信息
