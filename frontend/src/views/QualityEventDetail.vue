@@ -2290,7 +2290,6 @@ const getActionLabel = (action, logData, oldLogData) => {
         // 如果有status但不匹配任何已知状态，返回更新
         return '更新'
       }
-      }
       // 检查附件上传
       if (data.planFiles?.length) return 'Plan附件上传'
       if (data.doFiles?.length) return 'Do附件上传'
