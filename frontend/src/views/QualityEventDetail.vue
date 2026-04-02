@@ -2106,13 +2106,16 @@ const savePDCA = async () => {
       data.rootCause = editForm.value.rootCause
       data.correctiveAction = editForm.value.correctiveAction
       data.planFiles = planFiles.value
-      // PLAN阶段修改后，状态变为DO（重新执行）
-      data.status = 'DO'
-      // 当前处理人设为责任人
-      const responsibleIds = parseJsonArray(event.value.responsible_ids)
-      data.currentHandlerId = responsibleIds[0] || null
-      data.nextHandlerId = null
-      data.nextStep = 'DO'
+      // P阶段修改时不传status，让后端识别为PLAN_UPDATE
+      // 只有在首次完成P阶段时才传status=DO
+      if (event.value.status !== 'PLAN') {
+        // 首次完成P阶段，进入DO
+        data.status = 'DO'
+        const responsibleIds = parseJsonArray(event.value.responsible_ids)
+        data.currentHandlerId = responsibleIds[0] || null
+        data.nextHandlerId = null
+        data.nextStep = 'DO'
+      }
     } else if (editType.value === 'DO') {
       data.implementation = editForm.value.implementation
       data.doFiles = doFiles.value
@@ -2249,6 +2252,7 @@ const getActionLabel = (action, logData, oldLogData) => {
     SUPPLEMENT_DESCRIPTION: '补充描述',
     ASSIGN: '完成指派',
     ASSIGN_UPDATE: '修改指派',
+    PLAN_UPDATE: '修改计划',
     DO_UPDATE: '修改执行',
     CHECK_UPDATE: '修改检查',
     UPDATE_DUE_DATE: '截止日期变更'
@@ -2318,6 +2322,9 @@ const parseLogContent = (log) => {
       case 'ASSIGN_UPDATE':
         // ASSIGN阶段修改责任人和监督人
         return data.actionDetail || '修改了指派信息'
+
+      case 'PLAN_UPDATE':
+        return data.actionDetail || '修改了计划'
 
       case 'DO_UPDATE':
         return data.actionDetail || '修改了执行'

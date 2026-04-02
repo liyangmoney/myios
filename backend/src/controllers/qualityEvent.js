@@ -951,6 +951,11 @@ export const updateQualityEvent = async (req, res) => {
       ['responsibleIds', 'supervisorId'].includes(field)
     )
     
+    // 检测PLAN阶段修改（更新了P阶段字段，但不伴随状态变更）
+    const isPlanUpdate = updatedFields.some(field => 
+      ['rootCause', 'correctiveAction', 'planFiles'].includes(field)
+    ) && !updateData.status
+    
     // 检测DO阶段修改（不伴随状态变更）
     const isDoUpdate = updatedFields.some(field => 
       ['implementation', 'doFiles'].includes(field)
@@ -1015,6 +1020,14 @@ export const updateQualityEvent = async (req, res) => {
       }
       
       logNewValue.actionDetail = changes.join('；')
+    } else if (isPlanUpdate) {
+      // PLAN阶段修改（不伴随状态变更）
+      actionDetail = 'PLAN_UPDATE'
+      const changes = []
+      if (updateData.rootCause !== undefined) changes.push('根本原因')
+      if (updateData.correctiveAction !== undefined) changes.push('纠正措施')
+      if (updateData.planFiles !== undefined) changes.push('附件')
+      logNewValue.actionDetail = changes.length > 0 ? `修改了${changes.join('、')}` : '修改了计划'
     } else if (isDoUpdate) {
       // DO阶段修改（不伴随状态变更）
       actionDetail = 'DO_UPDATE'
