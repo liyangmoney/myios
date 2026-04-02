@@ -2302,6 +2302,10 @@ const parseLogContent = (log) => {
       case 'CREATE':
         return `创建了质量事件：${data.title || data.eventNo || ''}`
 
+      case 'ASSIGN_UPDATE':
+        // ASSIGN阶段修改责任人和监督人
+        return data.actionDetail || '修改了指派信息'
+
       case 'UPDATE': {
         // 判断更新了哪些字段
         const changes = []
