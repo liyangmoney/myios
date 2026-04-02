@@ -963,7 +963,8 @@ export const updateQualityEvent = async (req, res) => {
     
     // A阶段（进入CLOSED状态）添加详细信息
     if (updateData.status === 'CLOSED' && oldEvent.status === 'ACT') {
-      logNewValue.actionDetail = '确认关闭事件'
+      actionDetail = 'ACT_CLOSE'
+      logNewValue.actionDetail = '完成处理并关闭事件'
       if (updateData.causeType) {
         logNewValue.causeTypeDetail = `原因类型: ${Array.isArray(updateData.causeType) ? updateData.causeType.join(', ') : updateData.causeType}`
       }

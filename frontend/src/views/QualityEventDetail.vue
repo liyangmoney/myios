@@ -2256,6 +2256,7 @@ const getActionLabel = (action, logData, oldLogData) => {
     DO_UPDATE: '更新执行阶段',
     CHECK_UPDATE: '更新检查阶段',
     ACT_UPDATE: '更新处理阶段',
+    ACT_CLOSE: '完成处理关闭事件',
     UPDATE_DUE_DATE: '截止日期变更'
   }
   if (specialLabels[action]) return specialLabels[action]
@@ -2325,6 +2326,7 @@ const parseLogContent = (log) => {
       case 'DO_UPDATE':
       case 'CHECK_UPDATE':
       case 'ACT_UPDATE':
+      case 'ACT_CLOSE':
         return data.actionDetail || '更新'
 
       case 'UPDATE': {
