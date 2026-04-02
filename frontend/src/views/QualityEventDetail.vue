@@ -2262,7 +2262,7 @@ const getActionLabel = (action, logData, oldLogData) => {
       const oldData = oldLogData ? (typeof oldLogData === 'string' ? JSON.parse(oldLogData) : oldLogData) : {}
       
       // 检查状态变更 - 根据旧状态判断完成哪个阶段
-      if (data.status && data.status !== oldData.status) {
+      if (data.status) {
         // 根据旧状态判断完成了哪个阶段（旧状态→新状态，完成旧阶段）
         const oldStatusLabels = {
           'ASSIGN': '完成指派',      // 从指派→计划，完成指派
@@ -2271,13 +2271,22 @@ const getActionLabel = (action, logData, oldLogData) => {
           'CHECK': '完成检查',       // 从检查→处理，完成检查
           'ACT': '完成处理'          // 从处理→关闭，完成处理
         }
-        // 根据旧状态判断完成的是哪个阶段
+        // 优先根据旧状态判断
         if (oldData.status && oldStatusLabels[oldData.status]) {
           return oldStatusLabels[oldData.status]
         }
-        // 如果没有旧状态或特殊情况下，用新状态判断
+        // 如果没有旧状态，根据新状态反推旧状态
+        const newStatusToOld = {
+          'PLAN': '完成指派',        // PLAN←ASSIGN
+          'DO': '完成计划',          // DO←PLAN
+          'CHECK': '完成执行',       // CHECK←DO
+          'ACT': '完成检查',         // ACT←CHECK
+          'CLOSED': '完成处理'       // CLOSED←ACT
+        }
+        if (newStatusToOld[data.status]) {
+          return newStatusToOld[data.status]
+        }
         if (data.status === 'CLOSED') return '关闭事件'
-        return '更新'
       }
       // 检查附件上传
       if (data.planFiles?.length) return 'Plan附件上传'
