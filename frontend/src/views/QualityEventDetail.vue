@@ -2251,10 +2251,11 @@ const getActionLabel = (action, logData, oldLogData) => {
     COMMENT: '评论',
     SUPPLEMENT_DESCRIPTION: '补充描述',
     ASSIGN: '完成指派',
-    ASSIGN_UPDATE: '修改指派',
-    PLAN_UPDATE: '修改计划',
-    DO_UPDATE: '修改执行',
-    CHECK_UPDATE: '修改检查',
+    ASSIGN_UPDATE: '更新指派阶段',
+    PLAN_UPDATE: '更新计划阶段',
+    DO_UPDATE: '更新执行阶段',
+    CHECK_UPDATE: '更新检查阶段',
+    ACT_UPDATE: '更新处理阶段',
     UPDATE_DUE_DATE: '截止日期变更'
   }
   if (specialLabels[action]) return specialLabels[action]
@@ -2320,17 +2321,11 @@ const parseLogContent = (log) => {
         return `创建了质量事件：${data.title || data.eventNo || ''}`
 
       case 'ASSIGN_UPDATE':
-        // ASSIGN阶段修改责任人和监督人
-        return data.actionDetail || '修改了指派信息'
-
       case 'PLAN_UPDATE':
-        return data.actionDetail || '修改了计划'
-
       case 'DO_UPDATE':
-        return data.actionDetail || '修改了执行'
-
       case 'CHECK_UPDATE':
-        return data.actionDetail || '修改了检查'
+      case 'ACT_UPDATE':
+        return data.actionDetail || '更新'
 
       case 'UPDATE': {
         // 判断更新了哪些字段

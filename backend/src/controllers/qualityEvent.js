@@ -938,115 +938,27 @@ export const updateQualityEvent = async (req, res) => {
     
     // 构建详细的操作日志内容
     const logNewValue = { ...updateData }
+    
+    // 根据更新的字段判断是哪个阶段的更新
     let actionDetail = 'UPDATE'
     
-    // 检测是否是描述补充（只更新了description字段）
-    const updatedFields = Object.keys(updateData)
-    const isDescriptionOnly = updatedFields.length === 2 && 
-                               updatedFields.includes('description') && 
-                               updatedFields.includes('descriptionFiles')
-    
-    // 检测是否是ASSIGN阶段修改（只更新了responsibleIds或supervisorId）
-    const isAssignUpdate = updatedFields.every(field => 
-      ['responsibleIds', 'supervisorId'].includes(field)
-    )
-    
-    // 检测PLAN阶段修改（更新了P阶段字段，但不伴随状态变更）
-    const isPlanUpdate = (updateData.rootCause !== undefined || 
-                          updateData.correctiveAction !== undefined || 
-                          updateData.planFiles !== undefined) && 
-                         !updateData.status
-    
-    // 检测DO阶段修改（不伴随状态变更）
-    const isDoUpdate = (updateData.implementation !== undefined || 
-                        updateData.doFiles !== undefined ||
-                        updateData.currentHandlerId !== undefined) && 
-                       !updateData.status
-    
-    // 检测CHECK阶段修改（不伴随状态变更）
-    const isCheckUpdate = (updateData.verificationResult !== undefined || 
-                           updateData.checkFiles !== undefined || 
-                           updateData.passed !== undefined) && 
-                          !updateData.status
-    
-    if (isDescriptionOnly) {
-      actionDetail = 'SUPPLEMENT_DESCRIPTION'
-      const supplementTime = new Date().toLocaleString('zh-CN')
-      logNewValue.actionDetail = `对事件描述进行了补充`
-      logNewValue.supplementTime = supplementTime
-      logNewValue.supplementContent = updateData.description?.substring(oldEvent.description?.length || 0) || ''
-    } else if (isAssignUpdate) {
-      // ASSIGN阶段修改责任人和监督人
-      actionDetail = 'ASSIGN_UPDATE'
-      
-      // 构建中文变更描述
-      const changes = []
-      
-      if (updateData.responsibleIds) {
-        const oldResponsibleIds = JSON.parse(oldEvent.responsible_ids || '[]')
-        
-        // 查询新旧责任人姓名
-        let oldNames = []
-        let newNames = []
-        
-        if (oldResponsibleIds.length > 0) {
-          const placeholders = oldResponsibleIds.map(() => '?').join(',')
-          const users = await query(`SELECT user_name FROM sys_user WHERE id IN (${placeholders})`, oldResponsibleIds)
-          oldNames = users.map(u => u.user_name)
-        }
-        
-        if (updateData.responsibleIds.length > 0) {
-          const placeholders = updateData.responsibleIds.map(() => '?').join(',')
-          const users = await query(`SELECT user_name FROM sys_user WHERE id IN (${placeholders})`, updateData.responsibleIds)
-          newNames = users.map(u => u.user_name)
-        }
-        
-        changes.push(`责任人: ${oldNames.join(', ') || '无'} → ${newNames.join(', ') || '无'}`)
-      }
-      
-      if (updateData.supervisorId !== undefined) {
-        // 查询新旧监督人姓名
-        let oldName = '未分配'
-        let newName = '未分配'
-        
-        if (oldEvent.supervisor_id) {
-          const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [oldEvent.supervisor_id])
-          if (users.length > 0) oldName = users[0].user_name
-        }
-        
-        if (updateData.supervisorId) {
-          const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [updateData.supervisorId])
-          if (users.length > 0) newName = users[0].user_name
-        }
-        
-        changes.push(`监督/确认人: ${oldName} → ${newName}`)
-      }
-      
-      logNewValue.actionDetail = changes.join('；')
-    } else if (isPlanUpdate) {
-      // PLAN阶段修改（不伴随状态变更）
+    if (updateData.rootCause !== undefined || updateData.correctiveAction !== undefined || updateData.planFiles !== undefined) {
       actionDetail = 'PLAN_UPDATE'
-      const changes = []
-      if (updateData.rootCause !== undefined) changes.push('根本原因')
-      if (updateData.correctiveAction !== undefined) changes.push('纠正措施')
-      if (updateData.planFiles !== undefined) changes.push('附件')
-      logNewValue.actionDetail = changes.length > 0 ? `修改了${changes.join('、')}` : '修改了计划'
-    } else if (isDoUpdate) {
-      // DO阶段修改（不伴随状态变更）
+      logNewValue.actionDetail = '更新计划阶段'
+    } else if (updateData.implementation !== undefined || updateData.doFiles !== undefined) {
       actionDetail = 'DO_UPDATE'
-      const changes = []
-      if (updateData.implementation !== undefined) changes.push('实施记录')
-      if (updateData.doFiles !== undefined) changes.push('附件')
-      if (updateData.currentHandlerId !== undefined) changes.push('C阶段验证人')
-      logNewValue.actionDetail = changes.length > 0 ? `修改了${changes.join('、')}` : '修改了执行'
-    } else if (isCheckUpdate) {
-      // CHECK阶段修改（不伴随状态变更）
+      logNewValue.actionDetail = '更新执行阶段'
+    } else if (updateData.verificationResult !== undefined || updateData.checkFiles !== undefined || updateData.passed !== undefined) {
       actionDetail = 'CHECK_UPDATE'
-      const changes = []
-      if (updateData.verificationResult !== undefined) changes.push('验证结果')
-      if (updateData.checkFiles !== undefined) changes.push('附件')
-      if (updateData.passed !== undefined) changes.push('验证结论')
-      logNewValue.actionDetail = changes.length > 0 ? `修改了${changes.join('、')}` : '修改了检查'
+      logNewValue.actionDetail = '更新检查阶段'
+    } else if (updateData.standardization !== undefined || updateData.causeType !== undefined || updateData.actFiles !== undefined) {
+      actionDetail = 'ACT_UPDATE'
+      logNewValue.actionDetail = '更新处理阶段'
+    } else if (updateData.responsibleIds !== undefined || updateData.supervisorId !== undefined) {
+      actionDetail = 'ASSIGN_UPDATE'
+      logNewValue.actionDetail = '更新指派阶段'
+    } else {
+      logNewValue.actionDetail = '更新'
     }
     
     // A阶段（进入CLOSED状态）添加详细信息
