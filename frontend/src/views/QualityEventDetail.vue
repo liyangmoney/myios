@@ -2248,6 +2248,7 @@ const getActionLabel = (action, logData, oldLogData) => {
     COMMENT: '评论',
     SUPPLEMENT_DESCRIPTION: '补充描述',
     ASSIGN: '完成指派',
+    ASSIGN_UPDATE: '修改指派',
     UPDATE_DUE_DATE: '截止日期变更'
   }
   if (specialLabels[action]) return specialLabels[action]

@@ -960,20 +960,51 @@ export const updateQualityEvent = async (req, res) => {
     } else if (isAssignUpdate) {
       // ASSIGN阶段修改责任人和监督人
       actionDetail = 'ASSIGN_UPDATE'
-      logNewValue.actionDetail = '修改指派信息'
+      
+      // 构建中文变更描述
+      const changes = []
+      
       if (updateData.responsibleIds) {
         const oldResponsibleIds = JSON.parse(oldEvent.responsible_ids || '[]')
-        logNewValue.responsibleChange = {
-          old: oldResponsibleIds,
-          new: updateData.responsibleIds
+        
+        // 查询新旧责任人姓名
+        let oldNames = []
+        let newNames = []
+        
+        if (oldResponsibleIds.length > 0) {
+          const placeholders = oldResponsibleIds.map(() => '?').join(',')
+          const users = await query(`SELECT user_name FROM sys_user WHERE id IN (${placeholders})`, oldResponsibleIds)
+          oldNames = users.map(u => u.user_name)
         }
+        
+        if (updateData.responsibleIds.length > 0) {
+          const placeholders = updateData.responsibleIds.map(() => '?').join(',')
+          const users = await query(`SELECT user_name FROM sys_user WHERE id IN (${placeholders})`, updateData.responsibleIds)
+          newNames = users.map(u => u.user_name)
+        }
+        
+        changes.push(`责任人: ${oldNames.join(', ') || '无'} → ${newNames.join(', ') || '无'}`)
       }
+      
       if (updateData.supervisorId !== undefined) {
-        logNewValue.supervisorChange = {
-          old: oldEvent.supervisor_id,
-          new: updateData.supervisorId
+        // 查询新旧监督人姓名
+        let oldName = '未分配'
+        let newName = '未分配'
+        
+        if (oldEvent.supervisor_id) {
+          const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [oldEvent.supervisor_id])
+          if (users.length > 0) oldName = users[0].user_name
         }
+        
+        if (updateData.supervisorId) {
+          const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [updateData.supervisorId])
+          if (users.length > 0) newName = users[0].user_name
+        }
+        
+        changes.push(`监督/确认人: ${oldName} → ${newName}`)
       }
+      
+      logNewValue.actionDetail = changes.join('；')
     }
     
     // A阶段（进入CLOSED状态）添加详细信息
