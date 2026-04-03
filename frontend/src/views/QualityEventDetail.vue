@@ -2321,22 +2321,23 @@ const parseLogContent = (log) => {
       case 'CREATE':
         return `创建了质量事件：${data.title || data.eventNo || ''}`
 
-      case 'SUPPLEMENT_DESCRIPTION':
-        return data.actionDetail || '补充了事件描述'
-
       case 'ASSIGN_UPDATE': {
-        // 指派阶段修改，显示责任人和监督人变更
+        // 指派阶段修改，显示责任人和监督人变更详情
         const changes = []
-        if (data.responsibleIds !== undefined) {
+        if (data.responsibleIds !== undefined || oldData.responsible_ids) {
           const oldIds = oldData.responsible_ids ? JSON.parse(oldData.responsible_ids) : []
           const newIds = data.responsibleIds || []
+          const oldNames = oldData.responsible_name || oldIds.join(', ') || '未分配'
+          const newNames = data.responsibleName || newIds.join(', ') || '未分配'
           if (JSON.stringify(oldIds) !== JSON.stringify(newIds)) {
-            changes.push('更新了责任人')
+            changes.push(`责任人: ${oldNames} → ${newNames}`)
           }
         }
-        if (data.supervisorId !== undefined) {
+        if (data.supervisorId !== undefined || oldData.supervisor_id) {
+          const oldName = oldData.supervisor_name || '未分配'
+          const newName = data.supervisorName || '未分配'
           if (data.supervisorId !== oldData.supervisor_id) {
-            changes.push('更新了监督/确认人')
+            changes.push(`监督/确认人: ${oldName} → ${newName}`)
           }
         }
         return changes.join('；') || '更新指派阶段'

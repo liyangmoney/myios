@@ -965,7 +965,56 @@ export const updateQualityEvent = async (req, res) => {
       logNewValue.actionDetail = '更新处理阶段'
     } else if (updateData.responsibleIds !== undefined || updateData.supervisorId !== undefined) {
       actionDetail = 'ASSIGN_UPDATE'
-      logNewValue.actionDetail = '更新指派阶段'
+      
+      // 构建责任人和监督人变更详情
+      const changes = []
+      
+      if (updateData.responsibleIds !== undefined) {
+        // 查询新责任人姓名
+        let newNames = []
+        if (updateData.responsibleIds.length > 0) {
+          const placeholders = updateData.responsibleIds.map(() => '?').join(',')
+          const users = await query(`SELECT user_name FROM sys_user WHERE id IN (${placeholders})`, updateData.responsibleIds)
+          newNames = users.map(u => u.user_name)
+        }
+        logNewValue.responsibleName = newNames.join(', ')
+        
+        // 查询旧责任人姓名
+        let oldNames = []
+        if (oldEvent.responsible_ids) {
+          const oldIds = JSON.parse(oldEvent.responsible_ids)
+          if (oldIds.length > 0) {
+            const placeholders = oldIds.map(() => '?').join(',')
+            const users = await query(`SELECT user_name FROM sys_user WHERE id IN (${placeholders})`, oldIds)
+            oldNames = users.map(u => u.user_name)
+          }
+        }
+        logNewValue.oldResponsibleName = oldNames.join(', ') || '未分配'
+        
+        changes.push(`责任人: ${logNewValue.oldResponsibleName} → ${logNewValue.responsibleName || '未分配'}`)
+      }
+      
+      if (updateData.supervisorId !== undefined) {
+        // 查询新监督人姓名
+        let newName = '未分配'
+        if (updateData.supervisorId) {
+          const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [updateData.supervisorId])
+          if (users.length > 0) newName = users[0].user_name
+        }
+        logNewValue.supervisorName = newName
+        
+        // 查询旧监督人姓名
+        let oldName = '未分配'
+        if (oldEvent.supervisor_id) {
+          const users = await query('SELECT user_name FROM sys_user WHERE id = ?', [oldEvent.supervisor_id])
+          if (users.length > 0) oldName = users[0].user_name
+        }
+        logNewValue.oldSupervisorName = oldName
+        
+        changes.push(`监督/确认人: ${oldName} → ${newName}`)
+      }
+      
+      logNewValue.actionDetail = changes.join('；')
     } else {
       logNewValue.actionDetail = '更新'
     }
