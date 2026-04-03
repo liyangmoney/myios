@@ -3164,15 +3164,19 @@ const parseMultiSelect = (value) => {
   return []
 }
 
-// 解析JSON数组字段
+// 解析JSON数组字段（支持JSON数组或逗号分隔字符串）
 const parseJsonArray = (value) => {
   if (!value) return []
   if (Array.isArray(value)) return value
   if (typeof value === 'string') {
+    // 尝试解析JSON数组
     try {
       const parsed = JSON.parse(value)
       if (Array.isArray(parsed)) return parsed
-    } catch {}
+    } catch {
+      // 不是JSON，尝试按逗号分割
+      return value.split(',').map(v => v.trim()).filter(v => v)
+    }
   }
   return []
 }
