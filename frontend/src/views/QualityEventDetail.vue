@@ -1973,11 +1973,17 @@ const canEditDo = computed(() => {
 })
 
 // CHECK阶段：当前处理人（验证人）可以编辑
-// 条件：1.当前阶段是CHECK  2.上一阶段是CHECK（从CHECK回退到P/D，P/D处理后又回到CHECK）
+// 条件：1.当前阶段是CHECK  或者 2.上一阶段是CHECK（从CHECK回退到P/D，P/D处理后又回到当前阶段）
 const canEditCheck = computed(() => {
   const isCurrentHandler = event.value?.current_handler_id === currentUserId.value
   const isCheckStatus = event.value?.status === 'CHECK'
-  return isCurrentHandler && isCheckStatus
+  
+  // 检查上一阶段是否是CHECK（通过检查是否有verified_at记录，且没有从P/D重新进入CHECK）
+  // 如果verified_at存在，说明曾经进入过CHECK阶段
+  const wasInCheck = event.value?.verified_at !== null
+  
+  // 当前是CHECK阶段，或者曾经进入过CHECK阶段（上一阶段是CHECK）
+  return isCurrentHandler && (isCheckStatus || wasInCheck)
 })
 
 // ACT阶段：监督/确认人可以编辑（关闭前）
