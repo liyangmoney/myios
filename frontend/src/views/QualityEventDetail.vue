@@ -3092,6 +3092,12 @@ const getFileUrl = (url) => {
   
   // 原生平台需要使用完整URL
   if (Capacitor.isNativePlatform()) {
+    // 从 apiConfig 获取基础 URL
+    const baseURL = apiConfig?.baseURL || '/api'
+    if (baseURL.startsWith('http')) {
+      const serverUrl = baseURL.replace('/api', '')
+      return `${serverUrl}${downloadPath}`
+    }
     return `http://myjghy.myds.me:9090${downloadPath}`
   }
   

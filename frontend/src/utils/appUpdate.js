@@ -3,10 +3,19 @@ import { Capacitor } from '@capacitor/core'
 import { Dialog } from '@capacitor/dialog'
 import { Toast } from '@capacitor/toast'
 import { Filesystem, Directory } from '@capacitor/filesystem'
+import apiConfig from '@/api/config'
 
 // 当前版本号（每次发版时由 GitHub Actions 自动同步）
-const CURRENT_VERSION = '1.7.8'
-const UPDATE_SERVER_URL = 'http://myjghy.myds.me:9090'
+const CURRENT_VERSION = '1.8.6'
+
+// 获取更新服务器 URL
+const getUpdateServerUrl = () => {
+  const baseURL = apiConfig?.baseURL || '/api'
+  if (baseURL.startsWith('http')) {
+    return baseURL.replace('/api', '')
+  }
+  return 'http://myjghy.myds.me:9090'
+}
 
 /**
  * 检查 APP 版本并自动下载更新
@@ -17,7 +26,8 @@ export const checkAndUpdateApp = async () => {
   try {
     console.log('[Update] 检查版本...')
     
-    const response = await fetch(`${UPDATE_SERVER_URL}/api/app/version`)
+    const updateServerUrl = getUpdateServerUrl()
+    const response = await fetch(`${updateServerUrl}/api/app/version`)
     if (!response.ok) return
     
     const data = await response.json()

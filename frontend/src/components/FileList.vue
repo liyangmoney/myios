@@ -188,7 +188,14 @@ const getFileUrl = (url) => {
   
   // 安卓端需要完整 URL
   if (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.()) {
-    // 使用后端默认地址
+    // 从 apiConfig 获取基础 URL，如果没有则使用默认地址
+    const baseURL = apiConfig?.baseURL || '/api'
+    if (baseURL.startsWith('http')) {
+      // 如果 baseURL 是完整 URL（如 http://xxx:9090/api），提取服务器地址
+      const serverUrl = baseURL.replace('/api', '')
+      return `${serverUrl}${downloadPath}`
+    }
+    // 如果 baseURL 是相对路径，使用默认服务器地址
     return `http://myjghy.myds.me:9090${downloadPath}`
   }
   
