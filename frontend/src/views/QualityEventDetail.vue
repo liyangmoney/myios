@@ -1974,8 +1974,11 @@ const canEditDo = computed(() => {
 
 // CHECK阶段：当前处理人（验证人）可以修改（刚编辑完，未流转前）
 const canEditCheck = computed(() => {
-  return event.value?.current_handler_id === currentUserId.value && 
-         event.value?.status === 'CHECK'
+  // 只有状态为CHECK且没有verified_at记录时才能修改（刚编辑完未流转）
+  const isCurrentHandler = event.value?.current_handler_id === currentUserId.value
+  const isCheckStatus = event.value?.status === 'CHECK'
+  const notVerified = !event.value?.verified_at // 没有验证过（刚编辑完）
+  return isCurrentHandler && isCheckStatus && notVerified
 })
 
 // ACT阶段：不可修改
