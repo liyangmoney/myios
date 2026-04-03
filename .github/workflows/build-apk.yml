@@ -203,10 +203,16 @@ jobs:
         cd ..
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
+        # 先暂存任何未提交的更改
+        git stash || echo "Nothing to stash"
+        # 拉取最新代码
+        git pull --rebase https://liyangmoney:${GH_TOKEN}@github.com/liyangmoney/MyIOS.git main || echo "Pull failed, continuing..."
+        # 恢复暂存的更改
+        git stash pop || echo "Nothing to pop"
+        # 添加并提交 APK
         git add backend/app/pis-latest.apk
         git diff --staged --quiet || git commit -m "chore: update APK [skip ci]"
-        # 先拉取最新代码，避免推送冲突
-        git pull --rebase https://liyangmoney:${GH_TOKEN}@github.com/liyangmoney/MyIOS.git main || echo "Pull failed, continuing..."
+        # 推送
         git push https://liyangmoney:${GH_TOKEN}@github.com/liyangmoney/MyIOS.git main
 
   notify:
