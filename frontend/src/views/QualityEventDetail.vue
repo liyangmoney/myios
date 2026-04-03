@@ -1981,9 +1981,10 @@ const canEditCheck = computed(() => {
   return isCurrentHandler && isCheckStatus && notVerified
 })
 
-// ACT阶段：不可修改
+// ACT阶段：监督/确认人可以编辑（关闭前）
 const canEditAct = computed(() => {
-  return false
+  return event.value?.supervisor_id === currentUserId.value && 
+         event.value?.status === 'ACT'
 })
 
 // 是否可以评论（所有人都可以评论）
