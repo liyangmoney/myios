@@ -2160,13 +2160,25 @@ const savePDCA = async () => {
 
   saving.value = true
   try {
-    // 指派阶段：使用update API，只更新责任人和监督人，不改变阶段
+    // 指派阶段：使用update API，更新责任人和监督人
+    // 第一次指派（责任人从无到有）：状态变为PLAN
+    // 后续修改指派：只更新信息，不改变状态
     if (editType.value === 'ASSIGN') {
-      await qualityEventApi.update(event.value.id, {
+      const hasExistingResponsible = event.value.responsible_ids && 
+        JSON.parse(event.value.responsible_ids || '[]').length > 0
+      
+      const updateData = {
         responsibleIds: editForm.value.responsibleIds,
         supervisorId: editForm.value.supervisorId
-      })
-      ElMessage.success('指派信息更新成功')
+      }
+      
+      // 第一次指派，状态变为PLAN
+      if (!hasExistingResponsible) {
+        updateData.status = 'PLAN'
+      }
+      
+      await qualityEventApi.update(event.value.id, updateData)
+      ElMessage.success(hasExistingResponsible ? '指派信息更新成功' : '指派成功，事件进入计划阶段')
       editDialogVisible.value = false
       fetchEventDetail()
       return
