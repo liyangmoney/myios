@@ -2157,16 +2157,13 @@ const savePDCA = async () => {
       data.rootCause = editForm.value.rootCause
       data.correctiveAction = editForm.value.correctiveAction
       data.planFiles = planFiles.value
-      // P阶段修改时不传status，让后端识别为PLAN_UPDATE
-      // 只有在首次完成P阶段时才传status=DO
-      if (event.value.status !== 'PLAN') {
-        // 首次完成P阶段，进入DO
-        data.status = 'DO'
-        const responsibleIds = parseJsonArray(event.value.responsible_ids)
-        data.currentHandlerId = responsibleIds[0] || null
-        data.nextHandlerId = null
-        data.nextStep = 'DO'
-      }
+      // PLAN阶段保存后，状态变为DO（重新执行）
+      data.status = 'DO'
+      // 当前处理人设为责任人
+      const responsibleIds = parseJsonArray(event.value.responsible_ids)
+      data.currentHandlerId = responsibleIds[0] || null
+      data.nextHandlerId = null
+      data.nextStep = 'DO'
     } else if (editType.value === 'DO') {
       data.implementation = editForm.value.implementation
       data.doFiles = doFiles.value
