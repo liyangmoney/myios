@@ -326,7 +326,7 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="产品类型" prop="productType">
-                <el-select v-model="formData.productType" placeholder="请选择" style="width: 100%">
+                <el-select v-model="formData.productType" multiple placeholder="请选择（可多选）" style="width: 100%">
                   <el-option v-for="opt in productTypeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
                 </el-select>
               </el-form-item>
