@@ -1972,15 +1972,12 @@ const canEditDo = computed(() => {
   return isResponsible && (event.value?.status === 'DO' || event.value?.status === 'CHECK')
 })
 
-// CHECK阶段：当前处理人（验证人）可以修改（刚编辑完，未流转前）
+// CHECK阶段：当前处理人（验证人）可以编辑
+// 条件：1.当前阶段是CHECK  2.上一阶段是CHECK（从CHECK回退到P/D，P/D处理后又回到CHECK）
 const canEditCheck = computed(() => {
   const isCurrentHandler = event.value?.current_handler_id === currentUserId.value
   const isCheckStatus = event.value?.status === 'CHECK'
-  // 检查是否是从C阶段流转出去的（通过检查verified_at和do_filled_at）
-  // 如果do_filled_at在verified_at之后，说明已经回退到D并重新执行过，不能再修改C阶段
-  const hasBeenRolledBack = event.value?.do_filled_at && event.value?.verified_at && 
-                            new Date(event.value.do_filled_at) > new Date(event.value.verified_at)
-  return isCurrentHandler && isCheckStatus && !hasBeenRolledBack
+  return isCurrentHandler && isCheckStatus
 })
 
 // ACT阶段：监督/确认人可以编辑（关闭前）
