@@ -1974,11 +1974,13 @@ const canEditDo = computed(() => {
 
 // CHECK阶段：当前处理人（验证人）可以修改（刚编辑完，未流转前）
 const canEditCheck = computed(() => {
-  // 只有状态为CHECK且没有verified_at记录时才能修改（刚编辑完未流转）
   const isCurrentHandler = event.value?.current_handler_id === currentUserId.value
   const isCheckStatus = event.value?.status === 'CHECK'
-  const notVerified = !event.value?.verified_at // 没有验证过（刚编辑完）
-  return isCurrentHandler && isCheckStatus && notVerified
+  // 检查是否是从C阶段流转出去的（通过检查verified_at和do_filled_at）
+  // 如果do_filled_at在verified_at之后，说明已经回退到D并重新执行过，不能再修改C阶段
+  const hasBeenRolledBack = event.value?.do_filled_at && event.value?.verified_at && 
+                            new Date(event.value.do_filled_at) > new Date(event.value.verified_at)
+  return isCurrentHandler && isCheckStatus && !hasBeenRolledBack
 })
 
 // ACT阶段：监督/确认人可以编辑（关闭前）
