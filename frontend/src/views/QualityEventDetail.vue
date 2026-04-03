@@ -692,6 +692,57 @@
               <template v-else-if="['ASSIGN', 'UPDATE_DUE_DATE'].includes(log.action)">
                 {{ log.new_value }}
               </template>
+              <!-- PDCA阶段更新（PLAN_UPDATE/DO_UPDATE/CHECK_UPDATE/ACT_UPDATE） - 显示内容和附件 -->
+              <template v-else-if="['PLAN_UPDATE', 'DO_UPDATE', 'CHECK_UPDATE', 'ACT_UPDATE', 'ACT_CLOSE'].includes(log.action) && log.new_value && isJson(log.new_value)">
+                <template v-for="(data, idx) in [JSON.parse(log.new_value)]" :key="idx">
+                  <!-- 显示内容 -->
+                  <div>{{ parseLogContent(log) }}</div>
+                  <!-- Plan附件 -->
+                  <template v-if="data.planFiles?.length > 0">
+                    <div>上传了 {{ data.planFiles.length }} 个 Plan 阶段附件:</div>
+                    <div class="log-attachments">
+                      <div v-for="(file, fidx) in data.planFiles" :key="fidx" class="log-attachment-item">
+                        <el-link @click="handleFileClick(getFileUrl(file.url), file.name)" type="primary">
+                          <el-icon><Document /></el-icon> {{ file.name }}
+                        </el-link>
+                      </div>
+                    </div>
+                  </template>
+                  <!-- Do附件 -->
+                  <template v-if="data.doFiles?.length > 0">
+                    <div>上传了 {{ data.doFiles.length }} 个 Do 阶段附件:</div>
+                    <div class="log-attachments">
+                      <div v-for="(file, fidx) in data.doFiles" :key="fidx" class="log-attachment-item">
+                        <el-link @click="handleFileClick(getFileUrl(file.url), file.name)" type="primary">
+                          <el-icon><Document /></el-icon> {{ file.name }}
+                        </el-link>
+                      </div>
+                    </div>
+                  </template>
+                  <!-- Check附件 -->
+                  <template v-if="data.checkFiles?.length > 0">
+                    <div>上传了 {{ data.checkFiles.length }} 个 Check 阶段附件:</div>
+                    <div class="log-attachments">
+                      <div v-for="(file, fidx) in data.checkFiles" :key="fidx" class="log-attachment-item">
+                        <el-link @click="handleFileClick(getFileUrl(file.url), file.name)" type="primary">
+                          <el-icon><Document /></el-icon> {{ file.name }}
+                        </el-link>
+                      </div>
+                    </div>
+                  </template>
+                  <!-- Act附件 -->
+                  <template v-if="data.actFiles?.length > 0">
+                    <div>上传了 {{ data.actFiles.length }} 个 Act 阶段附件:</div>
+                    <div class="log-attachments">
+                      <div v-for="(file, fidx) in data.actFiles" :key="fidx" class="log-attachment-item">
+                        <el-link @click="handleFileClick(getFileUrl(file.url), file.name)" type="primary">
+                          <el-icon><Document /></el-icon> {{ file.name }}
+                        </el-link>
+                      </div>
+                    </div>
+                  </template>
+                </template>
+              </template>
               <!-- PDCA阶段附件上传（检测planFiles/doFiles/checkFiles/actFiles） -->
               <template v-else-if="log.action === 'UPDATE' && log.new_value && isJson(log.new_value)">
                 <template v-for="(data, idx) in [JSON.parse(log.new_value)]" :key="idx">
