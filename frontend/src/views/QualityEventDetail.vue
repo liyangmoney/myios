@@ -2160,13 +2160,13 @@ const savePDCA = async () => {
 
   saving.value = true
   try {
-    // 指派阶段：使用assign API，更新责任人和监督人，并将状态改为PLAN
+    // 指派阶段：使用update API，只更新责任人和监督人，不改变阶段
     if (editType.value === 'ASSIGN') {
-      await qualityEventApi.assign(event.value.id, {
+      await qualityEventApi.update(event.value.id, {
         responsibleIds: editForm.value.responsibleIds,
         supervisorId: editForm.value.supervisorId
       })
-      ElMessage.success('指派成功，事件进入计划阶段')
+      ElMessage.success('指派信息更新成功')
       editDialogVisible.value = false
       fetchEventDetail()
       return
