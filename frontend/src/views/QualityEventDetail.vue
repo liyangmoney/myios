@@ -962,6 +962,8 @@
               <el-option label="偶发事件" value="偶发事件" />
               <el-option label="验证不足" value="验证不足" />
               <el-option label="测试不全" value="测试不全" />
+              <el-option label="其他" value="其他" />
+              <el-option label="偶发" value="偶发" />
             </el-select>
           </el-form-item>
 
