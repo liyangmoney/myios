@@ -7,44 +7,66 @@
       </el-button>
     </div>
 
-    <!-- 统计卡片 -->
+    <!-- 统计卡片 - 六个阶段 -->
     <div class="stats-grid">
       <el-card class="stat-card">
         <div class="stat-item">
-          <div class="stat-icon" style="background: #F56C6C">
-            <el-icon size="28"><Warning /></el-icon>
+          <div class="stat-icon" style="background: #909399">
+            <el-icon size="28"><User /></el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-value">{{ stats.new || 0 }}</div>
-            <div class="stat-label">待处理</div>
+            <div class="stat-value">{{ stats.assign || 0 }}</div>
+            <div class="stat-label">指派中</div>
           </div>
         </div>
       </el-card>
       <el-card class="stat-card">
         <div class="stat-item">
           <div class="stat-icon" style="background: #E6A23C">
-            <el-icon size="28"><Clock /></el-icon>
+            <el-icon size="28"><Document /></el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-value">{{ stats.processing || 0 }}</div>
-            <div class="stat-label">处理中</div>
+            <div class="stat-value">{{ stats.plan || 0 }}</div>
+            <div class="stat-label">计划中</div>
           </div>
         </div>
       </el-card>
       <el-card class="stat-card">
         <div class="stat-item">
           <div class="stat-icon" style="background: #409EFF">
-            <el-icon size="28"><View /></el-icon>
+            <el-icon size="28"><Loading /></el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-value">{{ stats.checking || 0 }}</div>
-            <div class="stat-label">验证中</div>
+            <div class="stat-value">{{ stats.do || 0 }}</div>
+            <div class="stat-label">执行中</div>
           </div>
         </div>
       </el-card>
       <el-card class="stat-card">
         <div class="stat-item">
           <div class="stat-icon" style="background: #67C23A">
+            <el-icon size="28"><View /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.check || 0 }}</div>
+            <div class="stat-label">验证中</div>
+          </div>
+        </div>
+      </el-card>
+      <el-card class="stat-card">
+        <div class="stat-item">
+          <div class="stat-icon" style="background: #F56C6C">
+            <el-icon size="28"><Tools /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.act || 0 }}</div>
+            <div class="stat-label">处理中</div>
+          </div>
+        </div>
+      </el-card>
+      <el-card class="stat-card">
+        <div class="stat-item">
+          <div class="stat-icon" style="background: #606266">
             <el-icon size="28"><CircleCheck /></el-icon>
           </div>
           <div class="stat-info">
@@ -592,7 +614,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { qualityEventApi, userApi } from '@/api'
 import { useUserStore } from '@/store/user'
-import { Paperclip, Document } from '@element-plus/icons-vue'
+import { Paperclip, Document, User, Loading, Tools } from '@element-plus/icons-vue'
 import { smartUpload } from '@/utils/chunkUpload'
 import apiConfig from '@/api/config'
 
@@ -642,9 +664,11 @@ onMounted(() => {
 
 // 统计数据
 const stats = ref({
-  new: 0,
-  processing: 0,
-  checking: 0,
+  assign: 0,
+  plan: 0,
+  do: 0,
+  check: 0,
+  act: 0,
   closed: 0
 })
 
@@ -860,10 +884,11 @@ const fetchStatistics = async () => {
     if (res.code === 200) {
       const statusStats = res.data.byStatus
       stats.value = {
-        new: statusStats.find(s => s.status === 'NEW')?.count || 0,
-        processing: (statusStats.find(s => s.status === 'DO')?.count || 0) +
-                   (statusStats.find(s => s.status === 'ACT')?.count || 0),
-        checking: statusStats.find(s => s.status === 'CHECK')?.count || 0,
+        assign: statusStats.find(s => s.status === 'ASSIGN')?.count || 0,
+        plan: statusStats.find(s => s.status === 'PLAN')?.count || 0,
+        do: statusStats.find(s => s.status === 'DO')?.count || 0,
+        check: statusStats.find(s => s.status === 'CHECK')?.count || 0,
+        act: statusStats.find(s => s.status === 'ACT')?.count || 0,
         closed: statusStats.find(s => s.status === 'CLOSED')?.count || 0
       }
     }
@@ -1337,7 +1362,7 @@ onMounted(() => {
 /* 移动端适配 */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 10px;
   margin-bottom: 20px;
 }
@@ -1397,9 +1422,9 @@ onMounted(() => {
     font-size: 18px;
   }
 
-  /* 统计卡片网格 */
+  /* 统计卡片网格 - 移动端3列 */
   .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 8px;
     margin-bottom: 15px;
   }
