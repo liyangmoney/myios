@@ -1989,12 +1989,12 @@ const canEditDo = computed(() => {
 })
 
 // CHECK阶段：当前处理人（验证人）可以编辑
-// 条件：上一阶段是CHECK（从CHECK流转到当前阶段，无论当前是P/D/A/CHECK）
+// 条件：当前状态是CHECK，或者next_step是CHECK（说明上一阶段是CHECK）
 const canEditCheck = computed(() => {
   const isCurrentHandler = event.value?.current_handler_id === currentUserId.value
-  // 只要曾经进入过CHECK阶段（有verified_at记录），就可以修改CHECK阶段
-  const wasInCheck = event.value?.verified_at !== null && event.value?.verified_at !== undefined
-  return isCurrentHandler && wasInCheck
+  const isCheckStatus = event.value?.status === 'CHECK'
+  const isNextStepCheck = event.value?.next_step === 'CHECK'
+  return isCurrentHandler && (isCheckStatus || isNextStepCheck)
 })
 
 // ACT阶段：监督/确认人可以编辑（关闭前）
