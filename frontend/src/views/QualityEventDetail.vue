@@ -2345,56 +2345,60 @@ const parseLogContent = (log) => {
 
       case 'PLAN_UPDATE': {
         const changes = []
-        // 检查是否有状态变更（PLAN阶段修改不应该有状态变更，但首次完成会有）
-        if (data.status && oldData.status && data.status !== oldData.status) {
-          changes.push(`阶段变更: ${getStatusLabel(oldData.status)} → ${getStatusLabel(data.status)}`)
-        }
         if (data.rootCause !== undefined) changes.push(`根本原因: ${data.rootCause}`)
         if (data.correctiveAction !== undefined) changes.push(`纠正措施: ${data.correctiveAction}`)
         if (data.planFiles?.length) changes.push(`附件: ${data.planFiles.length}个`)
+        // 阶段变更放到最后
+        if (data.status && oldData.status && data.status !== oldData.status) {
+          changes.push(`阶段变更: ${getStatusLabel(oldData.status)} → ${getStatusLabel(data.status)}`)
+        }
         return changes.join('；') || '更新计划阶段'
       }
 
       case 'DO_UPDATE': {
         const changes = []
-        if (data.status && oldData.status && data.status !== oldData.status) {
-          changes.push(`阶段变更: ${getStatusLabel(oldData.status)} → ${getStatusLabel(data.status)}`)
-        }
         if (data.implementation !== undefined) changes.push(`实施记录: ${data.implementation}`)
         if (data.doFiles?.length) changes.push(`附件: ${data.doFiles.length}个`)
         if (data.currentHandlerId !== undefined) changes.push('更新了C阶段验证人')
+        // 阶段变更放到最后
+        if (data.status && oldData.status && data.status !== oldData.status) {
+          changes.push(`阶段变更: ${getStatusLabel(oldData.status)} → ${getStatusLabel(data.status)}`)
+        }
         return changes.join('；') || '更新执行阶段'
       }
 
       case 'CHECK_UPDATE': {
         const changes = []
-        if (data.status && oldData.status && data.status !== oldData.status) {
-          changes.push(`阶段变更: ${getStatusLabel(oldData.status)} → ${getStatusLabel(data.status)}`)
-        }
         if (data.verificationResult !== undefined) changes.push(`验证结果: ${data.verificationResult}`)
         if (data.checkFiles?.length) changes.push(`附件: ${data.checkFiles.length}个`)
         if (data.passed !== undefined) changes.push(data.passed ? '验证结论: 通过' : '验证结论: 不通过')
+        // 阶段变更放到最后
+        if (data.status && oldData.status && data.status !== oldData.status) {
+          changes.push(`阶段变更: ${getStatusLabel(oldData.status)} → ${getStatusLabel(data.status)}`)
+        }
         return changes.join('；') || '更新检查阶段'
       }
 
       case 'ACT_UPDATE': {
         const changes = []
-        if (data.status && oldData.status && data.status !== oldData.status) {
-          changes.push(`阶段变更: ${getStatusLabel(oldData.status)} → ${getStatusLabel(data.status)}`)
-        }
         if (data.standardization !== undefined) changes.push(`标准化措施: ${data.standardization}`)
         if (data.causeType?.length) changes.push(`原因类型: ${data.causeType.join(', ')}`)
         if (data.actFiles?.length) changes.push(`附件: ${data.actFiles.length}个`)
+        // 阶段变更放到最后
+        if (data.status && oldData.status && data.status !== oldData.status) {
+          changes.push(`阶段变更: ${getStatusLabel(oldData.status)} → ${getStatusLabel(data.status)}`)
+        }
         return changes.join('；') || '更新处理阶段'
       }
 
       case 'ACT_CLOSE': {
         const changes = []
+        if (data.standardization !== undefined) changes.push(`标准化措施: ${data.standardization}`)
+        if (data.causeType?.length) changes.push(`原因类型: ${data.causeType.join(', ')}`)
+        // 阶段变更放到最后
         if (data.status && oldData.status && data.status !== oldData.status) {
           changes.push(`阶段变更: ${getStatusLabel(oldData.status)} → ${getStatusLabel(data.status)}`)
         }
-        if (data.standardization !== undefined) changes.push(`标准化措施: ${data.standardization}`)
-        if (data.causeType?.length) changes.push(`原因类型: ${data.causeType.join(', ')}`)
         return changes.join('；') || '完成处理并关闭事件'
       }
 
