@@ -46,7 +46,12 @@
             {{ event.product_stage }}
           </el-descriptions-item>
           <el-descriptions-item label="产品类型">
-            {{ event.product_type }}
+            <div v-if="parseJsonArray(event.product_type).length > 0">
+              <el-tag v-for="(type, idx) in parseJsonArray(event.product_type)" :key="idx" size="small" class="mr-2" type="info">
+                {{ type }}
+              </el-tag>
+            </div>
+            <span v-else class="text-gray">-</span>
           </el-descriptions-item>
           <el-descriptions-item label="项目号/生产任务单号">
             {{ event.project_no || '-' }}
@@ -98,7 +103,7 @@
             </div>
             <span v-else class="text-gray">-</span>
           </el-descriptions-item>
-          <el-descriptions-item label="监督/确认人">
+          <el-descriptions-item label="事件总结人">
             {{ event.supervisor_name || '未分配' }}
           </el-descriptions-item>
           <el-descriptions-item label="责任人">
@@ -174,7 +179,12 @@
           </div>
           <div class="mobile-info-item">
             <span class="mobile-info-label">产品类型</span>
-            <span class="mobile-info-value">{{ event.product_type || '-' }}</span>
+            <div v-if="parseJsonArray(event.product_type).length > 0">
+              <el-tag v-for="(type, idx) in parseJsonArray(event.product_type)" :key="idx" size="small" class="mr-2" type="info">
+                {{ type }}
+              </el-tag>
+            </div>
+            <span v-else class="text-gray">-</span>
           </div>
         </div>
         <div class="mobile-info-grid">
@@ -226,7 +236,7 @@
         </div>
         <div class="mobile-info-grid">
           <div class="mobile-info-item">
-            <span class="mobile-info-label">监督/确认人</span>
+            <span class="mobile-info-label">事件总结人</span>
             <span class="mobile-info-value">{{ event.supervisor_name || '未分配' }}</span>
           </div>
           <div class="mobile-info-item">
@@ -371,7 +381,7 @@
             <el-descriptions-item label="责任人">
               {{ event.responsible_name || '待指派' }}
             </el-descriptions-item>
-            <el-descriptions-item label="监督/确认人">
+            <el-descriptions-item label="事件总结人">
               {{ event.supervisor_name || '待指派' }}
             </el-descriptions-item>
           </el-descriptions>
@@ -821,11 +831,11 @@
             />
           </el-form-item>
 
-          <el-form-item label="监督/确认人" prop="supervisorId">
+          <el-form-item label="事件总结人" prop="supervisorId">
             <el-select-v2
               v-model="editForm.supervisorId"
               :options="userOptions"
-              placeholder="请选择监督/确认人"
+              placeholder="请选择事件总结人"
               style="width: 100%"
               clearable
               filterable
@@ -946,10 +956,12 @@
               <el-option label="设计考虑不周" value="设计考虑不周" />
               <el-option label="培训不足" value="培训不足" />
               <el-option label="人员能力不足" value="人员能力不足" />
+              <el-option label="人员粗心" value="人员粗心" />
               <el-option label="流程不全" value="流程不全" />
               <el-option label="供方物料原因" value="供方物料原因" />
               <el-option label="偶发事件" value="偶发事件" />
               <el-option label="验证不足" value="验证不足" />
+              <el-option label="测试不全" value="测试不全" />
             </el-select>
           </el-form-item>
 
@@ -1038,7 +1050,7 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="产品类型" prop="productType">
-                <el-select v-model="changeForm.productType" placeholder="请选择" style="width: 100%">
+                <el-select v-model="changeForm.productType" multiple placeholder="请选择（可多选）" style="width: 100%">
                   <el-option label="地铁机器人" value="地铁机器人" />
                   <el-option label="国铁巡检仪" value="国铁巡检仪" />
                   <el-option label="国铁功能模块-扣件" value="国铁功能模块-扣件" />
@@ -1060,9 +1072,11 @@
             <el-col :span="12">
               <el-form-item label="问题类型" prop="problemType">
                 <el-select v-model="changeForm.problemType" placeholder="请选择" style="width: 100%">
-                  <el-option label="软件算法" value="软件算法" />
+                  <el-option label="软件" value="软件" />
+                  <el-option label="算法" value="算法" />
                   <el-option label="嵌入式硬件" value="嵌入式硬件" />
-                  <el-option label="机械电气" value="机械电气" />
+                  <el-option label="机械" value="机械" />
+                  <el-option label="电气" value="电气" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -1194,7 +1208,7 @@
           </el-form-item>
 
           <el-form-item label="产品类型" prop="productType">
-            <el-select v-model="changeForm.productType" placeholder="请选择" style="width: 100%">
+            <el-select v-model="changeForm.productType" multiple placeholder="请选择（可多选）" style="width: 100%">
               <el-option label="地铁机器人" value="地铁机器人" />
               <el-option label="国铁巡检仪" value="国铁巡检仪" />
               <el-option label="国铁功能模块-扣件" value="国铁功能模块-扣件" />
@@ -1214,9 +1228,11 @@
 
           <el-form-item label="问题类型" prop="problemType">
             <el-select v-model="changeForm.problemType" placeholder="请选择" style="width: 100%">
-              <el-option label="软件算法" value="软件算法" />
+              <el-option label="软件" value="软件" />
+              <el-option label="算法" value="算法" />
               <el-option label="嵌入式硬件" value="嵌入式硬件" />
-              <el-option label="机械电气" value="机械电气" />
+              <el-option label="机械" value="机械" />
+              <el-option label="电气" value="电气" />
             </el-select>
           </el-form-item>
 
@@ -1496,7 +1512,7 @@ const changeDialogVisible = ref(false)
 const changeForm = ref({
   title: '',
   productStage: '',
-  productType: '',
+  productType: [],  // 改为多选数组
   projectNo: '',
   customer: '',
   keywords: '',
@@ -1725,7 +1741,7 @@ const openChangeDialog = () => {
   changeForm.value = {
     title: event.value.title || '',
     productStage: event.value.product_stage || '',
-    productType: event.value.product_type || '',
+    productType: parseJsonArray(event.value.product_type),  // 改为解析数组
     projectNo: event.value.project_no || '',
     customer: event.value.customer || '',
     keywords: event.value.keywords || '',
@@ -1792,7 +1808,7 @@ const submitChangeEvent = async () => {
     const data = {
       title: changeForm.value.title,
       productStage: changeForm.value.productStage,
-      productType: changeForm.value.productType,
+      productType: Array.isArray(changeForm.value.productType) ? changeForm.value.productType.join(',') : changeForm.value.productType,
       projectNo: changeForm.value.projectNo,
       customer: changeForm.value.customer,
       keywords: changeForm.value.keywords,

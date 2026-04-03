@@ -436,7 +436,7 @@
           </el-form-item>
 
           <el-form-item label="产品类型" prop="productType">
-            <el-select v-model="formData.productType" placeholder="请选择" style="width: 100%">
+            <el-select v-model="formData.productType" multiple placeholder="请选择（可多选）" style="width: 100%">
               <el-option v-for="opt in productTypeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
           </el-form-item>
@@ -693,7 +693,7 @@ const formData = reactive({
   title: '',
   // 删除 eventType，添加新字段
   productStage: '',        // 产品阶段
-  productType: '',         // 产品类型
+  productType: [],         // 产品类型
   projectNo: '',           // 项目号/生产任务单号
   customer: '',            // 用户
   keywords: '',            // 关键字
@@ -765,7 +765,8 @@ const productTypeOptions = [
 ]
 
 const problemTypeOptions = [
-  { label: '软件算法', value: '软件算法' },
+  { label: '软件', value: '软件' },
+  { label: '算法', value: '算法' },
   { label: '嵌入式硬件', value: '嵌入式硬件' },
   { label: '机械', value: '机械' },
   { label: '电气', value: '电气' }
@@ -942,7 +943,7 @@ const showCreateDialog = () => {
   formData.title = ''
   // 新字段
   formData.productStage = ''
-  formData.productType = ''
+  formData.productType = []
   formData.projectNo = ''
   formData.customer = ''
   formData.keywords = ''
@@ -971,7 +972,7 @@ const handleSubmit = async () => {
       title: formData.title,
       // 新字段
       productStage: formData.productStage,
-      productType: formData.productType,
+      productType: Array.isArray(formData.productType) ? formData.productType.join(',') : formData.productType,
       projectNo: formData.projectNo,
       customer: formData.customer,
       keywords: formData.keywords,
