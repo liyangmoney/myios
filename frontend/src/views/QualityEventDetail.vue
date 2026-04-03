@@ -1991,13 +1991,11 @@ const canEditDo = computed(() => {
 })
 
 // CHECK阶段：当前处理人（验证人）可以编辑
-// 条件1：当前状态是CHECK（当前处于C阶段）
-// 条件2：当前不是CHECK状态，但next_step是ACT/PLAN/DO（刚从C阶段流转过来）
+// 条件：当前状态是CHECK或ACT
 const canEditCheck = computed(() => {
   const isCurrentHandler = event.value?.current_handler_id === currentUserId.value
-  const isCheckStatus = event.value?.status === 'CHECK'
-  const isNextStepFromCheck = ['ACT', 'PLAN', 'DO'].includes(event.value?.next_step)
-  return isCurrentHandler && (isCheckStatus || isNextStepFromCheck)
+  const isCheckOrAct = event.value?.status === 'CHECK' || event.value?.status === 'ACT'
+  return isCurrentHandler && isCheckOrAct
 })
 
 // ACT阶段：监督/确认人可以编辑（关闭前）
@@ -2177,6 +2175,11 @@ const savePDCA = async () => {
       // 第一次指派，状态变为PLAN
       if (!hasExistingResponsible) {
         updateData.status = 'PLAN'
+      }
+      
+      // 如果当前处于ACT阶段，修改事件总结人时，当前处理人也更新
+      if (event.value.status === 'ACT') {
+        updateData.currentHandlerId = editForm.value.supervisorId
       }
       
       await qualityEventApi.update(event.value.id, updateData)
