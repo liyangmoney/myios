@@ -33,7 +33,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
         
     - name: Verify keystore in repo
@@ -198,7 +198,7 @@ jobs:
 
     - name: Commit APK to repository
       env:
-        GH_TOKEN: ${{ secrets.PAT }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         cd ..
         git config --local user.email "action@github.com"
