@@ -942,7 +942,16 @@ export const updateQualityEvent = async (req, res) => {
     // 根据更新的字段判断是哪个阶段的更新
     let actionDetail = 'UPDATE'
     
-    if (updateData.rootCause !== undefined || updateData.correctiveAction !== undefined || updateData.planFiles !== undefined) {
+    // 检测是否是描述补充（只更新了description字段）
+    const updatedFields = Object.keys(updateData)
+    const isDescriptionOnly = updatedFields.length === 2 && 
+                               updatedFields.includes('description') && 
+                               updatedFields.includes('descriptionFiles')
+    
+    if (isDescriptionOnly) {
+      actionDetail = 'SUPPLEMENT_DESCRIPTION'
+      logNewValue.actionDetail = '补充了事件描述'
+    } else if (updateData.rootCause !== undefined || updateData.correctiveAction !== undefined || updateData.planFiles !== undefined) {
       actionDetail = 'PLAN_UPDATE'
       logNewValue.actionDetail = '更新计划阶段'
     } else if (updateData.implementation !== undefined || updateData.doFiles !== undefined) {

@@ -2321,8 +2321,26 @@ const parseLogContent = (log) => {
       case 'CREATE':
         return `创建了质量事件：${data.title || data.eventNo || ''}`
 
-      case 'ASSIGN_UPDATE':
-        return data.actionDetail || '更新指派信息'
+      case 'SUPPLEMENT_DESCRIPTION':
+        return data.actionDetail || '补充了事件描述'
+
+      case 'ASSIGN_UPDATE': {
+        // 指派阶段修改，显示责任人和监督人变更
+        const changes = []
+        if (data.responsibleIds !== undefined) {
+          const oldIds = oldData.responsible_ids ? JSON.parse(oldData.responsible_ids) : []
+          const newIds = data.responsibleIds || []
+          if (JSON.stringify(oldIds) !== JSON.stringify(newIds)) {
+            changes.push('更新了责任人')
+          }
+        }
+        if (data.supervisorId !== undefined) {
+          if (data.supervisorId !== oldData.supervisor_id) {
+            changes.push('更新了监督/确认人')
+          }
+        }
+        return changes.join('；') || '更新指派阶段'
+      }
 
       case 'PLAN_UPDATE': {
         const changes = []
