@@ -60,9 +60,9 @@
           </template>
         </el-table-column>
         
-        <el-table-column prop="department" label="部门" width="120">
+        <el-table-column prop="department" label="部门" width="150">
           <template #default="{ row }">
-            {{ row.department || '-' }}
+            {{ formatDepartments(row.department) }}
           </template>
         </el-table-column>
         
@@ -160,8 +160,8 @@
           <el-input v-model="formData.phone" placeholder="请输入手机号" />
         </el-form-item>
         
-        <el-form-item label="部门" prop="department" required>
-          <el-select v-model="formData.department" placeholder="请选择部门" style="width: 100%">
+        <el-form-item label="部门" prop="departments" required>
+          <el-select v-model="formData.departments" placeholder="请选择部门（可多选）" style="width: 100%" multiple>
             <el-option 
               v-for="dept in departmentList" 
               :key="dept.id" 
@@ -305,7 +305,7 @@ const isEdit = ref(false)
 const formRef = ref(null)
 const submitting = ref(false)
 
-// 表单数据
+// 表单数据 - 部门改为数组
 const formData = reactive({
   id: null,
   username: '',
@@ -313,7 +313,7 @@ const formData = reactive({
   password: '',
   email: '',
   phone: '',
-  department: '',
+  departments: [],  // 改为数组，支持多部门
   role: 'user',
   status: 1,
   remark: '',
@@ -339,8 +339,8 @@ const formRules = {
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
   ],
-  department: [
-    { required: true, message: '请选择部门', trigger: 'change' }
+  departments: [
+    { required: true, message: '请选择部门', trigger: 'change', type: 'array', min: 1 }
   ]
 }
 
@@ -437,6 +437,14 @@ const handleSizeChange = (size) => {
   fetchUserList()
 }
 
+// 格式化部门显示（逗号分隔转为换行显示）
+const formatDepartments = (deptStr) => {
+  if (!deptStr) return '-'
+  // 如果是逗号分隔的字符串，拆分显示
+  const depts = deptStr.split(',').filter(d => d.trim())
+  return depts.join('、')
+}
+
 // 显示新增对话框
 const showCreateDialog = () => {
   isEdit.value = false
@@ -446,7 +454,7 @@ const showCreateDialog = () => {
   formData.password = ''
   formData.email = ''
   formData.phone = ''
-  formData.department = ''
+  formData.departments = []  // 清空数组
   formData.role = 'user'
   formData.status = 1
   formData.remark = ''
@@ -463,7 +471,8 @@ const showEditDialog = (row) => {
   formData.userName = row.user_name
   formData.email = row.email
   formData.phone = row.phone || ''
-  formData.department = row.department || ''
+  // 将逗号分隔的部门字符串转为数组
+  formData.departments = row.department ? row.department.split(',').filter(d => d.trim()) : []
   formData.role = row.role
   formData.status = row.status
   formData.remark = row.remark || ''
@@ -479,13 +488,16 @@ const handleSubmit = async () => {
 
   submitting.value = true
   try {
+    // 将部门数组转为逗号分隔字符串
+    const departmentStr = formData.departments.join(',')
+    
     if (isEdit.value) {
       // 编辑
       const res = await userApi.update(formData.id, {
         userName: formData.userName,
         email: formData.email,
         phone: formData.phone,
-        department: formData.department,
+        department: departmentStr,  // 传逗号分隔字符串
         role: formData.role,
         status: formData.status,
         remark: formData.remark,
@@ -505,7 +517,7 @@ const handleSubmit = async () => {
         password: formData.password,
         email: formData.email,
         phone: formData.phone,
-        department: formData.department,
+        department: departmentStr,  // 传逗号分隔字符串
         role: formData.role,
         remark: formData.remark,
         isDeptLeader: formData.isDeptLeader,

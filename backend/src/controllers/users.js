@@ -30,13 +30,16 @@ export const getUsers = async (req, res) => {
       params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
     }
     
-    // 支持多部门筛选（逗号分隔）
+    // 支持多部门筛选（逗号分隔）- 改为 LIKE 匹配，支持多部门存储格式
     if (department) {
       const depts = department.split(',').filter(Boolean)
       if (depts.length > 0) {
-        const placeholders = depts.map(() => '?').join(',')
-        sql += ` AND u.department IN (${placeholders})`
-        params.push(...depts)
+        // 使用 OR 连接多个 LIKE 条件，匹配包含该部门的记录
+        const likeConditions = depts.map(() => 'u.department LIKE ?').join(' OR ')
+        sql += ` AND (${likeConditions})`
+        depts.forEach(dept => {
+          params.push(`%${dept}%`)
+        })
       }
     }
     
@@ -70,13 +73,15 @@ export const getUsers = async (req, res) => {
       countSql += ' AND (username LIKE ? OR user_name LIKE ? OR email LIKE ?)'
       countParams.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
     }
-    // 支持多部门筛选
+    // 支持多部门筛选 - 同样改为 LIKE 匹配
     if (department) {
       const depts = department.split(',').filter(Boolean)
       if (depts.length > 0) {
-        const placeholders = depts.map(() => '?').join(',')
-        countSql += ` AND department IN (${placeholders})`
-        countParams.push(...depts)
+        const likeConditions = depts.map(() => 'department LIKE ?').join(' OR ')
+        countSql += ` AND (${likeConditions})`
+        depts.forEach(dept => {
+          countParams.push(`%${dept}%`)
+        })
       }
     }
     if (role) {
@@ -171,7 +176,7 @@ export const createUser = async (req, res) => {
     // 加密密码
     const hashedPassword = await bcrypt.hash(password, 10)
     
-    // 插入用户
+    // 插入用户 - department 直接存逗号分隔字符串
     const result = await query(`
       INSERT INTO sys_user (username, password, user_name, email, phone, department, role, status, created_by, remark, is_dept_leader, job_title)
       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
